@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { brl } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
+import { linkWhatsapp } from "@/lib/contato";
+
 
 export const Route = createFileRoute("/servico/$id")({
   head: () => ({
