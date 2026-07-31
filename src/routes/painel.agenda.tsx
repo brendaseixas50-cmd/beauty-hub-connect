@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { agendamentosHoje, horariosDisponiveis } from "@/data/demo";
+import { useDemo, useNegocio } from "@/data/negocio";
 
 export const Route = createFileRoute("/painel/agenda")({
   head: () => ({
@@ -17,17 +18,18 @@ export const Route = createFileRoute("/painel/agenda")({
   component: Agenda,
 });
 
-const SEMANA = [
-  { dia: "Seg 28", itens: [] as string[] },
-  { dia: "Ter 29", itens: ["09:00 Patrícia", "14:00 Renata"] },
-  { dia: "Qua 30", itens: ["10:30 Marina"] },
-  { dia: "Qui 31", itens: ["09:00 Patrícia", "11:00 Marina", "14:30 Juliana", "17:00 Beatriz"] },
-  { dia: "Sex 01", itens: ["10:00 Camila"] },
-  { dia: "Sáb 02", itens: ["08:30 Renata", "13:00 Ana"] },
-  { dia: "Dom 03", itens: [] },
-];
-
 function Agenda() {
+  const { tipo } = useNegocio();
+  const { agendamentosHoje, horariosDisponiveis, semana, profissionais, fila, encaixes, rotulos } =
+    useDemo();
+  const barbearia = tipo === "barbearia";
+  const [filtro, setFiltro] = useState("Qualquer profissional disponível");
+
+  const lista =
+    filtro === "Qualquer profissional disponível"
+      ? agendamentosHoje
+      : agendamentosHoje.filter((a) => a.profissional === filtro);
+
   return (
     <div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
@@ -38,7 +40,23 @@ function Agenda() {
         <Button className="shrink-0 rounded-full">Novo agendamento</Button>
       </div>
 
-      <Tabs defaultValue="dia" className="mt-8">
+      <div className="mt-6 flex flex-wrap gap-2">
+        {["Qualquer profissional disponível", ...profissionais.map((p) => p.nome)].map((n) => (
+          <button
+            key={n}
+            onClick={() => setFiltro(n)}
+            className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+              filtro === n
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-muted-foreground hover:bg-secondary"
+            }`}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+
+      <Tabs defaultValue="dia" className="mt-6">
         <TabsList>
           <TabsTrigger value="dia">Dia</TabsTrigger>
           <TabsTrigger value="semana">Semana</TabsTrigger>
@@ -46,7 +64,12 @@ function Agenda() {
         </TabsList>
 
         <TabsContent value="dia" className="mt-6 space-y-3">
-          {agendamentosHoje.map((a) => (
+          {lista.length === 0 && (
+            <Card className="p-5 text-sm text-muted-foreground">
+              Nenhum atendimento para este {rotulos.profissionalSingular.toLowerCase()} hoje.
+            </Card>
+          )}
+          {lista.map((a) => (
             <Card key={a.hora} className="grid grid-cols-[auto_minmax(0,1fr)] gap-4 p-5">
               <span className="font-medium">{a.hora}</span>
               <div className="min-w-0">
@@ -55,6 +78,9 @@ function Agenda() {
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   <Badge variant="outline" className="rounded-full font-normal">
                     {a.formato}
+                  </Badge>
+                  <Badge variant="outline" className="rounded-full font-normal">
+                    {a.profissional}
                   </Badge>
                   <Badge variant="secondary" className="rounded-full font-normal">
                     {a.status}
@@ -73,11 +99,46 @@ function Agenda() {
               ))}
             </div>
           </Card>
+
+          {barbearia && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Card className="gap-3 p-5">
+                <p className="text-eyebrow">Fila de atendimento</p>
+                {fila.map((f) => (
+                  <div key={f.cliente} className="flex items-center justify-between text-sm">
+                    <span className="truncate">
+                      {f.cliente} · {f.servico}
+                    </span>
+                    <span className="shrink-0 text-muted-foreground">{f.espera}</span>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" className="mt-1 rounded-full">
+                  Chamar próximo
+                </Button>
+              </Card>
+              <Card className="gap-3 p-5">
+                <p className="text-eyebrow">Pedidos de encaixe</p>
+                {encaixes.map((e) => (
+                  <div key={e.cliente} className="flex items-center justify-between text-sm">
+                    <span className="truncate">
+                      {e.horario} · {e.cliente}
+                    </span>
+                    <Badge variant="outline" className="shrink-0 rounded-full font-normal">
+                      {e.status}
+                    </Badge>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" className="mt-1 rounded-full">
+                  Abrir encaixe
+                </Button>
+              </Card>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="semana" className="mt-6">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
-            {SEMANA.map((d) => (
+            {semana.map((d) => (
               <Card key={d.dia} className="gap-2 p-4">
                 <p className="text-eyebrow">{d.dia}</p>
                 {d.itens.length === 0 ? (
@@ -107,10 +168,7 @@ function Agenda() {
               {Array.from({ length: 31 }).map((_, i) => {
                 const qtd = [3, 0, 2, 4, 1, 0, 5][i % 7] ?? 0;
                 return (
-                  <div
-                    key={i}
-                    className="aspect-square rounded-lg border p-1.5 text-left text-xs"
-                  >
+                  <div key={i} className="aspect-square rounded-lg border p-1.5 text-left text-xs">
                     <span className={i === 30 ? "font-bold" : "text-muted-foreground"}>
                       {i + 1}
                     </span>

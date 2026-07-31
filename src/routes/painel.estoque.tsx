@@ -3,7 +3,8 @@ import { Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { estoque } from "@/data/demo";
+import { brl } from "@/data/demo";
+import { useDemo, useNegocio } from "@/data/negocio";
 
 export const Route = createFileRoute("/painel/estoque")({
   head: () => ({
@@ -18,13 +19,12 @@ export const Route = createFileRoute("/painel/estoque")({
 });
 
 const cor = (status: string) =>
-  status === "Ok"
-    ? "secondary"
-    : status === "Esgotado"
-      ? "destructive"
-      : ("outline" as const);
+  status === "Ok" ? "secondary" : status === "Esgotado" ? "destructive" : ("outline" as const);
 
 function Estoque() {
+  const { tipo } = useNegocio();
+  const { estoque, produtos } = useDemo();
+
   return (
     <div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
@@ -39,7 +39,10 @@ function Estoque() {
 
       <Card className="mt-8 divide-y p-0">
         {estoque.map((e) => (
-          <div key={e.item} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-4">
+          <div
+            key={e.item}
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-4"
+          >
             <div className="min-w-0">
               <p className="truncate font-medium">{e.item}</p>
               <p className="text-sm text-muted-foreground">
@@ -58,6 +61,33 @@ function Estoque() {
           </div>
         ))}
       </Card>
+
+      <section className="mt-10">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+          <h2 className="text-2xl">
+            {tipo === "barbearia" ? "Loja — venda de produtos" : "Produtos para revenda"}
+          </h2>
+          <Button variant="outline" size="sm" className="shrink-0 rounded-full">
+            Nova venda
+          </Button>
+        </div>
+        <Card className="mt-4 divide-y p-0">
+          {produtos.map((p) => (
+            <div
+              key={p.nome}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-4"
+            >
+              <div className="min-w-0">
+                <p className="truncate font-medium">{p.nome}</p>
+                <p className="text-sm text-muted-foreground">
+                  {p.vendidos} vendidos no mês · {p.estoque} em estoque
+                </p>
+              </div>
+              <span className="shrink-0 font-medium">{brl(p.preco)}</span>
+            </div>
+          ))}
+        </Card>
+      </section>
     </div>
   );
 }
