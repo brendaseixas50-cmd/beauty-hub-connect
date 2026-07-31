@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { galeria, categorias } from "@/data/demo";
+import { useDemo } from "@/data/negocio";
 
 export const Route = createFileRoute("/painel/galeria")({
   head: () => ({
@@ -17,7 +17,9 @@ export const Route = createFileRoute("/painel/galeria")({
 });
 
 function Galeria() {
+  const { galeria, categorias } = useDemo();
   return (
+
     <div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <div className="min-w-0">

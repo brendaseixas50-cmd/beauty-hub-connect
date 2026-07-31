@@ -2,7 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { financeiro, brl } from "@/data/demo";
+import { brl } from "@/data/demo";
+import { useDemo } from "@/data/negocio";
+
 
 export const Route = createFileRoute("/painel/financeiro")({
   head: () => ({
@@ -17,7 +19,9 @@ export const Route = createFileRoute("/painel/financeiro")({
 });
 
 function Financeiro() {
+  const { financeiro } = useDemo();
   return (
+
     <div>
       <p className="text-eyebrow">Resultados</p>
       <h1 className="mt-1 text-3xl">Financeiro</h1>
