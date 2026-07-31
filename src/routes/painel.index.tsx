@@ -63,7 +63,6 @@ function VisaoGeral() {
         </Button>
       </div>
 
-
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Metrica
           icon={CalendarCheck}
@@ -198,7 +197,9 @@ function VisaoGeral() {
           </section>
 
           <section>
-            <h2 className="mb-3 text-2xl">Desempenho por {rotulos.profissionalSingular.toLowerCase()}</h2>
+            <h2 className="mb-3 text-2xl">
+              Desempenho por {rotulos.profissionalSingular.toLowerCase()}
+            </h2>
             <Card className="gap-4 p-5">
               {profissionais.map((p) => (
                 <div key={p.id}>

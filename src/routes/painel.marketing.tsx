@@ -11,7 +11,6 @@ import { useDemo, useNegocio } from "@/data/negocio";
 import { DialogoInfo } from "@/components/dialogo-info";
 import { avisoDemo, BotaoDemo } from "@/components/acao-demo";
 
-
 export const Route = createFileRoute("/painel/marketing")({
   head: () => ({
     meta: [
@@ -91,7 +90,6 @@ function Marketing() {
           </Card>
         ))}
       </div>
-
 
       <section className="mt-10">
         <h2 className="mb-4 text-2xl">Assinaturas mensais</h2>

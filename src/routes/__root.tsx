@@ -14,8 +14,6 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { NegocioProvider, useNegocio } from "@/data/negocio";
 import { Toaster } from "@/components/ui/sonner";
 
-
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -150,8 +148,6 @@ function Casca({ children }: { children: ReactNode }) {
   );
 }
 
-
-
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -166,4 +162,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

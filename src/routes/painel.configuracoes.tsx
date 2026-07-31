@@ -13,8 +13,6 @@ import { type FormatoAtendimento } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
 import { BotaoDemo } from "@/components/acao-demo";
 
-
-
 export const Route = createFileRoute("/painel/configuracoes")({
   head: () => ({
     meta: [
@@ -66,7 +64,6 @@ function Configuracoes() {
           >
             Alterar logo
           </BotaoDemo>
-
         </div>
         <Campo label="Nome do espaço" valor={estudio.nome} />
         <Campo label="Nome da profissional" valor={estudio.profissional} />
@@ -89,7 +86,6 @@ function Configuracoes() {
             >
               Personalizar
             </BotaoDemo>
-
           </div>
         </div>
       </Bloco>
@@ -111,7 +107,6 @@ function Configuracoes() {
         >
           Trocar banner
         </BotaoDemo>
-
       </Bloco>
 
       <Bloco titulo="Contato e localização">
@@ -226,7 +221,6 @@ function Configuracoes() {
           Salvar alterações
         </BotaoDemo>
       </div>
-
     </div>
   );
 }

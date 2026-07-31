@@ -44,8 +44,7 @@ export function NegocioProvider({ children }: { children: ReactNode }) {
   };
 
   const valor = useMemo<Contexto>(() => {
-    const dados =
-      perfil.tipo === "barbearia" ? dadosBarbearia : dadosBelezaPorArea(perfil.area);
+    const dados = perfil.tipo === "barbearia" ? dadosBarbearia : dadosBelezaPorArea(perfil.area);
     return {
       ...perfil,
       dados,
@@ -56,7 +55,6 @@ export function NegocioProvider({ children }: { children: ReactNode }) {
       concluir: () => salvar({ ...perfil, concluido: true }),
       reiniciar: () => salvar(PADRAO),
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfil]);
 
   return <NegocioContext.Provider value={valor}>{children}</NegocioContext.Provider>;

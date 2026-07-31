@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AgendarRouteImport } from './routes/agendar'
 import { Route as CadastroRouteImport } from './routes/cadastro'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as PainelRouteImport } from './routes/painel'
 import { Route as PainelIndexRouteImport } from './routes/painel.index'
 import { Route as PainelAgendaRouteImport } from './routes/painel.agenda'
@@ -38,6 +39,11 @@ const AgendarRoute = AgendarRouteImport.update({
 const CadastroRoute = CadastroRouteImport.update({
   id: '/cadastro',
   path: '/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PainelRoute = PainelRouteImport.update({
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agendar': typeof AgendarRoute
   '/cadastro': typeof CadastroRoute
+  '/login': typeof LoginRoute
   '/painel': typeof PainelRouteWithChildren
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agendar': typeof AgendarRoute
   '/cadastro': typeof CadastroRoute
+  '/login': typeof LoginRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/agendar': typeof AgendarRoute
   '/cadastro': typeof CadastroRoute
+  '/login': typeof LoginRoute
   '/painel': typeof PainelRouteWithChildren
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agendar'
     | '/cadastro'
+    | '/login'
     | '/painel'
     | '/painel/agenda'
     | '/painel/clientes'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agendar'
     | '/cadastro'
+    | '/login'
     | '/painel/agenda'
     | '/painel/clientes'
     | '/painel/configuracoes'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agendar'
     | '/cadastro'
+    | '/login'
     | '/painel'
     | '/painel/agenda'
     | '/painel/clientes'
@@ -209,6 +221,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendarRoute: typeof AgendarRoute
   CadastroRoute: typeof CadastroRoute
+  LoginRoute: typeof LoginRoute
   PainelRoute: typeof PainelRouteWithChildren
   ServicoIdRoute: typeof ServicoIdRoute
 }
@@ -234,6 +247,13 @@ declare module '@tanstack/react-router' {
       path: '/cadastro'
       fullPath: '/cadastro'
       preLoaderRoute: typeof CadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/painel': {
@@ -356,9 +376,20 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendarRoute: AgendarRoute,
   CadastroRoute: CadastroRoute,
+  LoginRoute: LoginRoute,
   PainelRoute: PainelRouteWithChildren,
   ServicoIdRoute: ServicoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

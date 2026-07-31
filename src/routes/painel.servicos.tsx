@@ -16,20 +16,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { brl, type Servico, type TipoTaxa } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
 import { avisoDemo } from "@/components/acao-demo";
-
-
 
 export const Route = createFileRoute("/painel/servicos")({
   head: () => ({
     meta: [
       { title: "Serviços — Painel Lu IA Studio" },
-      { name: "description", content: "Cadastre serviços, preços por formato e taxa de deslocamento." },
+      {
+        name: "description",
+        content: "Cadastre serviços, preços por formato e taxa de deslocamento.",
+      },
       { property: "og:title", content: "Serviços — Painel Lu IA Studio" },
-      { property: "og:description", content: "Preços no local, em domicílio e taxa de deslocamento." },
+      {
+        property: "og:description",
+        content: "Preços no local, em domicílio e taxa de deslocamento.",
+      },
     ],
   }),
   component: Servicos,
@@ -38,7 +48,6 @@ export const Route = createFileRoute("/painel/servicos")({
 function Servicos() {
   const { servicos } = useDemo();
   return (
-
     <div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <div className="min-w-0">
@@ -111,13 +120,7 @@ function Servicos() {
   );
 }
 
-function FormularioServico({
-  servico,
-  gatilho,
-}: {
-  servico?: Servico;
-  gatilho: React.ReactNode;
-}) {
+function FormularioServico({ servico, gatilho }: { servico?: Servico; gatilho: React.ReactNode }) {
   const { categorias } = useDemo();
   const [aberto, setAberto] = useState(false);
   const [mesmoPreco, setMesmoPreco] = useState(servico?.mesmoPreco ?? true);
@@ -307,7 +310,6 @@ function FormularioServico({
               Cancelar
             </Button>
           </div>
-
         </div>
       </DialogContent>
     </Dialog>

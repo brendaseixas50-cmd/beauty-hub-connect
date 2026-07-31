@@ -24,8 +24,6 @@ import { brl } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
 import { linkInstagram, linkWhatsapp } from "@/lib/contato";
 
-
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -40,7 +38,6 @@ export const Route = createFileRoute("/")({
         property: "og:description",
         content: "Serviços, preços e agendamento online no espaço ou em domicílio.",
       },
-
     ],
   }),
   component: PaginaPublica,
@@ -121,7 +118,6 @@ function PaginaPublica() {
               </a>
             </Button>
           </div>
-
         </section>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-2">
@@ -140,7 +136,6 @@ function PaginaPublica() {
             href={linkWhatsapp(estudio.whatsapp, estudio.nome)}
           />
         </section>
-
 
         <Secao titulo="Horários de funcionamento" eyebrow="Atendimento">
           <Card className="divide-y p-0">
@@ -297,7 +292,6 @@ function PaginaPublica() {
               <MessageCircle className="h-4 w-4" />
             </a>
           </Button>
-
         </div>
       </div>
     </div>
@@ -332,7 +326,6 @@ function InfoLinha({
     </a>
   );
 }
-
 
 function Secao({
   titulo,

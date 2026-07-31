@@ -6,7 +6,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi"] },
+  { ignores: ["dist", ".output", ".vercel", ".vinxi"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -34,6 +34,19 @@ export default tseslint.config(
       ],
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+  {
+    files: [
+      "src/components/acao-demo.tsx",
+      "src/components/ui/**/*.tsx",
+      "src/data/negocio.tsx",
+      "src/modules/auth/context.tsx",
+    ],
+    rules: {
+      // These modules intentionally export a component together with its
+      // variants, hooks or provider API (the standard shadcn pattern).
+      "react-refresh/only-export-components": "off",
     },
   },
   eslintPluginPrettier,

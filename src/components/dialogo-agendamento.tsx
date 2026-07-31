@@ -39,7 +39,6 @@ export function DialogoAgendamento({
   horaInicial?: string | undefined;
   profissionalInicial?: string | undefined;
 }) {
-
   const { servicos, profissionais, horariosDisponiveis, rotulos } = useDemo();
   const [aberto, setAberto] = useState(false);
   const [cliente, setCliente] = useState("");
@@ -101,7 +100,11 @@ export function DialogoAgendamento({
 
           <Campo titulo={rotulos.profissionalSingular}>
             {profissionais.map((p) => (
-              <Chip key={p.id} ativo={profissional === p.nome} onClick={() => setProfissional(p.nome)}>
+              <Chip
+                key={p.id}
+                ativo={profissional === p.nome}
+                onClick={() => setProfissional(p.nome)}
+              >
                 {p.nome}
               </Chip>
             ))}

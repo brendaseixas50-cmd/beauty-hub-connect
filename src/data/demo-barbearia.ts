@@ -333,15 +333,49 @@ export const dadosBarbearia: DadosNegocio = {
     ],
   },
   estoque: [
-    { item: "Pomada modeladora efeito matte", categoria: "Finalização", quantidade: 12, minimo: 6, status: "Ok" },
-    { item: "Lâminas de navalha (cx 100)", categoria: "Barba", quantidade: 2, minimo: 3, status: "Baixo" },
+    {
+      item: "Pomada modeladora efeito matte",
+      categoria: "Finalização",
+      quantidade: 12,
+      minimo: 6,
+      status: "Ok",
+    },
+    {
+      item: "Lâminas de navalha (cx 100)",
+      categoria: "Barba",
+      quantidade: 2,
+      minimo: 3,
+      status: "Baixo",
+    },
     { item: "Óleo para barba", categoria: "Barba", quantidade: 5, minimo: 4, status: "Ok" },
-    { item: "Pó descolorante", categoria: "Coloração", quantidade: 1, minimo: 2, status: "Atenção" },
-    { item: "Talco para pescoço", categoria: "Finalização", quantidade: 0, minimo: 2, status: "Esgotado" },
+    {
+      item: "Pó descolorante",
+      categoria: "Coloração",
+      quantidade: 1,
+      minimo: 2,
+      status: "Atenção",
+    },
+    {
+      item: "Talco para pescoço",
+      categoria: "Finalização",
+      quantidade: 0,
+      minimo: 2,
+      status: "Esgotado",
+    },
   ],
   campanhas: [
-    { nome: "Assinatura Navalha Ouro", publico: "Clientes recorrentes", status: "Ativa", retorno: "34 assinantes" },
-    { nome: "Indique e ganhe um acabamento", publico: "Base ativa", status: "Ativa", retorno: "17 novos clientes" },
+    {
+      nome: "Assinatura Navalha Ouro",
+      publico: "Clientes recorrentes",
+      status: "Ativa",
+      retorno: "34 assinantes",
+    },
+    {
+      nome: "Indique e ganhe um acabamento",
+      publico: "Base ativa",
+      status: "Ativa",
+      retorno: "17 novos clientes",
+    },
     { nome: "Combo Dia dos Pais", publico: "Toda a base", status: "Programada", retorno: "—" },
     { nome: "Retorno 45 dias", publico: "28 clientes", status: "Rascunho", retorno: "—" },
   ],
@@ -381,8 +415,18 @@ export const dadosBarbearia: DadosNegocio = {
     },
   ],
   fila: [
-    { cliente: "Léo Ramires", servico: "Acabamento", espera: "5 min", profissional: "Qualquer disponível" },
-    { cliente: "Ivan Costa", servico: "Corte masculino", espera: "20 min", profissional: "Diego Vasques" },
+    {
+      cliente: "Léo Ramires",
+      servico: "Acabamento",
+      espera: "5 min",
+      profissional: "Qualquer disponível",
+    },
+    {
+      cliente: "Ivan Costa",
+      servico: "Corte masculino",
+      espera: "20 min",
+      profissional: "Diego Vasques",
+    },
     { cliente: "Sérgio Peixe", servico: "Barba", espera: "35 min", profissional: "Rafael Motta" },
   ],
   encaixes: [
@@ -391,8 +435,18 @@ export const dadosBarbearia: DadosNegocio = {
   ],
   combos: [
     { nome: "Corte e barba", itens: ["Corte masculino", "Barba"], preco: 95, duracao: "1h15" },
-    { nome: "Combo executivo", itens: ["Corte masculino", "Sobrancelha", "Hidratação"], preco: 120, duracao: "1h20" },
-    { nome: "Combo pai e filho", itens: ["Corte masculino", "Corte infantil"], preco: 90, duracao: "1h" },
+    {
+      nome: "Combo executivo",
+      itens: ["Corte masculino", "Sobrancelha", "Hidratação"],
+      preco: 120,
+      duracao: "1h20",
+    },
+    {
+      nome: "Combo pai e filho",
+      itens: ["Corte masculino", "Corte infantil"],
+      preco: 90,
+      duracao: "1h",
+    },
   ],
   assinaturas: [
     {

@@ -24,9 +24,15 @@ export const Route = createFileRoute("/painel/clientes")({
   head: () => ({
     meta: [
       { title: "Clientes — Painel Lu IA Studio" },
-      { name: "description", content: "Ficha das clientes com histórico, aniversário e observações." },
+      {
+        name: "description",
+        content: "Ficha das clientes com histórico, aniversário e observações.",
+      },
       { property: "og:title", content: "Clientes — Painel Lu IA Studio" },
-      { property: "og:description", content: "Histórico, contatos e observações das suas clientes." },
+      {
+        property: "og:description",
+        content: "Histórico, contatos e observações das suas clientes.",
+      },
     ],
   }),
   component: Clientes,
@@ -55,10 +61,7 @@ function Clientes() {
           <p className="text-eyebrow">Relacionamento</p>
           <h1 className="mt-1 text-3xl">Clientes</h1>
         </div>
-        <NovoCliente
-          feminino={feminino}
-          onCriar={(c) => setNovos((l) => [c, ...l])}
-        />
+        <NovoCliente feminino={feminino} onCriar={(c) => setNovos((l) => [c, ...l])} />
       </div>
 
       <div className="relative mt-6 max-w-sm">
@@ -152,13 +155,7 @@ function Clientes() {
   );
 }
 
-function NovoCliente({
-  feminino,
-  onCriar,
-}: {
-  feminino: boolean;
-  onCriar: (c: Cliente) => void;
-}) {
+function NovoCliente({ feminino, onCriar }: { feminino: boolean; onCriar: (c: Cliente) => void }) {
   const [aberto, setAberto] = useState(false);
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");

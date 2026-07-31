@@ -1,6 +1,108 @@
 # Beauty Hub Connect
 
-Crie a estrutura visual inicial de uma plataforma SaaS para profissionais da área da beleza, desenvolvida pela empresa Lu IA Studio.
+Plataforma SaaS multiempresa para profissionais da beleza, desenvolvida pela Lu IA Studio. O projeto reúne página pública, agendamento e painel privado responsivo em uma arquitetura preparada para Supabase e implantação na Vercel.
+
+## Estado desta versão
+
+- Aplicação React 19 + TypeScript + TanStack Start, compilada pelo Vite;
+- adaptador Nitro fixado para Vercel;
+- login separado da página pública e painel protegido no servidor;
+- sessão demonstrativa em cookie `httpOnly` (adaptador temporário);
+- contexto de usuário com empresa, papel e permissões;
+- contratos de repositório que exigem `tenantId` em toda operação privada;
+- esquema SQL de referência com Row Level Security para isolamento multiempresa;
+- dados visuais demonstrativos preservados;
+- Supabase ainda não conectado a nenhum projeto real.
+
+## Executando localmente
+
+Requisitos: Node.js 22 ou superior. Bun é opcional.
+
+```bash
+npm install
+npm run dev
+```
+
+Abra `http://localhost:3000`. Para acessar o painel demonstrativo:
+
+```text
+E-mail: demo@beautyhub.local
+Senha: demo123
+```
+
+Os mesmos scripts funcionam com Bun:
+
+```bash
+bun install
+bun run dev
+```
+
+## Validação antes do deploy
+
+```bash
+npm run typecheck
+npm run lint
+npm run build
+# ou
+bun run build
+```
+
+`npm run check` executa typecheck, lint e build em sequência. O build de produção gera a estrutura da Vercel em `.vercel/output`.
+
+Para validar localmente o artefato já compilado, execute `npm run preview`.
+
+## Implantação na Vercel
+
+1. Importe este repositório na Vercel.
+2. Use Node.js 22 ou superior.
+3. Mantenha o comando de build como `npm run build` (ou `bun run build`).
+4. Não configure manualmente um diretório de saída: o Nitro gera o Vercel Build Output API.
+
+As variáveis abaixo são opcionais nesta versão e estão documentadas em `.env.example`:
+
+```env
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+```
+
+## Arquitetura
+
+```text
+src/
+├── components/              componentes reutilizáveis e UI
+├── data/                    dados demonstrativos atuais
+├── modules/
+│   ├── auth/                sessão, login, contexto, papéis e permissões
+│   ├── supabase/            fronteira da futura integração
+│   └── tenancy/             domínio e contratos multiempresa
+├── routes/                  rotas públicas e painel protegido
+├── server.ts                entrada SSR e tratamento de falhas críticas
+└── start.ts                 middleware global e proteção CSRF
+supabase/schema.sql           modelo relacional e políticas RLS de referência
+```
+
+### Autenticação
+
+`/login` é público e `/painel` protege todas as rotas filhas em `beforeLoad`. A validação consulta uma server function e usa cookie `httpOnly`; digitar a URL do painel sem sessão redireciona para o login. O adaptador demonstrativo deve ser substituído por Supabase Auth quando o banco for conectado, mantendo os contratos e a interface de sessão.
+
+### Isolamento multiempresa
+
+Cada usuário autenticado pertence a um único `tenantId`. Todos os modelos privados carregam esse identificador e todo repositório recebe um `TenantContext` obrigatório. No banco, `supabase/schema.sql` ativa RLS e limita consultas e alterações ao tenant retornado pelo perfil do usuário autenticado. A aplicação deve manter as duas camadas: filtro explícito no repositório e RLS no Supabase.
+
+### Permissões
+
+Papéis disponíveis: `owner`, `admin`, `professional` e `receptionist`. As permissões são tipadas por domínio (agenda, clientes, serviços, financeiro, equipe e configurações) e podem ser verificadas pelo contexto de autenticação ou na camada de servidor.
+
+## Conectando o Supabase futuramente
+
+1. Crie o projeto e revise/aplique `supabase/schema.sql` por migration.
+2. Instale o cliente oficial e implemente o adaptador em `src/modules/supabase`.
+3. Troque a sessão temporária de `src/modules/auth/server.ts` por Supabase Auth.
+4. Exija autenticação e permissão em cada server function privada.
+5. Implemente repositórios sempre filtrando `tenant_id`; nunca use a chave `service_role` no navegador.
+6. Configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` na Vercel.
+
+## Escopo visual preservado
 
 A plataforma será destinada a profissionais como manicures, nail designers, lash designers, designers de sobrancelhas, cabeleireiras, depiladoras, esteticistas e massoterapeutas.
 

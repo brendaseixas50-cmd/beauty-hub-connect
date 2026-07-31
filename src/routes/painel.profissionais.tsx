@@ -11,7 +11,6 @@ import { brl } from "@/data/demo";
 import { DialogoInfo } from "@/components/dialogo-info";
 import { avisoDemo } from "@/components/acao-demo";
 
-
 export const Route = createFileRoute("/painel/profissionais")({
   head: () => ({
     meta: [
@@ -62,7 +61,6 @@ function Profissionais() {
             <Input id="prof-com" type="number" defaultValue={40} />
           </div>
         </DialogoInfo>
-
       </div>
 
       <div className="mt-8 grid gap-3">
@@ -170,12 +168,10 @@ function Profissionais() {
                   <Input id={`com-${p.id}`} type="number" defaultValue={p.comissao} />
                 </div>
                 <p className="text-muted-foreground">
-                  Comissão atual estimada:{" "}
-                  {brl(Math.round((p.faturamento * p.comissao) / 100))}
+                  Comissão atual estimada: {brl(Math.round((p.faturamento * p.comissao) / 100))}
                 </p>
               </DialogoInfo>
             </div>
-
           </Card>
         ))}
       </div>
@@ -204,7 +200,8 @@ function Profissionais() {
           <h2 className="mb-3 text-2xl">Rateio do faturamento</h2>
           <Card className="gap-3 p-5">
             <p className="text-sm text-muted-foreground">
-              Faturamento do mês: <span className="font-medium text-foreground">{brl(financeiro.mes)}</span>
+              Faturamento do mês:{" "}
+              <span className="font-medium text-foreground">{brl(financeiro.mes)}</span>
             </p>
             {profissionais.map((p) => (
               <div key={p.id} className="flex items-center justify-between text-sm">

@@ -95,7 +95,10 @@ function Agenda() {
             </Card>
           )}
           {lista.map((a) => (
-            <Card key={`${a.hora}-${a.cliente}`} className="grid grid-cols-[auto_minmax(0,1fr)] gap-4 p-5">
+            <Card
+              key={`${a.hora}-${a.cliente}`}
+              className="grid grid-cols-[auto_minmax(0,1fr)] gap-4 p-5"
+            >
               <span className="font-medium">{a.hora}</span>
               <div className="min-w-0">
                 <p className="truncate font-medium">{a.cliente}</p>

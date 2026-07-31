@@ -6,12 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { useDemo } from "@/data/negocio";
 import { BotaoDemo, avisoDemo } from "@/components/acao-demo";
 
-
 export const Route = createFileRoute("/painel/galeria")({
   head: () => ({
     meta: [
       { title: "Galeria — Painel Lu IA Studio" },
-      { name: "description", content: "Organize as fotos dos trabalhos exibidos na página pública." },
+      {
+        name: "description",
+        content: "Organize as fotos dos trabalhos exibidos na página pública.",
+      },
       { property: "og:title", content: "Galeria — Painel Lu IA Studio" },
       { property: "og:description", content: "Fotos dos trabalhos realizados." },
     ],

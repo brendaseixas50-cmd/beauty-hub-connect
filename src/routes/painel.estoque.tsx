@@ -10,7 +10,6 @@ import { useDemo, useNegocio } from "@/data/negocio";
 import { DialogoInfo } from "@/components/dialogo-info";
 import { avisoDemo, BotaoDemo } from "@/components/acao-demo";
 
-
 export const Route = createFileRoute("/painel/estoque")({
   head: () => ({
     meta: [
@@ -61,7 +60,6 @@ function Estoque() {
             <Input id="est-min" type="number" defaultValue={3} />
           </div>
         </DialogoInfo>
-
       </div>
 
       <Card className="mt-8 divide-y p-0">
@@ -103,7 +101,6 @@ function Estoque() {
           >
             Nova venda
           </BotaoDemo>
-
         </div>
         <Card className="mt-4 divide-y p-0">
           {produtos.map((p) => (

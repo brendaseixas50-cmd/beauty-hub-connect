@@ -7,7 +7,6 @@ import { brl } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
 import { linkWhatsapp } from "@/lib/contato";
 
-
 export const Route = createFileRoute("/servico/$id")({
   head: () => ({
     meta: [
@@ -50,7 +49,6 @@ function DetalheServico() {
     (estudio.formatoAtendimento === "ambos" && estudio.domicilioAtivo);
   const aceitaDomicilio = servico.formato !== "espaco" && domicilioLiberado;
   const aceitaLocal = servico.formato !== "domicilio" && estudio.formatoAtendimento !== "domicilio";
-
 
   const precoDomicilio = servico.mesmoPreco
     ? servico.precoLocal
@@ -171,7 +169,6 @@ function DetalheServico() {
           )}
         </div>
       </div>
-
     </div>
   );
 }

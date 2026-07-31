@@ -5,8 +5,6 @@ import { brl } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
 import { BotaoDemo } from "@/components/acao-demo";
 
-
-
 export const Route = createFileRoute("/painel/financeiro")({
   head: () => ({
     meta: [
@@ -22,7 +20,6 @@ export const Route = createFileRoute("/painel/financeiro")({
 function Financeiro() {
   const { financeiro } = useDemo();
   return (
-
     <div>
       <p className="text-eyebrow">Resultados</p>
       <h1 className="mt-1 text-3xl">Financeiro</h1>
@@ -46,7 +43,6 @@ function Financeiro() {
           Exportar
         </BotaoDemo>
       </div>
-
 
       <Card className="mt-4 divide-y p-0">
         {financeiro.lancamentos.map((l, i) => (

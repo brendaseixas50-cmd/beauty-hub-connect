@@ -9,7 +9,8 @@ import type { ComponentProps, ReactNode } from "react";
 export function avisoDemo(titulo: string, descricao?: string) {
   toast.success(titulo, {
     description:
-      descricao ?? "Ação demonstrativa — será salva de verdade quando o banco de dados for conectado.",
+      descricao ??
+      "Ação demonstrativa — será salva de verdade quando o banco de dados for conectado.",
   });
 }
 

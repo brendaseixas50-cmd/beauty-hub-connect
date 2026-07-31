@@ -11,8 +11,6 @@ import { brl, type Servico } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
 import { linkWhatsapp } from "@/lib/contato";
 
-
-
 type Busca = { servico?: string | undefined };
 
 export const Route = createFileRoute("/agendar")({
@@ -24,7 +22,8 @@ export const Route = createFileRoute("/agendar")({
       { title: "Agendar horário — Lu IA Studio" },
       {
         name: "description",
-        content: "Escolha o serviço, o formato de atendimento, a data e o horário do seu agendamento.",
+        content:
+          "Escolha o serviço, o formato de atendimento, a data e o horário do seu agendamento.",
       },
       { property: "og:title", content: "Agendar horário — Lu IA Studio" },
 
@@ -36,13 +35,10 @@ export const Route = createFileRoute("/agendar")({
 
 const DIAS = ["01/08", "02/08", "03/08", "05/08", "06/08", "07/08"];
 
-
 function Agendar() {
   const { servico: servicoInicial } = Route.useSearch();
   const { estudio, servicos, horariosDisponiveis, profissionais } = useDemo();
   const disponiveis = servicos.filter((s) => s.disponivel);
-
-
 
   const domicilioLiberado =
     estudio.formatoAtendimento === "domicilio" ||
@@ -62,7 +58,6 @@ function Agendar() {
   const [profissional, setProfissional] = useState<string | null>(null);
   const [nome, setNome] = useState("");
   const [whats, setWhats] = useState("");
-
 
   const totalPassos = escolheFormato ? 6 : 5;
   const passoVisual = escolheFormato ? passo : passo > 1 ? passo - 1 : passo;
@@ -252,7 +247,6 @@ function Agendar() {
             </>
           )}
 
-
           {passo === 5 && (
             <>
               <h2 className="text-2xl">Seus dados</h2>
@@ -299,7 +293,6 @@ function Agendar() {
                   Informe seu nome e WhatsApp para continuar.
                 </p>
               )}
-
             </>
           )}
 
@@ -334,9 +327,7 @@ function Agendar() {
                   valor={brl(precoServico)}
                 />
                 {taxaFixa > 0 && <Linha label="Taxa de deslocamento" valor={brl(taxaFixa)} />}
-                {taxaCombinar && (
-                  <Linha label="Taxa de deslocamento" valor="A combinar" />
-                )}
+                {taxaCombinar && <Linha label="Taxa de deslocamento" valor="A combinar" />}
                 <Separator />
                 <div className="flex items-center justify-between">
                   <span className="font-medium">
@@ -370,8 +361,8 @@ function Agendar() {
                 {taxaCombinar ? "Solicitação enviada!" : "Agendamento confirmado!"}
               </h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                {nome.split(" ")[0]}, seu horário para <strong>{servico.nome}</strong> em{" "}
-                {data} às {hora}
+                {nome.split(" ")[0]}, seu horário para <strong>{servico.nome}</strong> em {data} às{" "}
+                {hora}
                 {profissional ? ` com ${profissional}` : ""} foi registrado.
                 {taxaCombinar
                   ? " Você receberá a confirmação do valor de deslocamento no WhatsApp."
@@ -406,7 +397,6 @@ function Agendar() {
             {servico.nome} · {servico.duracao}
           </Badge>
         )}
-
       </div>
     </div>
   );
@@ -421,15 +411,7 @@ function Campo({ id, label }: { id: string; label: string }) {
   );
 }
 
-function Linha({
-  label,
-  valor,
-  icone,
-}: {
-  label: string;
-  valor: string;
-  icone?: React.ReactNode;
-}) {
+function Linha({ label, valor, icone }: { label: string; valor: string; icone?: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 text-sm">
       <span className="text-muted-foreground">{label}</span>
