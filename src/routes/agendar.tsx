@@ -19,12 +19,13 @@ export const Route = createFileRoute("/agendar")({
   }),
   head: () => ({
     meta: [
-      { title: `Agendar horário — ${estudio.nome}` },
+      { title: "Agendar horário — Lu IA Studio" },
       {
         name: "description",
         content: "Escolha o serviço, o formato de atendimento, a data e o horário do seu agendamento.",
       },
-      { property: "og:title", content: `Agendar horário — ${estudio.nome}` },
+      { property: "og:title", content: "Agendar horário — Lu IA Studio" },
+
       { property: "og:description", content: "Agendamento online em poucos passos." },
     ],
   }),

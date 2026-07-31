@@ -27,16 +27,18 @@ import { useDemo } from "@/data/negocio";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: `${estudio.nome} — agendamento online` },
+      { title: "Agendamento online — Lu IA Studio" },
       {
         name: "description",
-        content: `${estudio.especialidade} em ${estudio.regiao}. Veja serviços, preços e agende seu horário online.`,
+        content:
+          "Página pública da profissional: serviços, preços, portfólio e agendamento online em poucos passos.",
       },
-      { property: "og:title", content: `${estudio.nome} — agendamento online` },
+      { property: "og:title", content: "Agendamento online — Lu IA Studio" },
       {
         property: "og:description",
-        content: `${estudio.especialidade}. Atendimento no espaço e em domicílio.`,
+        content: "Serviços, preços e agendamento online no espaço ou em domicílio.",
       },
+
     ],
   }),
   component: PaginaPublica,
