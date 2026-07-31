@@ -285,9 +285,19 @@ function Agendar() {
                 </Card>
               )}
 
-              <Button className="w-full rounded-full" onClick={avancar}>
+              <Button
+                className="w-full rounded-full"
+                disabled={nome.trim().length < 3 || whats.trim().length < 8}
+                onClick={avancar}
+              >
                 Ver resumo
               </Button>
+              {(nome.trim().length < 3 || whats.trim().length < 8) && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Informe seu nome e WhatsApp para continuar.
+                </p>
+              )}
+
             </>
           )}
 
