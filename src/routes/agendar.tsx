@@ -311,6 +311,11 @@ function Agendar() {
                 <Linha label="Data" valor={data ?? "—"} />
                 <Linha label="Horário" valor={hora ?? "—"} />
                 <Linha
+                  label="Profissional"
+                  valor={profissional ?? "Qualquer profissional disponível"}
+                />
+
+                <Linha
                   label="Duração"
                   valor={servico.duracao}
                   icone={<Clock className="h-3.5 w-3.5" />}
