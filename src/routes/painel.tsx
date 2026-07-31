@@ -10,12 +10,14 @@ import {
   Scissors,
   Settings,
   Users,
+  UserCog,
   Wallet,
   ExternalLink,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { estudio } from "@/data/demo";
+import { TrocaTipo } from "@/components/troca-tipo";
+import { useDemo, useNegocio } from "@/data/negocio";
 
 export const Route = createFileRoute("/painel")({
   component: PainelLayout,
@@ -25,6 +27,7 @@ const itens = [
   { to: "/painel", label: "Visão geral", icon: LayoutGrid, exact: true },
   { to: "/painel/agenda", label: "Agenda", icon: CalendarDays },
   { to: "/painel/servicos", label: "Serviços", icon: Scissors },
+  { to: "/painel/profissionais", label: "Profissionais", icon: UserCog },
   { to: "/painel/clientes", label: "Clientes", icon: Users },
   { to: "/painel/galeria", label: "Galeria", icon: Images },
   { to: "/painel/financeiro", label: "Financeiro", icon: Wallet },
@@ -32,6 +35,7 @@ const itens = [
   { to: "/painel/marketing", label: "Marketing", icon: Megaphone },
   { to: "/painel/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
+
 
 function Navegacao({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -61,6 +65,8 @@ function Navegacao({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function Marca() {
+  const { estudio } = useDemo();
+  const { rotulos } = useDemo();
   return (
     <div className="flex min-w-0 items-center gap-3">
       <img
@@ -72,11 +78,14 @@ function Marca() {
       />
       <div className="min-w-0">
         <p className="truncate text-sm font-medium">{estudio.nome}</p>
-        <p className="truncate text-xs text-muted-foreground">{estudio.profissional}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {estudio.profissional} · {rotulos.profissionalSingular}
+        </p>
       </div>
     </div>
   );
 }
+
 
 function PainelLayout() {
   const [aberto, setAberto] = useState(false);
