@@ -135,6 +135,89 @@
   --sidebar-ring: oklch(0.7 0.05 60);
 }
 
+/* ---------- Tema BELEZA: claro, leve, rosé e bege ---------- */
+.tema-beleza {
+  --radius: 0.875rem;
+  --background: oklch(0.985 0.008 350);
+  --foreground: oklch(0.26 0.02 340);
+  --card: oklch(1 0.004 350);
+  --card-foreground: oklch(0.26 0.02 340);
+  --popover: oklch(1 0.004 350);
+  --popover-foreground: oklch(0.26 0.02 340);
+  --primary: oklch(0.52 0.09 350);
+  --primary-foreground: oklch(0.99 0.008 350);
+  --secondary: oklch(0.955 0.02 340);
+  --secondary-foreground: oklch(0.38 0.05 345);
+  --muted: oklch(0.96 0.012 340);
+  --muted-foreground: oklch(0.54 0.03 340);
+  --accent: oklch(0.91 0.04 330);
+  --accent-foreground: oklch(0.34 0.04 340);
+  --gold: oklch(0.78 0.07 60);
+  --border: oklch(0.91 0.018 340);
+  --input: oklch(0.91 0.018 340);
+  --ring: oklch(0.72 0.06 340);
+  --sidebar: oklch(0.97 0.016 340);
+  --sidebar-foreground: oklch(0.3 0.025 340);
+  --sidebar-primary: oklch(0.52 0.09 350);
+  --sidebar-primary-foreground: oklch(0.99 0.008 350);
+  --sidebar-accent: oklch(0.925 0.03 335);
+  --sidebar-accent-foreground: oklch(0.33 0.04 340);
+  --sidebar-border: oklch(0.9 0.018 340);
+  --sidebar-ring: oklch(0.72 0.06 340);
+}
+
+/* ---------- Tema BARBEARIA: preto, grafite, madeira e cobre ---------- */
+.tema-barbearia {
+  --radius: 0.375rem;
+  --background: oklch(0.16 0.005 60);
+  --foreground: oklch(0.95 0.005 80);
+  --card: oklch(0.21 0.008 60);
+  --card-foreground: oklch(0.95 0.005 80);
+  --popover: oklch(0.21 0.008 60);
+  --popover-foreground: oklch(0.95 0.005 80);
+  --primary: oklch(0.72 0.11 70);
+  --primary-foreground: oklch(0.17 0.01 60);
+  --secondary: oklch(0.27 0.01 60);
+  --secondary-foreground: oklch(0.94 0.005 80);
+  --muted: oklch(0.26 0.008 60);
+  --muted-foreground: oklch(0.72 0.012 80);
+  --accent: oklch(0.32 0.025 55);
+  --accent-foreground: oklch(0.95 0.005 80);
+  --destructive: oklch(0.58 0.17 25);
+  --destructive-foreground: oklch(0.98 0.01 80);
+  --success: oklch(0.68 0.1 150);
+  --success-foreground: oklch(0.17 0.01 60);
+  --warning: oklch(0.78 0.13 70);
+  --warning-foreground: oklch(0.18 0.01 60);
+  --gold: oklch(0.76 0.12 75);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.72 0.11 70);
+  --chart-1: oklch(0.72 0.11 70);
+  --chart-2: oklch(0.6 0.06 45);
+  --chart-3: oklch(0.82 0.06 85);
+  --chart-4: oklch(0.45 0.03 60);
+  --chart-5: oklch(0.9 0.02 80);
+  --sidebar: oklch(0.13 0.005 60);
+  --sidebar-foreground: oklch(0.93 0.005 80);
+  --sidebar-primary: oklch(0.72 0.11 70);
+  --sidebar-primary-foreground: oklch(0.17 0.01 60);
+  --sidebar-accent: oklch(0.27 0.02 60);
+  --sidebar-accent-foreground: oklch(0.97 0.005 80);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.72 0.11 70);
+}
+
+.tema-barbearia h1,
+.tema-barbearia h2,
+.tema-barbearia h3,
+.tema-barbearia .font-display {
+  font-family: "Oswald", "Karla", ui-sans-serif, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

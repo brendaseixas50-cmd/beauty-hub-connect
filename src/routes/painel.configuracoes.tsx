@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { estudio, type FormatoAtendimento } from "@/data/demo";
+import { type FormatoAtendimento } from "@/data/demo";
+import { useDemo } from "@/data/negocio";
+
 
 export const Route = createFileRoute("/painel/configuracoes")({
   head: () => ({
@@ -29,7 +31,9 @@ export const Route = createFileRoute("/painel/configuracoes")({
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
 function Configuracoes() {
+  const { estudio } = useDemo();
   const [formato, setFormato] = useState<FormatoAtendimento>(estudio.formatoAtendimento);
+
   const [domicilioAtivo, setDomicilioAtivo] = useState(estudio.domicilioAtivo);
   const [dias, setDias] = useState<string[]>(estudio.diasDomicilio);
 

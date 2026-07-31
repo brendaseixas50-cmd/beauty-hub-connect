@@ -4,17 +4,17 @@ import trabalho1 from "@/assets/trabalho-1.jpg";
 import trabalho2 from "@/assets/trabalho-2.jpg";
 import trabalho3 from "@/assets/trabalho-3.jpg";
 import trabalho4 from "@/assets/trabalho-4.jpg";
+import type { DadosNegocio, Estudio, Servico } from "./tipos";
+
+export type { FormatoAtendimento, TipoTaxa, Servico, Estudio, DadosNegocio } from "./tipos";
 
 /**
- * Dados demonstrativos. Toda a plataforma lê deste "estúdio ativo".
- * Estrutura preparada para multiempresa: cada estúdio terá o seu próprio
+ * Dados demonstrativos da experiência BELEZA.
+ * Estrutura preparada para multiempresa: cada estúdio tem o seu próprio
  * registro e nenhum dado é compartilhado entre contas.
  */
 
-export type FormatoAtendimento = "espaco" | "domicilio" | "ambos";
-export type TipoTaxa = "fixa" | "combinar" | "sem";
-
-export const estudio = {
+export const estudio: Estudio = {
   id: "estudio-lu-atelier",
   nome: "Atelier Lu Beauty",
   profissional: "Luana Ferreira",
@@ -27,7 +27,7 @@ export const estudio = {
   regiao: "Vila Madalena, Pinheiros, Perdizes e Sumaré",
   instagram: "@atelier.lubeauty",
   whatsapp: "(11) 98877-2200",
-  formatoAtendimento: "ambos" as FormatoAtendimento,
+  formatoAtendimento: "ambos",
   domicilioAtivo: true,
   nomeLocal: "Atelier Lu Beauty — Studio Vila Madalena",
   regioesDomicilio: "Vila Madalena, Pinheiros, Perdizes, Sumaré e Alto de Pinheiros",
@@ -60,24 +60,6 @@ export const estudio = {
       texto: "Cada horário pode ser remarcado uma vez, com no mínimo 24h de antecedência.",
     },
   ],
-};
-
-export type Servico = {
-  id: string;
-  nome: string;
-  categoria: string;
-  descricao: string;
-  duracao: string;
-  precoLocal: number;
-  precoDomicilio: number | null;
-  mesmoPreco: boolean;
-  cobrarTaxa: boolean;
-  tipoTaxa: TipoTaxa;
-  valorTaxa: number | null;
-  formato: FormatoAtendimento;
-  responsavel: string;
-  disponivel: boolean;
-  fotos: string[];
 };
 
 export const categorias = ["Unhas", "Cílios", "Sobrancelhas", "Estética"];
@@ -261,10 +243,38 @@ export const clientes = [
 ];
 
 export const agendamentosHoje = [
-  { hora: "09:00", cliente: "Patrícia Lemos", servico: "Manutenção de unhas em gel", formato: "No espaço", status: "Confirmado" },
-  { hora: "11:00", cliente: "Marina Prado", servico: "Alongamento em fibra de vidro", formato: "No espaço", status: "Confirmado" },
-  { hora: "14:30", cliente: "Juliana Reis", servico: "Lash lifting com hidratação", formato: "Em domicílio", status: "Aguardando análise" },
-  { hora: "17:00", cliente: "Beatriz Nogueira", servico: "Design de sobrancelhas com henna", formato: "No espaço", status: "Confirmado" },
+  {
+    hora: "09:00",
+    cliente: "Patrícia Lemos",
+    servico: "Manutenção de unhas em gel",
+    formato: "No espaço",
+    status: "Confirmado",
+    profissional: "Luana Ferreira",
+  },
+  {
+    hora: "11:00",
+    cliente: "Marina Prado",
+    servico: "Alongamento em fibra de vidro",
+    formato: "No espaço",
+    status: "Confirmado",
+    profissional: "Luana Ferreira",
+  },
+  {
+    hora: "14:30",
+    cliente: "Juliana Reis",
+    servico: "Lash lifting com hidratação",
+    formato: "Em domicílio",
+    status: "Aguardando análise",
+    profissional: "Luana Ferreira",
+  },
+  {
+    hora: "17:00",
+    cliente: "Beatriz Nogueira",
+    servico: "Design de sobrancelhas com henna",
+    formato: "No espaço",
+    status: "Confirmado",
+    profissional: "Camila Duarte",
+  },
 ];
 
 export const proximosAtendimentos = [
@@ -301,6 +311,224 @@ export const campanhas = [
   { nome: "Aniversariantes de agosto", publico: "12 clientes", status: "Programada", retorno: "—" },
   { nome: "Reativação 60 dias", publico: "23 clientes", status: "Rascunho", retorno: "—" },
 ];
+
+const semana = [
+  { dia: "Seg 28", itens: [] as string[] },
+  { dia: "Ter 29", itens: ["09:00 Patrícia", "14:00 Renata"] },
+  { dia: "Qua 30", itens: ["10:30 Marina"] },
+  { dia: "Qui 31", itens: ["09:00 Patrícia", "11:00 Marina", "14:30 Juliana", "17:00 Beatriz"] },
+  { dia: "Sex 01", itens: ["10:00 Camila"] },
+  { dia: "Sáb 02", itens: ["08:30 Renata", "13:00 Ana"] },
+  { dia: "Dom 03", itens: [] },
+];
+
+const profissionais: DadosNegocio["profissionais"] = [
+  {
+    id: "e1",
+    nome: "Luana Ferreira",
+    funcao: "Nail & lash designer · proprietária",
+    foto: profissional,
+    especialidades: ["Fibra de vidro", "Volume brasileiro", "Lash lifting"],
+    comissao: 100,
+    atendimentosMes: 96,
+    faturamento: 9120,
+    agendaHoje: ["09:00 Patrícia", "11:00 Marina", "14:30 Juliana"],
+  },
+  {
+    id: "e2",
+    nome: "Camila Duarte",
+    funcao: "Designer de sobrancelhas & esteticista",
+    foto: trabalho3,
+    especialidades: ["Henna", "Limpeza de pele", "Depilação"],
+    comissao: 45,
+    atendimentosMes: 52,
+    faturamento: 4360,
+    agendaHoje: ["17:00 Beatriz"],
+  },
+];
+
+export const dadosBeleza: DadosNegocio = {
+  estudio,
+  servicos,
+  categorias,
+  galeria,
+  avaliacoes,
+  clientes,
+  agendamentosHoje,
+  proximosAtendimentos,
+  horariosDisponiveis,
+  semana,
+  financeiro,
+  estoque,
+  campanhas,
+  profissionais,
+  fila: [
+    { cliente: "Renata Alves", servico: "Esmaltação em gel", espera: "10 min", profissional: "Qualquer disponível" },
+    { cliente: "Ana Beatriz", servico: "Design de sobrancelhas", espera: "25 min", profissional: "Camila Duarte" },
+  ],
+  encaixes: [
+    { cliente: "Camila Souza", servico: "Manutenção em gel", horario: "16:00", status: "Aguardando" },
+  ],
+  combos: [
+    { nome: "Dia de cuidado", itens: ["Manutenção em gel", "Design com henna"], preco: 225, duracao: "2h30" },
+    { nome: "Olhar completo", itens: ["Lash lifting", "Design de sobrancelhas"], preco: 230, duracao: "2h" },
+  ],
+  assinaturas: [
+    {
+      nome: "Clube Mãos Sempre Prontas",
+      preco: 260,
+      beneficios: ["2 manutenções por mês", "Agenda prioritária", "10% em esmaltes"],
+      assinantes: 14,
+    },
+  ],
+  fidelidade: {
+    regra: "A cada 8 atendimentos, o próximo esmalte em gel é cortesia.",
+    clientes: [
+      { nome: "Patrícia Lemos", selos: 7, meta: 8 },
+      { nome: "Marina Prado", selos: 5, meta: 8 },
+    ],
+  },
+  produtos: [
+    { nome: "Óleo para cutículas", preco: 42, estoque: 8, vendidos: 12 },
+    { nome: "Sérum para cílios", preco: 89, estoque: 4, vendidos: 9 },
+  ],
+  saudacao: {
+    eyebrow: "Sexta-feira, 31 de julho",
+    titulo: "Olá, Luana",
+    subtitulo: "Aqui está o resumo do seu dia.",
+  },
+  servicoTop: { nome: "Fibra de vidro", detalhe: "38% dos agendamentos" },
+  rotulos: {
+    clientes: "Clientes cadastradas",
+    profissionais: "Profissionais",
+    profissionalSingular: "Profissional",
+    equipeEyebrow: "Equipe",
+  },
+};
+
+/** Áreas de atuação da experiência Beleza — mudam apenas exemplos e textos. */
+export type AreaBeleza =
+  | "unhas"
+  | "cabelos"
+  | "cilios"
+  | "estetica"
+  | "massoterapia"
+  | "depilacao"
+  | "maquiagem"
+  | "outra";
+
+export const areasBeleza: { id: AreaBeleza; label: string }[] = [
+  { id: "unhas", label: "Unhas" },
+  { id: "cabelos", label: "Cabelos" },
+  { id: "cilios", label: "Cílios e sobrancelhas" },
+  { id: "estetica", label: "Estética" },
+  { id: "massoterapia", label: "Massoterapia" },
+  { id: "depilacao", label: "Depilação" },
+  { id: "maquiagem", label: "Maquiagem" },
+  { id: "outra", label: "Outra área de beleza" },
+];
+
+const s = (
+  v: Partial<Servico> & { id: string; nome: string; categoria: string },
+): Servico => ({
+  descricao: "",
+  duracao: "1h",
+  precoLocal: 120,
+  precoDomicilio: null,
+  mesmoPreco: true,
+  cobrarTaxa: false,
+  tipoTaxa: "sem",
+  valorTaxa: null,
+  formato: "ambos",
+  responsavel: "Luana Ferreira",
+  disponivel: true,
+  fotos: [trabalho1],
+  ...v,
+});
+
+const porArea: Record<
+  AreaBeleza,
+  { especialidade: string; categorias: string[]; servicos: Servico[] } | null
+> = {
+  unhas: null,
+  cabelos: {
+    especialidade: "Hair Stylist & Colorista",
+    categorias: ["Cortes", "Coloração", "Tratamentos"],
+    servicos: [
+      s({ id: "corte-feminino", nome: "Corte feminino com finalização", categoria: "Cortes", duracao: "1h15", precoLocal: 140, descricao: "Corte personalizado com visagismo e escova de finalização.", fotos: [trabalho3] }),
+      s({ id: "coloracao-raiz", nome: "Coloração de raiz", categoria: "Coloração", duracao: "1h30", precoLocal: 180, descricao: "Cobertura de brancos com coloração profissional e matização." }),
+      s({ id: "mechas", nome: "Mechas iluminadas", categoria: "Coloração", duracao: "3h", precoLocal: 420, descricao: "Iluminação natural com técnica de papel e tonalização.", fotos: [trabalho2] }),
+      s({ id: "cronograma", nome: "Cronograma capilar", categoria: "Tratamentos", duracao: "1h", precoLocal: 160, descricao: "Hidratação, nutrição e reconstrução conforme diagnóstico do fio.", fotos: [trabalho4] }),
+    ],
+  },
+  cilios: {
+    especialidade: "Lash & Brow Designer",
+    categorias: ["Cílios", "Sobrancelhas"],
+    servicos: [
+      s({ id: "volume-russo", nome: "Volume russo", categoria: "Cílios", duracao: "2h30", precoLocal: 280, descricao: "Fios ultrafinos em leques, olhar marcante e leve.", fotos: [trabalho2] }),
+      s({ id: "fio-a-fio", nome: "Extensão fio a fio clássica", categoria: "Cílios", duracao: "1h45", precoLocal: 200, descricao: "Um fio para cada cílio natural, resultado discreto." }),
+      s({ id: "brow-lamination", nome: "Brow lamination", categoria: "Sobrancelhas", duracao: "1h", precoLocal: 170, descricao: "Alinhamento dos fios com efeito preenchido.", fotos: [trabalho3] }),
+      s({ id: "design-simples", nome: "Design de sobrancelhas", categoria: "Sobrancelhas", duracao: "40min", precoLocal: 70, descricao: "Limpeza com pinça e visagismo do formato." }),
+    ],
+  },
+  estetica: {
+    especialidade: "Esteticista facial e corporal",
+    categorias: ["Facial", "Corporal"],
+    servicos: [
+      s({ id: "limpeza-pele", nome: "Limpeza de pele profunda", categoria: "Facial", duracao: "1h30", precoLocal: 190, descricao: "Higienização, extração, alta frequência e máscara calmante.", fotos: [trabalho4] }),
+      s({ id: "peeling", nome: "Peeling de diamante", categoria: "Facial", duracao: "1h", precoLocal: 210, descricao: "Renovação celular com ponteira de diamante e ativos." }),
+      s({ id: "drenagem", nome: "Drenagem linfática", categoria: "Corporal", duracao: "1h", precoLocal: 160, descricao: "Manobras manuais para reduzir retenção e inchaço." }),
+      s({ id: "massagem-modeladora", nome: "Massagem modeladora", categoria: "Corporal", duracao: "1h", precoLocal: 170, descricao: "Modelagem corporal com movimentos vigorosos." }),
+    ],
+  },
+  massoterapia: {
+    especialidade: "Massoterapeuta",
+    categorias: ["Relaxamento", "Terapêutica"],
+    servicos: [
+      s({ id: "relaxante", nome: "Massagem relaxante", categoria: "Relaxamento", duracao: "1h", precoLocal: 170, descricao: "Toque suave com óleos essenciais para aliviar o estresse.", fotos: [trabalho4] }),
+      s({ id: "pedras-quentes", nome: "Pedras quentes", categoria: "Relaxamento", duracao: "1h15", precoLocal: 210, descricao: "Termoterapia com pedras vulcânicas e aromaterapia." }),
+      s({ id: "desportiva", nome: "Massagem desportiva", categoria: "Terapêutica", duracao: "1h", precoLocal: 190, descricao: "Liberação muscular profunda para quem treina." }),
+      s({ id: "liberacao-miofascial", nome: "Liberação miofascial", categoria: "Terapêutica", duracao: "50min", precoLocal: 180, descricao: "Alívio de pontos de tensão e dores posturais." }),
+    ],
+  },
+  depilacao: {
+    especialidade: "Especialista em depilação",
+    categorias: ["Cera", "Laser"],
+    servicos: [
+      s({ id: "virilha-completa", nome: "Virilha completa", categoria: "Cera", duracao: "40min", precoLocal: 90, descricao: "Cera quente com pós-depilatório calmante." }),
+      s({ id: "pernas-inteiras", nome: "Pernas inteiras", categoria: "Cera", duracao: "50min", precoLocal: 110, descricao: "Depilação completa com cera de mel." }),
+      s({ id: "axilas", nome: "Axilas", categoria: "Cera", duracao: "20min", precoLocal: 45, descricao: "Rápida, com aplicação de gel calmante." }),
+      s({ id: "laser-axila", nome: "Laser — axilas (sessão)", categoria: "Laser", duracao: "30min", precoLocal: 160, descricao: "Sessão de laser de diodo com resfriamento.", formato: "espaco", fotos: [trabalho4] }),
+    ],
+  },
+  maquiagem: {
+    especialidade: "Maquiadora profissional",
+    categorias: ["Social", "Noiva"],
+    servicos: [
+      s({ id: "maquiagem-social", nome: "Maquiagem social", categoria: "Social", duracao: "1h", precoLocal: 180, descricao: "Pele natural e olhar marcante para festas e eventos.", fotos: [trabalho3] }),
+      s({ id: "maquiagem-noiva", nome: "Maquiagem de noiva", categoria: "Noiva", duracao: "2h", precoLocal: 650, descricao: "Inclui teste prévio, longa duração e retoque." }),
+      s({ id: "madrinha", nome: "Madrinhas e formandas", categoria: "Social", duracao: "1h15", precoLocal: 260, descricao: "Maquiagem à prova de fotos com cílios inclusos." }),
+      s({ id: "aula-automaquiagem", nome: "Aula de automaquiagem", categoria: "Social", duracao: "1h30", precoLocal: 320, descricao: "Aula individual com análise do rosto e lista de produtos." }),
+    ],
+  },
+  outra: null,
+};
+
+/** Retorna os dados de beleza ajustados à área de atuação escolhida. */
+export function dadosBelezaPorArea(area: AreaBeleza | null): DadosNegocio {
+  const variante = area ? porArea[area] : null;
+  if (!variante) return dadosBeleza;
+  return {
+    ...dadosBeleza,
+    estudio: { ...dadosBeleza.estudio, especialidade: variante.especialidade },
+    categorias: variante.categorias,
+    servicos: variante.servicos,
+    servicoTop: {
+      nome: variante.servicos[0]?.nome ?? dadosBeleza.servicoTop.nome,
+      detalhe: "36% dos agendamentos",
+    },
+  };
+}
 
 export const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 });

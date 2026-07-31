@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AgendarRouteImport } from './routes/agendar'
+import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as PainelRouteImport } from './routes/painel'
 import { Route as PainelIndexRouteImport } from './routes/painel.index'
 import { Route as PainelAgendaRouteImport } from './routes/painel.agenda'
@@ -20,6 +21,7 @@ import { Route as PainelEstoqueRouteImport } from './routes/painel.estoque'
 import { Route as PainelFinanceiroRouteImport } from './routes/painel.financeiro'
 import { Route as PainelGaleriaRouteImport } from './routes/painel.galeria'
 import { Route as PainelMarketingRouteImport } from './routes/painel.marketing'
+import { Route as PainelProfissionaisRouteImport } from './routes/painel.profissionais'
 import { Route as PainelServicosRouteImport } from './routes/painel.servicos'
 import { Route as ServicoIdRouteImport } from './routes/servico.$id'
 
@@ -31,6 +33,11 @@ const IndexRoute = IndexRouteImport.update({
 const AgendarRoute = AgendarRouteImport.update({
   id: '/agendar',
   path: '/agendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadastroRoute = CadastroRouteImport.update({
+  id: '/cadastro',
+  path: '/cadastro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PainelRoute = PainelRouteImport.update({
@@ -78,6 +85,11 @@ const PainelMarketingRoute = PainelMarketingRouteImport.update({
   path: '/marketing',
   getParentRoute: () => PainelRoute,
 } as any)
+const PainelProfissionaisRoute = PainelProfissionaisRouteImport.update({
+  id: '/profissionais',
+  path: '/profissionais',
+  getParentRoute: () => PainelRoute,
+} as any)
 const PainelServicosRoute = PainelServicosRouteImport.update({
   id: '/servicos',
   path: '/servicos',
@@ -92,6 +104,7 @@ const ServicoIdRoute = ServicoIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agendar': typeof AgendarRoute
+  '/cadastro': typeof CadastroRoute
   '/painel': typeof PainelRouteWithChildren
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
@@ -100,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/painel/financeiro': typeof PainelFinanceiroRoute
   '/painel/galeria': typeof PainelGaleriaRoute
   '/painel/marketing': typeof PainelMarketingRoute
+  '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/servicos': typeof PainelServicosRoute
   '/servico/$id': typeof ServicoIdRoute
   '/painel/': typeof PainelIndexRoute
@@ -107,6 +121,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agendar': typeof AgendarRoute
+  '/cadastro': typeof CadastroRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
@@ -114,6 +129,7 @@ export interface FileRoutesByTo {
   '/painel/financeiro': typeof PainelFinanceiroRoute
   '/painel/galeria': typeof PainelGaleriaRoute
   '/painel/marketing': typeof PainelMarketingRoute
+  '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/servicos': typeof PainelServicosRoute
   '/servico/$id': typeof ServicoIdRoute
   '/painel': typeof PainelIndexRoute
@@ -122,6 +138,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agendar': typeof AgendarRoute
+  '/cadastro': typeof CadastroRoute
   '/painel': typeof PainelRouteWithChildren
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
@@ -130,6 +147,7 @@ export interface FileRoutesById {
   '/painel/financeiro': typeof PainelFinanceiroRoute
   '/painel/galeria': typeof PainelGaleriaRoute
   '/painel/marketing': typeof PainelMarketingRoute
+  '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/servicos': typeof PainelServicosRoute
   '/servico/$id': typeof ServicoIdRoute
   '/painel/': typeof PainelIndexRoute
@@ -139,6 +157,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agendar'
+    | '/cadastro'
     | '/painel'
     | '/painel/agenda'
     | '/painel/clientes'
@@ -147,6 +166,7 @@ export interface FileRouteTypes {
     | '/painel/financeiro'
     | '/painel/galeria'
     | '/painel/marketing'
+    | '/painel/profissionais'
     | '/painel/servicos'
     | '/servico/$id'
     | '/painel/'
@@ -154,6 +174,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agendar'
+    | '/cadastro'
     | '/painel/agenda'
     | '/painel/clientes'
     | '/painel/configuracoes'
@@ -161,6 +182,7 @@ export interface FileRouteTypes {
     | '/painel/financeiro'
     | '/painel/galeria'
     | '/painel/marketing'
+    | '/painel/profissionais'
     | '/painel/servicos'
     | '/servico/$id'
     | '/painel'
@@ -168,6 +190,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/agendar'
+    | '/cadastro'
     | '/painel'
     | '/painel/agenda'
     | '/painel/clientes'
@@ -176,6 +199,7 @@ export interface FileRouteTypes {
     | '/painel/financeiro'
     | '/painel/galeria'
     | '/painel/marketing'
+    | '/painel/profissionais'
     | '/painel/servicos'
     | '/servico/$id'
     | '/painel/'
@@ -184,6 +208,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendarRoute: typeof AgendarRoute
+  CadastroRoute: typeof CadastroRoute
   PainelRoute: typeof PainelRouteWithChildren
   ServicoIdRoute: typeof ServicoIdRoute
 }
@@ -202,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/agendar'
       fullPath: '/agendar'
       preLoaderRoute: typeof AgendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cadastro': {
+      id: '/cadastro'
+      path: '/cadastro'
+      fullPath: '/cadastro'
+      preLoaderRoute: typeof CadastroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/painel': {
@@ -267,6 +299,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PainelMarketingRouteImport
       parentRoute: typeof PainelRoute
     }
+    '/painel/profissionais': {
+      id: '/painel/profissionais'
+      path: '/profissionais'
+      fullPath: '/painel/profissionais'
+      preLoaderRoute: typeof PainelProfissionaisRouteImport
+      parentRoute: typeof PainelRoute
+    }
     '/painel/servicos': {
       id: '/painel/servicos'
       path: '/servicos'
@@ -292,6 +331,7 @@ interface PainelRouteChildren {
   PainelFinanceiroRoute: typeof PainelFinanceiroRoute
   PainelGaleriaRoute: typeof PainelGaleriaRoute
   PainelMarketingRoute: typeof PainelMarketingRoute
+  PainelProfissionaisRoute: typeof PainelProfissionaisRoute
   PainelServicosRoute: typeof PainelServicosRoute
   PainelIndexRoute: typeof PainelIndexRoute
 }
@@ -304,6 +344,7 @@ const PainelRouteChildren: PainelRouteChildren = {
   PainelFinanceiroRoute: PainelFinanceiroRoute,
   PainelGaleriaRoute: PainelGaleriaRoute,
   PainelMarketingRoute: PainelMarketingRoute,
+  PainelProfissionaisRoute: PainelProfissionaisRoute,
   PainelServicosRoute: PainelServicosRoute,
   PainelIndexRoute: PainelIndexRoute,
 }
@@ -314,6 +355,7 @@ const PainelRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendarRoute: AgendarRoute,
+  CadastroRoute: CadastroRoute,
   PainelRoute: PainelRouteWithChildren,
   ServicoIdRoute: ServicoIdRoute,
 }

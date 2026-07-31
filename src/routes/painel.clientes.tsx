@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { clientes } from "@/data/demo";
+import { useDemo } from "@/data/negocio";
 
 export const Route = createFileRoute("/painel/clientes")({
   head: () => ({
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/painel/clientes")({
 });
 
 function Clientes() {
+  const { clientes, rotulos } = useDemo();
   return (
     <div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
@@ -27,8 +28,9 @@ function Clientes() {
           <h1 className="mt-1 text-3xl">Clientes</h1>
         </div>
         <Button className="shrink-0 rounded-full">
-          <Plus className="h-4 w-4" /> Nova cliente
+          <Plus className="h-4 w-4" /> {rotulos.clientes.startsWith("Clientes cadastradas") ? "Nova cliente" : "Novo cliente"}
         </Button>
+
       </div>
 
       <div className="relative mt-6 max-w-sm">

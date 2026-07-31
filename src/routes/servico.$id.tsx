@@ -1,42 +1,54 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Clock, Home, Store, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { estudio, servicos, brl } from "@/data/demo";
+import { brl } from "@/data/demo";
+import { useDemo } from "@/data/negocio";
 
 export const Route = createFileRoute("/servico/$id")({
-  loader: ({ params }) => {
-    const servico = servicos.find((s) => s.id === params.id);
-    if (!servico) throw notFound();
-    return { servico };
-  },
-  head: ({ loaderData }) => {
-    if (!loaderData) {
-      return {
-        meta: [{ title: "Serviço indisponível" }, { name: "robots", content: "noindex" }],
-      };
-    }
-    const { servico } = loaderData;
-    return {
-      meta: [
-        { title: `${servico.nome} — ${estudio.nome}` },
-        { name: "description", content: servico.descricao },
-        { property: "og:title", content: `${servico.nome} — ${estudio.nome}` },
-        { property: "og:description", content: servico.descricao },
-      ],
-    };
-  },
+  head: () => ({
+    meta: [
+      { title: "Detalhes do serviço — Lu IA Studio" },
+      {
+        name: "description",
+        content: "Duração, valores, formato de atendimento e fotos do serviço escolhido.",
+      },
+      { property: "og:title", content: "Detalhes do serviço — Lu IA Studio" },
+      {
+        property: "og:description",
+        content: "Duração, valores e formato de atendimento do serviço escolhido.",
+      },
+    ],
+  }),
   component: DetalheServico,
 });
 
 function DetalheServico() {
-  const { servico } = Route.useLoaderData();
+  const { id } = Route.useParams();
+  const { estudio, servicos } = useDemo();
+  const servico = servicos.find((s) => s.id === id);
+
+  if (!servico) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+        <h1 className="text-3xl">Serviço não encontrado</h1>
+        <p className="mt-2 text-muted-foreground">
+          Este serviço não faz parte do catálogo demonstrativo atual.
+        </p>
+        <Button asChild className="mt-6 rounded-full">
+          <Link to="/">Voltar para a página inicial</Link>
+        </Button>
+      </div>
+    );
+  }
+
   const domicilioLiberado =
     estudio.formatoAtendimento === "domicilio" ||
     (estudio.formatoAtendimento === "ambos" && estudio.domicilioAtivo);
   const aceitaDomicilio = servico.formato !== "espaco" && domicilioLiberado;
   const aceitaLocal = servico.formato !== "domicilio" && estudio.formatoAtendimento !== "domicilio";
+
 
   const precoDomicilio = servico.mesmoPreco
     ? servico.precoLocal

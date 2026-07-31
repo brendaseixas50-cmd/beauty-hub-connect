@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { estudio, servicos, brl, type Servico } from "@/data/demo";
+import { brl, type Servico } from "@/data/demo";
+import { useDemo } from "@/data/negocio";
+
 
 type Busca = { servico?: string | undefined };
 
@@ -17,12 +19,13 @@ export const Route = createFileRoute("/agendar")({
   }),
   head: () => ({
     meta: [
-      { title: `Agendar horário — ${estudio.nome}` },
+      { title: "Agendar horário — Lu IA Studio" },
       {
         name: "description",
         content: "Escolha o serviço, o formato de atendimento, a data e o horário do seu agendamento.",
       },
-      { property: "og:title", content: `Agendar horário — ${estudio.nome}` },
+      { property: "og:title", content: "Agendar horário — Lu IA Studio" },
+
       { property: "og:description", content: "Agendamento online em poucos passos." },
     ],
   }),
@@ -34,7 +37,10 @@ const HORAS = ["09:00", "10:30", "13:00", "14:30", "16:00", "17:30"];
 
 function Agendar() {
   const { servico: servicoInicial } = Route.useSearch();
+  const { estudio, servicos, horariosDisponiveis, profissionais } = useDemo();
   const disponiveis = servicos.filter((s) => s.disponivel);
+
+
 
   const domicilioLiberado =
     estudio.formatoAtendimento === "domicilio" ||
