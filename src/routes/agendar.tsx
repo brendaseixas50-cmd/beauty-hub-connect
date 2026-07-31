@@ -196,7 +196,7 @@ function Agendar() {
             <>
               <h2 className="text-2xl">Escolha o horário</h2>
               <div className="grid grid-cols-3 gap-2">
-                {HORAS.map((h) => (
+                {horariosDisponiveis.map((h) => (
                   <button
                     key={h}
                     onClick={() => setHora(h)}
@@ -210,11 +210,44 @@ function Agendar() {
                   </button>
                 ))}
               </div>
+
+              {profissionais.length > 1 && (
+                <div className="mt-2">
+                  <p className="text-eyebrow mb-2">Com quem você quer ser atendido?</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setProfissional(null)}
+                      className={`rounded-full border px-4 py-1.5 text-sm ${
+                        profissional === null
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card text-muted-foreground"
+                      }`}
+                    >
+                      Qualquer profissional disponível
+                    </button>
+                    {profissionais.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setProfissional(p.nome)}
+                        className={`rounded-full border px-4 py-1.5 text-sm ${
+                          profissional === p.nome
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-card text-muted-foreground"
+                        }`}
+                      >
+                        {p.nome}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <Button className="w-full rounded-full" disabled={!hora} onClick={avancar}>
                 Continuar
               </Button>
             </>
           )}
+
 
           {passo === 5 && (
             <>
