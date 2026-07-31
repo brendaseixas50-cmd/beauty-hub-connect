@@ -345,7 +345,7 @@ function Agendar() {
                 )}
               </Card>
 
-              <Button className="w-full rounded-full" size="lg">
+              <Button className="w-full rounded-full" size="lg" onClick={() => setPasso(7)}>
                 <Check className="h-4 w-4" /> Confirmar agendamento
               </Button>
               <p className="text-center text-xs text-muted-foreground">
@@ -354,7 +354,40 @@ function Agendar() {
             </>
           )}
 
-          {passo > 1 && (
+          {passo === 7 && servico && (
+            <Card className="items-center gap-3 p-8 text-center">
+              <div className="grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground">
+                <Check className="h-6 w-6" />
+              </div>
+              <h2 className="text-2xl">
+                {taxaCombinar ? "Solicitação enviada!" : "Agendamento confirmado!"}
+              </h2>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {nome.split(" ")[0]}, seu horário para <strong>{servico.nome}</strong> em{" "}
+                {data} às {hora}
+                {profissional ? ` com ${profissional}` : ""} foi registrado.
+                {taxaCombinar
+                  ? " Você receberá a confirmação do valor de deslocamento no WhatsApp."
+                  : " Enviaremos a confirmação e lembretes no seu WhatsApp."}
+              </p>
+              <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row">
+                <Button asChild variant="outline" className="flex-1 rounded-full">
+                  <a
+                    href={linkWhatsapp(estudio.whatsapp, estudio.nome)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Falar no WhatsApp
+                  </a>
+                </Button>
+                <Button asChild className="flex-1 rounded-full">
+                  <Link to="/">Voltar para a página</Link>
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          {passo > 1 && passo < 7 && (
             <Button variant="ghost" className="w-full" onClick={voltar}>
               Voltar
             </Button>
@@ -366,6 +399,7 @@ function Agendar() {
             {servico.nome} · {servico.duracao}
           </Badge>
         )}
+
       </div>
     </div>
   );
