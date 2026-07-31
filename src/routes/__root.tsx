@@ -11,6 +11,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { NegocioProvider, useNegocio } from "@/data/negocio";
+
 
 function NotFoundComponent() {
   return (
@@ -101,8 +103,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Karla:wght@300;400;500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Karla:wght@300;400;500;600;700&family=Oswald:wght@400;500;600&display=swap",
       },
+
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
@@ -127,13 +130,23 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function Casca({ children }: { children: ReactNode }) {
+  const { tema } = useNegocio();
+  return <div className={`${tema} min-h-screen bg-background text-foreground`}>{children}</div>;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <NegocioProvider>
+        <Casca>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+        </Casca>
+      </NegocioProvider>
     </QueryClientProvider>
   );
 }
+
