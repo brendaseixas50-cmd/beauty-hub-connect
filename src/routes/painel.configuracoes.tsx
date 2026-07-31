@@ -31,7 +31,9 @@ export const Route = createFileRoute("/painel/configuracoes")({
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
 function Configuracoes() {
+  const { estudio } = useDemo();
   const [formato, setFormato] = useState<FormatoAtendimento>(estudio.formatoAtendimento);
+
   const [domicilioAtivo, setDomicilioAtivo] = useState(estudio.domicilioAtivo);
   const [dias, setDias] = useState<string[]>(estudio.diasDomicilio);
 

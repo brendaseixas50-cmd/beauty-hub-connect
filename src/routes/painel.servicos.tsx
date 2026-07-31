@@ -116,7 +116,9 @@ function FormularioServico({
   servico?: Servico;
   gatilho: React.ReactNode;
 }) {
+  const { categorias } = useDemo();
   const [mesmoPreco, setMesmoPreco] = useState(servico?.mesmoPreco ?? true);
+
   const [cobrarTaxa, setCobrarTaxa] = useState(servico?.cobrarTaxa ?? false);
   const [tipoTaxa, setTipoTaxa] = useState<TipoTaxa>(servico?.tipoTaxa ?? "sem");
   const [formato, setFormato] = useState(servico?.formato ?? "ambos");
