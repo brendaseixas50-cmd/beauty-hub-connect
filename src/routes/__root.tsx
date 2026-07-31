@@ -132,8 +132,17 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function Casca({ children }: { children: ReactNode }) {
   const { tema } = useNegocio();
+
+  // Também no <html> para que portais (modais, sheets, selects) herdem o tema.
+  useEffect(() => {
+    const el = document.documentElement;
+    el.classList.add(tema);
+    return () => el.classList.remove(tema);
+  }, [tema]);
+
   return <div className={`${tema} min-h-screen bg-background text-foreground`}>{children}</div>;
 }
+
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
