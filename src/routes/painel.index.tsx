@@ -1,8 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarCheck, Clock, Star, TrendingUp, UserRound, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+
 import { brl } from "@/data/demo";
 import { useDemo, useNegocio } from "@/data/negocio";
 
@@ -42,6 +44,25 @@ function VisaoGeral() {
       <p className="text-eyebrow">{saudacao.eyebrow}</p>
       <h1 className="mt-1 text-3xl">{saudacao.titulo}</h1>
       <p className="mt-1 text-muted-foreground">{saudacao.subtitulo}</p>
+
+      <div className="mt-6 flex flex-wrap gap-2">
+        <Button asChild size="sm" className="rounded-full">
+          <Link to="/painel/agenda">Abrir agenda de hoje</Link>
+        </Button>
+        <Button asChild variant="outline" size="sm" className="rounded-full">
+          <Link to="/painel/servicos">Gerenciar serviços</Link>
+        </Button>
+        <Button asChild variant="outline" size="sm" className="rounded-full">
+          <Link to="/painel/clientes">{rotulos.clientes}</Link>
+        </Button>
+        <Button asChild variant="outline" size="sm" className="rounded-full">
+          <Link to="/painel/financeiro">Financeiro</Link>
+        </Button>
+        <Button asChild variant="ghost" size="sm" className="rounded-full">
+          <Link to="/">Ver página pública</Link>
+        </Button>
+      </div>
+
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Metrica

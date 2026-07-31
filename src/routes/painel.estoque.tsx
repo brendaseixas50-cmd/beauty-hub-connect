@@ -3,8 +3,13 @@ import { Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { brl } from "@/data/demo";
 import { useDemo, useNegocio } from "@/data/negocio";
+import { DialogoInfo } from "@/components/dialogo-info";
+import { avisoDemo, BotaoDemo } from "@/components/acao-demo";
+
 
 export const Route = createFileRoute("/painel/estoque")({
   head: () => ({
@@ -32,9 +37,31 @@ function Estoque() {
           <p className="text-eyebrow">Insumos</p>
           <h1 className="mt-1 text-3xl">Estoque</h1>
         </div>
-        <Button className="shrink-0 rounded-full">
-          <Plus className="h-4 w-4" /> Novo item
-        </Button>
+        <DialogoInfo
+          gatilho={
+            <Button className="shrink-0 rounded-full">
+              <Plus className="h-4 w-4" /> Novo item
+            </Button>
+          }
+          titulo="Novo item de estoque"
+          descricao="Cadastro demonstrativo de insumo."
+          acao="Salvar item"
+          onAcao={() => avisoDemo("Item adicionado ao estoque")}
+        >
+          <div className="grid gap-1.5">
+            <Label htmlFor="est-item">Item</Label>
+            <Input id="est-item" placeholder="Nome do produto" />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="est-qtd">Quantidade</Label>
+            <Input id="est-qtd" type="number" defaultValue={10} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="est-min">Quantidade mínima</Label>
+            <Input id="est-min" type="number" defaultValue={3} />
+          </div>
+        </DialogoInfo>
+
       </div>
 
       <Card className="mt-8 divide-y p-0">
@@ -67,9 +94,16 @@ function Estoque() {
           <h2 className="text-2xl">
             {tipo === "barbearia" ? "Loja — venda de produtos" : "Produtos para revenda"}
           </h2>
-          <Button variant="outline" size="sm" className="shrink-0 rounded-full">
+          <BotaoDemo
+            variant="outline"
+            size="sm"
+            className="shrink-0 rounded-full"
+            mensagem="Venda registrada"
+            descricao="Baixa no estoque e recibo entram com o banco de dados conectado."
+          >
             Nova venda
-          </Button>
+          </BotaoDemo>
+
         </div>
         <Card className="mt-4 divide-y p-0">
           {produtos.map((p) => (

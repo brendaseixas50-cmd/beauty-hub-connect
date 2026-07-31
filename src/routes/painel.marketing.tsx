@@ -4,8 +4,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { brl } from "@/data/demo";
 import { useDemo, useNegocio } from "@/data/negocio";
+import { DialogoInfo } from "@/components/dialogo-info";
+import { avisoDemo, BotaoDemo } from "@/components/acao-demo";
+
 
 export const Route = createFileRoute("/painel/marketing")({
   head: () => ({
@@ -33,9 +38,29 @@ function Marketing() {
           <p className="text-eyebrow">Crescimento</p>
           <h1 className="mt-1 text-3xl">Marketing</h1>
         </div>
-        <Button className="shrink-0 rounded-full">
-          <Plus className="h-4 w-4" /> Nova campanha
-        </Button>
+        <DialogoInfo
+          gatilho={
+            <Button className="shrink-0 rounded-full">
+              <Plus className="h-4 w-4" /> Nova campanha
+            </Button>
+          }
+          titulo="Nova campanha"
+          descricao="Monte a campanha demonstrativa e veja como ficará na lista."
+          acao="Criar campanha"
+          onAcao={() => avisoDemo("Campanha criada como rascunho")}
+        >
+          <div className="grid gap-1.5">
+            <Label htmlFor="camp-nome">Nome da campanha</Label>
+            <Input id="camp-nome" placeholder="Ex.: Retorno em 30 dias" />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="camp-publico">Público</Label>
+            <Input id="camp-publico" placeholder="Ex.: Clientes sem retorno há 45 dias" />
+          </div>
+          <p className="rounded-lg bg-muted px-3 py-2 text-muted-foreground">
+            O envio automático por WhatsApp e e-mail entra nas próximas etapas.
+          </p>
+        </DialogoInfo>
       </div>
 
       <div className="mt-8 grid gap-3">
@@ -47,15 +72,26 @@ function Marketing() {
                 {c.publico} · retorno: {c.retorno}
               </p>
             </div>
-            <Badge
-              variant={c.status === "Ativa" ? "default" : "outline"}
-              className="shrink-0 rounded-full font-normal"
-            >
-              {c.status}
-            </Badge>
+            <div className="flex shrink-0 items-center gap-2">
+              <Badge
+                variant={c.status === "Ativa" ? "default" : "outline"}
+                className="rounded-full font-normal"
+              >
+                {c.status}
+              </Badge>
+              <BotaoDemo
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+                mensagem={c.status === "Ativa" ? `${c.nome} pausada` : `${c.nome} ativada`}
+              >
+                {c.status === "Ativa" ? "Pausar" : "Ativar"}
+              </BotaoDemo>
+            </div>
           </Card>
         ))}
       </div>
+
 
       <section className="mt-10">
         <h2 className="mb-4 text-2xl">Assinaturas mensais</h2>

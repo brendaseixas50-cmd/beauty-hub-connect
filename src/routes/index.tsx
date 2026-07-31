@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/accordion";
 import { brl } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
+import { linkInstagram, linkWhatsapp } from "@/lib/contato";
+
 
 
 export const Route = createFileRoute("/")({
@@ -109,18 +111,36 @@ function PaginaPublica() {
             <Button asChild size="lg" className="rounded-full px-8">
               <Link to="/agendar">Agendar horário</Link>
             </Button>
-            <Button variant="outline" size="lg" className="rounded-full px-8">
-              <MessageCircle className="h-4 w-4" /> Falar no WhatsApp
+            <Button asChild variant="outline" size="lg" className="rounded-full px-8">
+              <a
+                href={linkWhatsapp(estudio.whatsapp, estudio.nome)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <MessageCircle className="h-4 w-4" /> Falar no WhatsApp
+              </a>
             </Button>
           </div>
+
         </section>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-2">
           <InfoLinha icon={MapPin} titulo="Endereço" texto={estudio.endereco} />
           <InfoLinha icon={Home} titulo="Região atendida" texto={estudio.regiao} />
-          <InfoLinha icon={Instagram} titulo="Instagram" texto={estudio.instagram} />
-          <InfoLinha icon={MessageCircle} titulo="WhatsApp" texto={estudio.whatsapp} />
+          <InfoLinha
+            icon={Instagram}
+            titulo="Instagram"
+            texto={estudio.instagram}
+            href={linkInstagram(estudio.instagram)}
+          />
+          <InfoLinha
+            icon={MessageCircle}
+            titulo="WhatsApp"
+            texto={estudio.whatsapp}
+            href={linkWhatsapp(estudio.whatsapp, estudio.nome)}
+          />
         </section>
+
 
         <Secao titulo="Horários de funcionamento" eyebrow="Atendimento">
           <Card className="divide-y p-0">
@@ -267,9 +287,17 @@ function PaginaPublica() {
           <Button asChild className="flex-1 rounded-full">
             <Link to="/agendar">Agendar horário</Link>
           </Button>
-          <Button variant="outline" size="icon" className="rounded-full" aria-label="WhatsApp">
-            <MessageCircle className="h-4 w-4" />
+          <Button asChild variant="outline" size="icon" className="rounded-full">
+            <a
+              href={linkWhatsapp(estudio.whatsapp, estudio.nome)}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="WhatsApp"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </a>
           </Button>
+
         </div>
       </div>
     </div>
@@ -280,13 +308,15 @@ function InfoLinha({
   icon: Icon,
   titulo,
   texto,
+  href,
 }: {
   icon: typeof MapPin;
   titulo: string;
   texto: string;
+  href?: string;
 }) {
-  return (
-    <Card className="flex flex-row items-start gap-3 p-4">
+  const conteudo = (
+    <Card className="flex h-full flex-row items-start gap-3 p-4 transition-shadow hover:shadow-md">
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0">
         <p className="text-eyebrow">{titulo}</p>
@@ -294,7 +324,15 @@ function InfoLinha({
       </div>
     </Card>
   );
+
+  if (!href) return conteudo;
+  return (
+    <a href={href} target="_blank" rel="noreferrer" className="block">
+      {conteudo}
+    </a>
+  );
 }
+
 
 function Secao({
   titulo,

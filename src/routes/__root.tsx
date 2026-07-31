@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { NegocioProvider, useNegocio } from "@/data/negocio";
+import { Toaster } from "@/components/ui/sonner";
+
 
 
 function NotFoundComponent() {
@@ -140,8 +142,14 @@ function Casca({ children }: { children: ReactNode }) {
     return () => el.classList.remove(tema);
   }, [tema]);
 
-  return <div className={`${tema} min-h-screen bg-background text-foreground`}>{children}</div>;
+  return (
+    <div className={`${tema} min-h-screen bg-background text-foreground`}>
+      {children}
+      <Toaster position="top-center" />
+    </div>
+  );
 }
+
 
 
 function RootComponent() {
