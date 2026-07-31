@@ -42,7 +42,9 @@ export const Route = createFileRoute("/")({
   component: PaginaPublica,
 });
 
+function PaginaPublica() {
   const { estudio, servicos, categorias, galeria, avaliacoes } = useDemo();
+
   const [categoria, setCategoria] = useState<string>("Todos");
 
   const mostraDomicilio =
