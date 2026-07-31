@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { brl } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
+import { linkWhatsapp } from "@/lib/contato";
+
 
 export const Route = createFileRoute("/servico/$id")({
   head: () => ({
@@ -150,13 +152,26 @@ function DetalheServico() {
 
       <div className="fixed inset-x-0 bottom-0 border-t bg-card/95 p-3 backdrop-blur">
         <div className="mx-auto max-w-3xl">
-          <Button asChild className="w-full rounded-full" size="lg" disabled={!servico.disponivel}>
-            <Link to="/agendar" search={{ servico: servico.id }}>
-              Agendar este serviço
-            </Link>
-          </Button>
+          {servico.disponivel ? (
+            <Button asChild className="w-full rounded-full" size="lg">
+              <Link to="/agendar" search={{ servico: servico.id }}>
+                Agendar este serviço
+              </Link>
+            </Button>
+          ) : (
+            <Button asChild variant="outline" className="w-full rounded-full" size="lg">
+              <a
+                href={linkWhatsapp(estudio.whatsapp, estudio.nome)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Entrar na lista de espera pelo WhatsApp
+              </a>
+            </Button>
+          )}
         </div>
       </div>
+
     </div>
   );
 }

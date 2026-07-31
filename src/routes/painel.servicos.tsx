@@ -19,6 +19,8 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { brl, type Servico, type TipoTaxa } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
+import { avisoDemo } from "@/components/acao-demo";
+
 
 
 export const Route = createFileRoute("/painel/servicos")({
@@ -117,6 +119,7 @@ function FormularioServico({
   gatilho: React.ReactNode;
 }) {
   const { categorias } = useDemo();
+  const [aberto, setAberto] = useState(false);
   const [mesmoPreco, setMesmoPreco] = useState(servico?.mesmoPreco ?? true);
 
   const [cobrarTaxa, setCobrarTaxa] = useState(servico?.cobrarTaxa ?? false);
@@ -125,8 +128,9 @@ function FormularioServico({
   const [disponivel, setDisponivel] = useState(servico?.disponivel ?? true);
 
   return (
-    <Dialog>
+    <Dialog open={aberto} onOpenChange={setAberto}>
       <DialogTrigger asChild>{gatilho}</DialogTrigger>
+
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-2xl">
@@ -285,7 +289,25 @@ function FormularioServico({
             <Switch checked={disponivel} onCheckedChange={setDisponivel} />
           </label>
 
-          <Button className="rounded-full">Salvar serviço</Button>
+          <div className="flex flex-col gap-2 sm:flex-row-reverse">
+            <Button
+              className="rounded-full sm:flex-1"
+              onClick={() => {
+                setAberto(false);
+                avisoDemo(servico ? "Serviço atualizado" : "Serviço criado");
+              }}
+            >
+              Salvar serviço
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-full sm:flex-1"
+              onClick={() => setAberto(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
+
         </div>
       </DialogContent>
     </Dialog>

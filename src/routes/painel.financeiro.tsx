@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { brl } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
+import { BotaoDemo } from "@/components/acao-demo";
+
 
 
 export const Route = createFileRoute("/painel/financeiro")({
@@ -35,10 +36,17 @@ function Financeiro() {
 
       <div className="mt-10 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <h2 className="text-2xl">Lançamentos recentes</h2>
-        <Button variant="outline" size="sm" className="shrink-0 rounded-full">
+        <BotaoDemo
+          variant="outline"
+          size="sm"
+          className="shrink-0 rounded-full"
+          mensagem="Relatório gerado"
+          descricao="A exportação em PDF/CSV será liberada com o banco de dados conectado."
+        >
           Exportar
-        </Button>
+        </BotaoDemo>
       </div>
+
 
       <Card className="mt-4 divide-y p-0">
         {financeiro.lancamentos.map((l, i) => (

@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { brl, type Servico } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
+import { linkWhatsapp } from "@/lib/contato";
+
 
 
 type Busca = { servico?: string | undefined };
@@ -33,7 +35,7 @@ export const Route = createFileRoute("/agendar")({
 });
 
 const DIAS = ["01/08", "02/08", "03/08", "05/08", "06/08", "07/08"];
-const HORAS = ["09:00", "10:30", "13:00", "14:30", "16:00", "17:30"];
+
 
 function Agendar() {
   const { servico: servicoInicial } = Route.useSearch();
@@ -57,8 +59,10 @@ function Agendar() {
   );
   const [data, setData] = useState<string | null>(null);
   const [hora, setHora] = useState<string | null>(null);
+  const [profissional, setProfissional] = useState<string | null>(null);
   const [nome, setNome] = useState("");
   const [whats, setWhats] = useState("");
+
 
   const totalPassos = escolheFormato ? 6 : 5;
   const passoVisual = escolheFormato ? passo : passo > 1 ? passo - 1 : passo;
@@ -196,7 +200,7 @@ function Agendar() {
             <>
               <h2 className="text-2xl">Escolha o horário</h2>
               <div className="grid grid-cols-3 gap-2">
-                {HORAS.map((h) => (
+                {horariosDisponiveis.map((h) => (
                   <button
                     key={h}
                     onClick={() => setHora(h)}
@@ -210,11 +214,44 @@ function Agendar() {
                   </button>
                 ))}
               </div>
+
+              {profissionais.length > 1 && (
+                <div className="mt-2">
+                  <p className="text-eyebrow mb-2">Com quem você quer ser atendido?</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setProfissional(null)}
+                      className={`rounded-full border px-4 py-1.5 text-sm ${
+                        profissional === null
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card text-muted-foreground"
+                      }`}
+                    >
+                      Qualquer profissional disponível
+                    </button>
+                    {profissionais.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setProfissional(p.nome)}
+                        className={`rounded-full border px-4 py-1.5 text-sm ${
+                          profissional === p.nome
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-card text-muted-foreground"
+                        }`}
+                      >
+                        {p.nome}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <Button className="w-full rounded-full" disabled={!hora} onClick={avancar}>
                 Continuar
               </Button>
             </>
           )}
+
 
           {passo === 5 && (
             <>
@@ -250,9 +287,19 @@ function Agendar() {
                 </Card>
               )}
 
-              <Button className="w-full rounded-full" onClick={avancar}>
+              <Button
+                className="w-full rounded-full"
+                disabled={nome.trim().length < 3 || whats.trim().length < 8}
+                onClick={avancar}
+              >
                 Ver resumo
               </Button>
+              {(nome.trim().length < 3 || whats.trim().length < 8) && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Informe seu nome e WhatsApp para continuar.
+                </p>
+              )}
+
             </>
           )}
 
@@ -263,6 +310,11 @@ function Agendar() {
                 <Linha label="Serviço" valor={servico.nome} />
                 <Linha label="Data" valor={data ?? "—"} />
                 <Linha label="Horário" valor={hora ?? "—"} />
+                <Linha
+                  label="Profissional"
+                  valor={profissional ?? "Qualquer profissional disponível"}
+                />
+
                 <Linha
                   label="Duração"
                   valor={servico.duracao}
@@ -300,7 +352,7 @@ function Agendar() {
                 )}
               </Card>
 
-              <Button className="w-full rounded-full" size="lg">
+              <Button className="w-full rounded-full" size="lg" onClick={() => setPasso(7)}>
                 <Check className="h-4 w-4" /> Confirmar agendamento
               </Button>
               <p className="text-center text-xs text-muted-foreground">
@@ -309,7 +361,40 @@ function Agendar() {
             </>
           )}
 
-          {passo > 1 && (
+          {passo === 7 && servico && (
+            <Card className="items-center gap-3 p-8 text-center">
+              <div className="grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground">
+                <Check className="h-6 w-6" />
+              </div>
+              <h2 className="text-2xl">
+                {taxaCombinar ? "Solicitação enviada!" : "Agendamento confirmado!"}
+              </h2>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {nome.split(" ")[0]}, seu horário para <strong>{servico.nome}</strong> em{" "}
+                {data} às {hora}
+                {profissional ? ` com ${profissional}` : ""} foi registrado.
+                {taxaCombinar
+                  ? " Você receberá a confirmação do valor de deslocamento no WhatsApp."
+                  : " Enviaremos a confirmação e lembretes no seu WhatsApp."}
+              </p>
+              <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row">
+                <Button asChild variant="outline" className="flex-1 rounded-full">
+                  <a
+                    href={linkWhatsapp(estudio.whatsapp, estudio.nome)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Falar no WhatsApp
+                  </a>
+                </Button>
+                <Button asChild className="flex-1 rounded-full">
+                  <Link to="/">Voltar para a página</Link>
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          {passo > 1 && passo < 7 && (
             <Button variant="ghost" className="w-full" onClick={voltar}>
               Voltar
             </Button>
@@ -321,6 +406,7 @@ function Agendar() {
             {servico.nome} · {servico.duracao}
           </Badge>
         )}
+
       </div>
     </div>
   );

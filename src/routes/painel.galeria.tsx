@@ -1,8 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDemo } from "@/data/negocio";
+import { BotaoDemo, avisoDemo } from "@/components/acao-demo";
+
 
 export const Route = createFileRoute("/painel/galeria")({
   head: () => ({
@@ -18,32 +21,44 @@ export const Route = createFileRoute("/painel/galeria")({
 
 function Galeria() {
   const { galeria, categorias } = useDemo();
-  return (
+  const [filtro, setFiltro] = useState("Todas");
 
+  return (
     <div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <div className="min-w-0">
           <p className="text-eyebrow">Portfólio</p>
           <h1 className="mt-1 text-3xl">Galeria</h1>
         </div>
-        <Button className="shrink-0 rounded-full">
+        <BotaoDemo
+          className="shrink-0 rounded-full"
+          mensagem="Envio de fotos disponível em breve"
+          descricao="O upload será liberado junto com o armazenamento de arquivos."
+        >
           <Plus className="h-4 w-4" /> Enviar foto
-        </Button>
+        </BotaoDemo>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        {["Todas", ...categorias].map((c, i) => (
-          <Badge
-            key={c}
-            variant={i === 0 ? "default" : "outline"}
-            className="rounded-full px-3 py-1.5 font-normal"
-          >
-            {c}
-          </Badge>
+        {["Todas", ...categorias].map((c) => (
+          <button key={c} onClick={() => setFiltro(c)} aria-pressed={filtro === c}>
+            <Badge
+              variant={filtro === c ? "default" : "outline"}
+              className="rounded-full px-3 py-1.5 font-normal"
+            >
+              {c}
+            </Badge>
+          </button>
         ))}
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <p className="mt-4 text-sm text-muted-foreground">
+        {filtro === "Todas"
+          ? `${galeria.length} fotos publicadas na página pública.`
+          : `Exibindo os trabalhos da categoria ${filtro}.`}
+      </p>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {galeria.map((foto, i) => (
           <div key={i} className="group relative overflow-hidden rounded-xl">
             <img
@@ -55,13 +70,22 @@ function Galeria() {
               className="aspect-square w-full object-cover"
             />
             <div className="absolute inset-x-0 bottom-0 flex justify-end gap-2 bg-gradient-to-t from-foreground/60 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
-              <Button size="sm" variant="secondary" className="rounded-full">
+              <BotaoDemo
+                size="sm"
+                variant="secondary"
+                className="rounded-full"
+                mensagem={`Foto ${i + 1} atualizada`}
+              >
                 Editar
-              </Button>
+              </BotaoDemo>
             </div>
           </div>
         ))}
-        <button className="grid aspect-square place-items-center rounded-xl border border-dashed text-muted-foreground">
+        <button
+          onClick={() => avisoDemo("Envio de fotos disponível em breve")}
+          aria-label="Adicionar foto"
+          className="grid aspect-square place-items-center rounded-xl border border-dashed text-muted-foreground"
+        >
           <Plus className="h-5 w-5" />
         </button>
       </div>

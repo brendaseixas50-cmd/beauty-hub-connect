@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Home, Store } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { type FormatoAtendimento } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
+import { BotaoDemo } from "@/components/acao-demo";
+
 
 
 export const Route = createFileRoute("/painel/configuracoes")({
@@ -55,9 +57,16 @@ function Configuracoes() {
             height={800}
             className="h-16 w-16 rounded-full object-cover"
           />
-          <Button variant="outline" size="sm" className="rounded-full">
+          <BotaoDemo
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            mensagem="Envio de logo disponível em breve"
+            descricao="O upload de imagens entra junto com o armazenamento de arquivos."
+          >
             Alterar logo
-          </Button>
+          </BotaoDemo>
+
         </div>
         <Campo label="Nome do espaço" valor={estudio.nome} />
         <Campo label="Nome da profissional" valor={estudio.profissional} />
@@ -71,9 +80,16 @@ function Configuracoes() {
             {["bg-primary", "bg-accent", "bg-gold", "bg-secondary"].map((c) => (
               <span key={c} className={`h-9 w-9 rounded-full border ${c}`} />
             ))}
-            <Button variant="outline" size="sm" className="rounded-full">
+            <BotaoDemo
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              mensagem="Paleta personalizada aplicada"
+              descricao="No protótipo o tema segue o tipo de negócio escolhido no cadastro."
+            >
               Personalizar
-            </Button>
+            </BotaoDemo>
+
           </div>
         </div>
       </Bloco>
@@ -87,9 +103,15 @@ function Configuracoes() {
           height={900}
           className="h-36 w-full rounded-xl object-cover"
         />
-        <Button variant="outline" size="sm" className="w-fit rounded-full">
+        <BotaoDemo
+          variant="outline"
+          size="sm"
+          className="w-fit rounded-full"
+          mensagem="Troca de banner disponível em breve"
+        >
           Trocar banner
-        </Button>
+        </BotaoDemo>
+
       </Bloco>
 
       <Bloco titulo="Contato e localização">
@@ -185,11 +207,26 @@ function Configuracoes() {
         ))}
       </Bloco>
 
-      <div className="sticky bottom-4 mt-8">
-        <Button className="w-full rounded-full" size="lg">
-          Salvar alterações
+      <div className="mt-8 flex flex-wrap gap-2">
+        <Button asChild variant="outline" className="rounded-full">
+          <Link to="/">Pré-visualizar página pública</Link>
+        </Button>
+        <Button asChild variant="ghost" className="rounded-full">
+          <Link to="/cadastro">Refazer escolha do negócio</Link>
         </Button>
       </div>
+
+      <div className="sticky bottom-4 mt-6">
+        <BotaoDemo
+          className="w-full rounded-full"
+          size="lg"
+          mensagem="Configurações salvas"
+          descricao="No protótipo as alterações valem apenas nesta sessão."
+        >
+          Salvar alterações
+        </BotaoDemo>
+      </div>
+
     </div>
   );
 }

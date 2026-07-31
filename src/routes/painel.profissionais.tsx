@@ -4,8 +4,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useDemo } from "@/data/negocio";
 import { brl } from "@/data/demo";
+import { DialogoInfo } from "@/components/dialogo-info";
+import { avisoDemo } from "@/components/acao-demo";
+
 
 export const Route = createFileRoute("/painel/profissionais")({
   head: () => ({
@@ -33,9 +38,31 @@ function Profissionais() {
           <p className="text-eyebrow">{rotulos.equipeEyebrow}</p>
           <h1 className="mt-1 text-3xl">{rotulos.profissionais}</h1>
         </div>
-        <Button className="shrink-0 rounded-full">
-          <Plus className="h-4 w-4" /> Novo {rotulos.profissionalSingular.toLowerCase()}
-        </Button>
+        <DialogoInfo
+          gatilho={
+            <Button className="shrink-0 rounded-full">
+              <Plus className="h-4 w-4" /> Novo {rotulos.profissionalSingular.toLowerCase()}
+            </Button>
+          }
+          titulo={`Novo ${rotulos.profissionalSingular.toLowerCase()}`}
+          descricao="Cadastro demonstrativo da equipe."
+          acao="Salvar"
+          onAcao={() => avisoDemo("Profissional adicionado à equipe")}
+        >
+          <div className="grid gap-1.5">
+            <Label htmlFor="prof-nome">Nome</Label>
+            <Input id="prof-nome" placeholder="Nome completo" />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="prof-funcao">Função</Label>
+            <Input id="prof-funcao" placeholder="Ex.: Barbeiro sênior" />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="prof-com">Comissão (%)</Label>
+            <Input id="prof-com" type="number" defaultValue={40} />
+          </div>
+        </DialogoInfo>
+
       </div>
 
       <div className="mt-8 grid gap-3">
@@ -106,13 +133,49 @@ function Profissionais() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" className="rounded-full">
-                Ver agenda
-              </Button>
-              <Button variant="outline" size="sm" className="rounded-full">
-                Editar comissão
-              </Button>
+              <DialogoInfo
+                gatilho={
+                  <Button variant="outline" size="sm" className="rounded-full">
+                    Ver agenda
+                  </Button>
+                }
+                titulo={`Agenda de ${p.nome}`}
+                descricao={`${p.funcao} · ${p.agendaHoje.length} atendimentos hoje`}
+                acao="Abrir novo horário"
+                onAcao={() => avisoDemo(`Horário extra liberado para ${p.nome}`)}
+              >
+                {p.agendaHoje.length === 0 ? (
+                  <p className="text-muted-foreground">Nenhum atendimento marcado hoje.</p>
+                ) : (
+                  p.agendaHoje.map((a) => (
+                    <p key={a} className="rounded-lg border px-3 py-2">
+                      {a}
+                    </p>
+                  ))
+                )}
+              </DialogoInfo>
+              <DialogoInfo
+                gatilho={
+                  <Button variant="outline" size="sm" className="rounded-full">
+                    Editar comissão
+                  </Button>
+                }
+                titulo={`Comissão de ${p.nome}`}
+                descricao="Percentual aplicado sobre o faturamento gerado."
+                acao="Salvar comissão"
+                onAcao={() => avisoDemo(`Comissão de ${p.nome} atualizada`)}
+              >
+                <div className="grid gap-1.5">
+                  <Label htmlFor={`com-${p.id}`}>Percentual (%)</Label>
+                  <Input id={`com-${p.id}`} type="number" defaultValue={p.comissao} />
+                </div>
+                <p className="text-muted-foreground">
+                  Comissão atual estimada:{" "}
+                  {brl(Math.round((p.faturamento * p.comissao) / 100))}
+                </p>
+              </DialogoInfo>
             </div>
+
           </Card>
         ))}
       </div>
