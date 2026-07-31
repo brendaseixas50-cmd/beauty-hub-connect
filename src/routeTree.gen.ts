@@ -21,6 +21,7 @@ import { Route as PainelEstoqueRouteImport } from './routes/painel.estoque'
 import { Route as PainelFinanceiroRouteImport } from './routes/painel.financeiro'
 import { Route as PainelGaleriaRouteImport } from './routes/painel.galeria'
 import { Route as PainelMarketingRouteImport } from './routes/painel.marketing'
+import { Route as PainelProfissionaisRouteImport } from './routes/painel.profissionais'
 import { Route as PainelServicosRouteImport } from './routes/painel.servicos'
 import { Route as ServicoIdRouteImport } from './routes/servico.$id'
 
@@ -84,6 +85,11 @@ const PainelMarketingRoute = PainelMarketingRouteImport.update({
   path: '/marketing',
   getParentRoute: () => PainelRoute,
 } as any)
+const PainelProfissionaisRoute = PainelProfissionaisRouteImport.update({
+  id: '/profissionais',
+  path: '/profissionais',
+  getParentRoute: () => PainelRoute,
+} as any)
 const PainelServicosRoute = PainelServicosRouteImport.update({
   id: '/servicos',
   path: '/servicos',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/painel/financeiro': typeof PainelFinanceiroRoute
   '/painel/galeria': typeof PainelGaleriaRoute
   '/painel/marketing': typeof PainelMarketingRoute
+  '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/servicos': typeof PainelServicosRoute
   '/servico/$id': typeof ServicoIdRoute
   '/painel/': typeof PainelIndexRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/painel/financeiro': typeof PainelFinanceiroRoute
   '/painel/galeria': typeof PainelGaleriaRoute
   '/painel/marketing': typeof PainelMarketingRoute
+  '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/servicos': typeof PainelServicosRoute
   '/servico/$id': typeof ServicoIdRoute
   '/painel': typeof PainelIndexRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/painel/financeiro': typeof PainelFinanceiroRoute
   '/painel/galeria': typeof PainelGaleriaRoute
   '/painel/marketing': typeof PainelMarketingRoute
+  '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/servicos': typeof PainelServicosRoute
   '/servico/$id': typeof ServicoIdRoute
   '/painel/': typeof PainelIndexRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/painel/financeiro'
     | '/painel/galeria'
     | '/painel/marketing'
+    | '/painel/profissionais'
     | '/painel/servicos'
     | '/servico/$id'
     | '/painel/'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/painel/financeiro'
     | '/painel/galeria'
     | '/painel/marketing'
+    | '/painel/profissionais'
     | '/painel/servicos'
     | '/servico/$id'
     | '/painel'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/painel/financeiro'
     | '/painel/galeria'
     | '/painel/marketing'
+    | '/painel/profissionais'
     | '/painel/servicos'
     | '/servico/$id'
     | '/painel/'
@@ -287,6 +299,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PainelMarketingRouteImport
       parentRoute: typeof PainelRoute
     }
+    '/painel/profissionais': {
+      id: '/painel/profissionais'
+      path: '/profissionais'
+      fullPath: '/painel/profissionais'
+      preLoaderRoute: typeof PainelProfissionaisRouteImport
+      parentRoute: typeof PainelRoute
+    }
     '/painel/servicos': {
       id: '/painel/servicos'
       path: '/servicos'
@@ -312,6 +331,7 @@ interface PainelRouteChildren {
   PainelFinanceiroRoute: typeof PainelFinanceiroRoute
   PainelGaleriaRoute: typeof PainelGaleriaRoute
   PainelMarketingRoute: typeof PainelMarketingRoute
+  PainelProfissionaisRoute: typeof PainelProfissionaisRoute
   PainelServicosRoute: typeof PainelServicosRoute
   PainelIndexRoute: typeof PainelIndexRoute
 }
@@ -324,6 +344,7 @@ const PainelRouteChildren: PainelRouteChildren = {
   PainelFinanceiroRoute: PainelFinanceiroRoute,
   PainelGaleriaRoute: PainelGaleriaRoute,
   PainelMarketingRoute: PainelMarketingRoute,
+  PainelProfissionaisRoute: PainelProfissionaisRoute,
   PainelServicosRoute: PainelServicosRoute,
   PainelIndexRoute: PainelIndexRoute,
 }
