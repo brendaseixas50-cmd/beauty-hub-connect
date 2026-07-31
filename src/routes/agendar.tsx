@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { brl, type Servico } from "@/data/demo";
 import { useDemo } from "@/data/negocio";
+import { linkWhatsapp } from "@/lib/contato";
+
 
 
 type Busca = { servico?: string | undefined };
