@@ -33,7 +33,7 @@ export const Route = createFileRoute("/agendar")({
 });
 
 const DIAS = ["01/08", "02/08", "03/08", "05/08", "06/08", "07/08"];
-const HORAS = ["09:00", "10:30", "13:00", "14:30", "16:00", "17:30"];
+
 
 function Agendar() {
   const { servico: servicoInicial } = Route.useSearch();
