@@ -20,7 +20,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { estudio, servicos, categorias, galeria, avaliacoes, brl } from "@/data/demo";
+import { brl } from "@/data/demo";
+import { useDemo } from "@/data/negocio";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,8 +42,9 @@ export const Route = createFileRoute("/")({
   component: PaginaPublica,
 });
 
-function PaginaPublica() {
+  const { estudio, servicos, categorias, galeria, avaliacoes } = useDemo();
   const [categoria, setCategoria] = useState<string>("Todos");
+
   const mostraDomicilio =
     estudio.formatoAtendimento === "domicilio" ||
     (estudio.formatoAtendimento === "ambos" && estudio.domicilioAtivo);

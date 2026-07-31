@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { estudio, servicos, brl, type Servico } from "@/data/demo";
+import { brl, type Servico } from "@/data/demo";
+import { useDemo } from "@/data/negocio";
+
 
 type Busca = { servico?: string | undefined };
 
@@ -34,7 +36,10 @@ const HORAS = ["09:00", "10:30", "13:00", "14:30", "16:00", "17:30"];
 
 function Agendar() {
   const { servico: servicoInicial } = Route.useSearch();
+  const { estudio, servicos, horariosDisponiveis, profissionais } = useDemo();
   const disponiveis = servicos.filter((s) => s.disponivel);
+
+
 
   const domicilioLiberado =
     estudio.formatoAtendimento === "domicilio" ||
