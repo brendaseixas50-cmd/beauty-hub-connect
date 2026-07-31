@@ -17,7 +17,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { servicos, categorias, brl, type Servico, type TipoTaxa } from "@/data/demo";
+import { brl, type Servico, type TipoTaxa } from "@/data/demo";
+import { useDemo } from "@/data/negocio";
+
 
 export const Route = createFileRoute("/painel/servicos")({
   head: () => ({
@@ -32,7 +34,9 @@ export const Route = createFileRoute("/painel/servicos")({
 });
 
 function Servicos() {
+  const { servicos } = useDemo();
   return (
+
     <div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <div className="min-w-0">
