@@ -420,3 +420,33 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Núcleo Lu IA Platform
+
+Este projeto agora possui uma camada central reutilizável em `src/platform`.
+
+Ela concentra:
+
+- conta única do cliente;
+- organização/negócio do cliente;
+- produtos contratados;
+- tipo e status do acesso;
+- autorização para LuBeauty e LuBarber;
+- estrutura preparada para futuros produtos da Lu IA Studio.
+
+Arquivos principais:
+
+- `src/platform/types.ts`: contratos centrais da plataforma;
+- `src/platform/demo-session.ts`: sessões demonstrativas;
+- `src/platform/platform-context.tsx`: fonte única de sessão e autorização;
+- `src/data/acesso.tsx`: adaptador visual do produto atual.
+
+No futuro, `demo-session.ts` será substituído por autenticação e consultas ao Supabase sem precisar reescrever os painéis dos produtos.
+
+### Preparação do Supabase
+
+A migration inicial está em:
+
+- `supabase/migrations/0001_lu_ia_platform_core.sql`
+
+Ela cria perfis, organizações, membros, catálogo de produtos, acessos e políticas RLS. O arquivo está apenas preparado; ainda não foi aplicado em nenhum banco.
