@@ -57,8 +57,10 @@ function Agendar() {
   );
   const [data, setData] = useState<string | null>(null);
   const [hora, setHora] = useState<string | null>(null);
+  const [profissional, setProfissional] = useState<string | null>(null);
   const [nome, setNome] = useState("");
   const [whats, setWhats] = useState("");
+
 
   const totalPassos = escolheFormato ? 6 : 5;
   const passoVisual = escolheFormato ? passo : passo > 1 ? passo - 1 : passo;
