@@ -23,29 +23,34 @@ import {
 import { brl } from "@/data/demo";
 import { useDemo, useNegocio } from "@/data/negocio";
 import { linkInstagram, linkWhatsapp } from "@/lib/contato";
+import { EntradaProduto } from "@/components/entrada-produto";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Agendamento online — Lu IA Studio" },
+      { title: "LuBeauty ou LuBarber — Lu IA Studio" },
       {
         name: "description",
-        content:
-          "Página pública da profissional: serviços, preços, portfólio e agendamento online em poucos passos.",
+        content: "Escolha entre as experiências LuBeauty e LuBarber, produtos da Lu IA Studio.",
       },
-      { property: "og:title", content: "Agendamento online — Lu IA Studio" },
+      { property: "og:title", content: "LuBeauty ou LuBarber — Lu IA Studio" },
       {
         property: "og:description",
-        content: "Serviços, preços e agendamento online no espaço ou em domicílio.",
+        content: "Duas identidades de gestão para profissionais de beleza e barbearias.",
       },
     ],
   }),
-  component: PaginaPublica,
+  component: PaginaInicial,
 });
+
+function PaginaInicial() {
+  const { concluido } = useNegocio();
+  return concluido ? <PaginaPublica /> : <EntradaProduto />;
+}
 
 function PaginaPublica() {
   const { estudio, servicos, categorias, galeria, avaliacoes } = useDemo();
-  const { marca } = useNegocio();
+  const { marca, reiniciar } = useNegocio();
 
   const [categoria, setCategoria] = useState<string>("Todos");
 
@@ -74,6 +79,13 @@ function PaginaPublica() {
         >
           <LayoutDashboard className="h-3.5 w-3.5" /> Painel
         </Link>
+        <button
+          type="button"
+          onClick={reiniciar}
+          className="absolute left-4 top-4 inline-flex items-center rounded-full bg-card/85 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur"
+        >
+          Trocar produto
+        </button>
       </header>
 
       <main className="mx-auto -mt-16 max-w-3xl px-5">
