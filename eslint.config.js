@@ -37,12 +37,7 @@ export default tseslint.config(
     },
   },
   {
-    files: [
-      "src/components/acao-demo.tsx",
-      "src/components/ui/**/*.tsx",
-      "src/data/negocio.tsx",
-      "src/modules/auth/context.tsx",
-    ],
+    files: ["src/components/ui/**/*.tsx", "src/modules/auth/context.tsx"],
     rules: {
       // These modules intentionally export a component together with its
       // variants, hooks or provider API (the standard shadcn pattern).

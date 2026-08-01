@@ -20,6 +20,7 @@ const loginSchema = z.object({
 
 const signupSchema = z
   .object({
+    productType: z.enum(["beauty", "barber"]),
     fullName: z.string().trim().min(2, "Informe seu nome completo.").max(120),
     businessName: z.string().trim().min(2, "Informe o nome da empresa.").max(120),
     email: z.string().trim().email("Informe um e-mail válido."),
@@ -103,7 +104,11 @@ async function resolveSession(): Promise<Session | null> {
   if (!role.success) return null;
 
   const [{ data: tenant, error: tenantError }, { data: authSession }] = await Promise.all([
-    supabase.from("tenants").select("name, status").eq("id", profile.tenant_id).single(),
+    supabase
+      .from("tenants")
+      .select("name, slug, status, product_type")
+      .eq("id", profile.tenant_id)
+      .single(),
     supabase.auth.getSession(),
   ]);
 
@@ -114,6 +119,8 @@ async function resolveSession(): Promise<Session | null> {
       id: user.id,
       tenantId: profile.tenant_id,
       tenantName: tenant.name,
+      tenantSlug: tenant.slug,
+      productType: tenant.product_type === "barber" ? "barber" : "beauty",
       email: user.email,
       name: profile.full_name,
       role: role.data as Role,
@@ -156,6 +163,7 @@ export const signup = createServerFn({ method: "POST" })
         data: {
           full_name: data.fullName,
           business_name: data.businessName,
+          product_type: data.productType,
         },
         emailRedirectTo: callbackUrl("/painel"),
       },

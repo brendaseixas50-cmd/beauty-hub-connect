@@ -1,261 +1,130 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarCheck, Clock, Star, TrendingUp, UserRound, Users } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { CalendarCheck, PackageSearch, Scissors, TrendingUp, UserRound, Users } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-
-import { brl } from "@/data/demo";
-import { useDemo, useNegocio } from "@/data/negocio";
+import { Card } from "@/components/ui/card";
+import { EmptyState, PageHeader } from "@/components/mvp-page";
+import { brl, formatDateTime } from "@/modules/mvp/domain";
+import { getDashboard } from "@/modules/mvp/server";
 
 export const Route = createFileRoute("/painel/")({
-  head: () => ({
-    meta: [
-      { title: "Visão geral — Painel Lu IA Studio" },
-      { name: "description", content: "Resumo do dia: agendamentos, faturamento e clientes." },
-      { property: "og:title", content: "Visão geral — Painel Lu IA Studio" },
-      { property: "og:description", content: "Resumo do dia da sua agenda e do seu faturamento." },
-    ],
-  }),
-  component: VisaoGeral,
+  loader: () => getDashboard(),
+  head: () => ({ meta: [{ title: "Dashboard — Beauty Hub Connect" }] }),
+  component: Dashboard,
 });
 
-function VisaoGeral() {
-  const { tipo } = useNegocio();
-  const {
-    agendamentosHoje,
-    proximosAtendimentos,
-    horariosDisponiveis,
-    financeiro,
-    clientes,
-    saudacao,
-    servicoTop,
-    rotulos,
-    fila,
-    encaixes,
-    profissionais,
-    assinaturas,
-  } = useDemo();
-  const barbearia = tipo === "barbearia";
-  const maior = Math.max(...profissionais.map((p) => p.faturamento));
+function Dashboard() {
+  const data = Route.useLoaderData();
+  const { session } = Route.useRouteContext();
+  const firstName = session.user.name.split(" ")[0];
+  const product = session.user.productType === "barber" ? "LuBarber Pro" : "LuBeauty Pro";
 
   return (
     <div>
-      <p className="text-eyebrow">{saudacao.eyebrow}</p>
-      <h1 className="mt-1 text-3xl">{saudacao.titulo}</h1>
-      <p className="mt-1 text-muted-foreground">{saudacao.subtitulo}</p>
-
-      <div className="mt-6 flex flex-wrap gap-2">
-        <Button asChild size="sm" className="rounded-full">
-          <Link to="/painel/agenda">Abrir agenda de hoje</Link>
-        </Button>
-        <Button asChild variant="outline" size="sm" className="rounded-full">
-          <Link to="/painel/servicos">Gerenciar serviços</Link>
-        </Button>
-        <Button asChild variant="outline" size="sm" className="rounded-full">
-          <Link to="/painel/clientes">{rotulos.clientes}</Link>
-        </Button>
-        <Button asChild variant="outline" size="sm" className="rounded-full">
-          <Link to="/painel/financeiro">Financeiro</Link>
-        </Button>
-        <Button asChild variant="ghost" size="sm" className="rounded-full">
-          <Link to="/">Ver página pública</Link>
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow={product}
+        title={`Olá, ${firstName}`}
+        description="Acompanhe os principais números da empresa e os atendimentos de hoje."
+        action={
+          <Button asChild className="rounded-full">
+            <Link to="/painel/agenda">Novo agendamento</Link>
+          </Button>
+        }
+      />
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <Metrica
+        <Metric
           icon={CalendarCheck}
-          titulo="Agendamentos de hoje"
-          valor={String(agendamentosHoje.length)}
-          detalhe={barbearia ? `${encaixes.length} encaixe(s) no dia` : "1 aguardando análise"}
+          title="Agendamentos hoje"
+          value={String(data.appointments.length)}
         />
-        <Metrica
-          icon={TrendingUp}
-          titulo="Faturamento do mês"
-          valor={brl(financeiro.mes)}
-          detalhe={`Ticket médio ${brl(financeiro.ticket)}`}
-        />
-        <Metrica
-          icon={Users}
-          titulo={rotulos.clientes}
-          valor={String(clientes.length * 32)}
-          detalhe="+9 neste mês"
-        />
-        <Metrica
-          icon={Clock}
-          titulo="Horários disponíveis hoje"
-          valor={String(horariosDisponiveis.length)}
-          detalhe={horariosDisponiveis.slice(0, 3).join(" · ")}
-        />
-        <Metrica
-          icon={Star}
-          titulo="Serviço mais procurado"
-          valor={servicoTop.nome}
-          detalhe={servicoTop.detalhe}
-        />
-        <Metrica
-          icon={UserRound}
-          titulo="Próximos atendimentos"
-          valor={String(proximosAtendimentos.length)}
-          detalhe="nos próximos 3 dias"
+        <Metric icon={TrendingUp} title="Saldo do mês" value={brl(data.monthBalanceCents)} />
+        <Metric icon={Users} title="Clientes ativos" value={String(data.clients)} />
+        <Metric icon={UserRound} title="Profissionais ativos" value={String(data.professionals)} />
+        <Metric icon={Scissors} title="Serviços ativos" value={String(data.services)} />
+        <Metric
+          icon={PackageSearch}
+          title="Itens com estoque baixo"
+          value={String(data.lowStock)}
+          alert={data.lowStock > 0}
         />
       </div>
 
-      <div className="mt-10 grid gap-6 lg:grid-cols-2">
-        <section>
-          <h2 className="mb-3 text-2xl">Agendamentos de hoje</h2>
-          <Card className="divide-y p-0">
-            {agendamentosHoje.map((a) => (
-              <div key={a.hora} className="grid grid-cols-[auto_minmax(0,1fr)] gap-4 px-5 py-4">
-                <span className="text-sm font-medium">{a.hora}</span>
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{a.cliente}</p>
-                  <p className="truncate text-sm text-muted-foreground">{a.servico}</p>
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    <Badge variant="outline" className="rounded-full font-normal">
-                      {a.formato}
-                    </Badge>
-                    <Badge variant="outline" className="rounded-full font-normal">
-                      {a.profissional}
-                    </Badge>
-                    <Badge
-                      variant={a.status === "Confirmado" ? "secondary" : "default"}
-                      className="rounded-full font-normal"
-                    >
-                      {a.status}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </Card>
-        </section>
-
-        <section>
-          <h2 className="mb-3 text-2xl">Próximos atendimentos</h2>
-          <Card className="divide-y p-0">
-            {proximosAtendimentos.map((a) => (
-              <div key={a.cliente} className="flex items-center justify-between px-5 py-4">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{a.cliente}</p>
-                  <p className="truncate text-sm text-muted-foreground">{a.servico}</p>
-                </div>
-                <span className="shrink-0 text-sm text-muted-foreground">
-                  {a.data} · {a.hora}
-                </span>
-              </div>
-            ))}
-          </Card>
-        </section>
-      </div>
-
-      {barbearia && (
-        <div className="mt-10 grid gap-6 lg:grid-cols-2">
-          <section>
-            <h2 className="mb-3 text-2xl">Fila de atendimento</h2>
-            <Card className="divide-y p-0">
-              {fila.map((f) => (
-                <div
-                  key={f.cliente}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 px-5 py-4"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{f.cliente}</p>
-                    <p className="truncate text-sm text-muted-foreground">
-                      {f.servico} · {f.profissional}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="shrink-0 rounded-full font-normal">
-                    espera {f.espera}
-                  </Badge>
-                </div>
-              ))}
-            </Card>
-          </section>
-
-          <section>
-            <h2 className="mb-3 text-2xl">Encaixes do dia</h2>
-            <Card className="divide-y p-0">
-              {encaixes.map((e) => (
-                <div key={e.cliente} className="flex items-center justify-between px-5 py-4">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{e.cliente}</p>
-                    <p className="truncate text-sm text-muted-foreground">
-                      {e.servico} · {e.horario}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={e.status === "Aprovado" ? "secondary" : "default"}
-                    className="shrink-0 rounded-full font-normal"
-                  >
-                    {e.status}
-                  </Badge>
-                </div>
-              ))}
-            </Card>
-          </section>
-
-          <section>
-            <h2 className="mb-3 text-2xl">
-              Desempenho por {rotulos.profissionalSingular.toLowerCase()}
-            </h2>
-            <Card className="gap-4 p-5">
-              {profissionais.map((p) => (
-                <div key={p.id}>
-                  <div className="mb-1.5 flex items-center justify-between text-sm">
-                    <span className="truncate">{p.nome}</span>
-                    <span className="shrink-0 text-muted-foreground">
-                      {p.atendimentosMes} · {brl(p.faturamento)}
-                    </span>
-                  </div>
-                  <Progress value={(p.faturamento / maior) * 100} />
-                </div>
-              ))}
-            </Card>
-          </section>
-
-          <section>
-            <h2 className="mb-3 text-2xl">Assinaturas ativas</h2>
-            <Card className="divide-y p-0">
-              {assinaturas.map((a) => (
-                <div key={a.nome} className="flex items-center justify-between px-5 py-4">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{a.nome}</p>
-                    <p className="truncate text-sm text-muted-foreground">
-                      {a.beneficios.join(" · ")}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-sm font-medium">{a.assinantes} assinantes</span>
-                </div>
-              ))}
-            </Card>
-          </section>
+      <section className="mt-10">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-2xl">Agenda de hoje</h2>
+          <Button asChild variant="outline" size="sm" className="rounded-full">
+            <Link to="/painel/agenda">Ver agenda completa</Link>
+          </Button>
         </div>
-      )}
+
+        {data.appointments.length === 0 ? (
+          <EmptyState
+            title="Nenhum atendimento hoje"
+            description="Crie um agendamento para começar a organizar a agenda da empresa."
+          />
+        ) : (
+          <Card className="mt-4 divide-y p-0">
+            {data.appointments.map((appointment) => (
+              <div
+                key={appointment.id}
+                className="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto]"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{appointment.clients?.name ?? "Cliente"}</p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {appointment.services?.name ?? "Serviço"} ·{" "}
+                    {appointment.professionals?.name ?? "Profissional"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 sm:justify-end">
+                  <span className="text-sm">{formatDateTime(appointment.starts_at)}</span>
+                  <Badge variant={appointment.status === "cancelled" ? "destructive" : "secondary"}>
+                    {statusLabel(appointment.status)}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </Card>
+        )}
+      </section>
     </div>
   );
 }
 
-function Metrica({
+function Metric({
   icon: Icon,
-  titulo,
-  valor,
-  detalhe,
+  title,
+  value,
+  alert = false,
 }: {
   icon: typeof Users;
-  titulo: string;
-  valor: string;
-  detalhe: string;
+  title: string;
+  value: string;
+  alert?: boolean;
 }) {
   return (
     <Card className="gap-2 p-5">
       <div className="flex items-center gap-2 text-muted-foreground">
         <Icon className="h-4 w-4" />
-        <span className="text-sm">{titulo}</span>
+        <span className="text-sm">{title}</span>
       </div>
-      <p className="font-display text-3xl">{valor}</p>
-      <p className="text-xs text-muted-foreground">{detalhe}</p>
+      <p className={`font-display text-3xl ${alert ? "text-destructive" : ""}`}>{value}</p>
     </Card>
+  );
+}
+
+function statusLabel(status: string) {
+  return (
+    (
+      {
+        scheduled: "Agendado",
+        confirmed: "Confirmado",
+        completed: "Concluído",
+        cancelled: "Cancelado",
+        no_show: "Faltou",
+      } as Record<string, string>
+    )[status] ?? status
   );
 }

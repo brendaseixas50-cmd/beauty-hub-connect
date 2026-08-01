@@ -1,317 +1,222 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Pencil, Plus } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { useServerFn } from "@tanstack/react-start";
+import { Clock, Pencil, Plus } from "lucide-react";
+import { useMemo, useState, type FormEvent } from "react";
+
+import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { brl, type Servico, type TipoTaxa } from "@/data/demo";
-import { useDemo } from "@/data/negocio";
-import { avisoDemo } from "@/components/acao-demo";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { brl, centsFromInput, type Service } from "@/modules/mvp/domain";
+import { deleteService, listServices, saveService } from "@/modules/mvp/server";
+import { useMvpAction } from "@/modules/mvp/use-action";
 
 export const Route = createFileRoute("/painel/servicos")({
-  head: () => ({
-    meta: [
-      { title: "Serviços — Painel Lu IA Studio" },
-      {
-        name: "description",
-        content: "Cadastre serviços, preços por formato e taxa de deslocamento.",
-      },
-      { property: "og:title", content: "Serviços — Painel Lu IA Studio" },
-      {
-        property: "og:description",
-        content: "Preços no local, em domicílio e taxa de deslocamento.",
-      },
-    ],
-  }),
-  component: Servicos,
+  loader: () => listServices(),
+  head: () => ({ meta: [{ title: "Serviços — Beauty Hub Connect" }] }),
+  component: ServicesPage,
 });
 
-function Servicos() {
-  const { servicos } = useDemo();
+function ServicesPage() {
+  const services = Route.useLoaderData();
+  const remove = useServerFn(deleteService);
+  const action = useMvpAction();
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
+  const [editing, setEditing] = useState<Service | null>();
+  const categories = useMemo(
+    () => [...new Set(services.map((item) => item.category).filter(Boolean))] as string[],
+    [services],
+  );
+  const term = search.trim().toLowerCase();
+  const filtered = services.filter(
+    (service) =>
+      (!term || service.name.toLowerCase().includes(term)) &&
+      (category === "all" || service.category === category),
+  );
+
   return (
     <div>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
-        <div className="min-w-0">
-          <p className="text-eyebrow">Catálogo</p>
-          <h1 className="mt-1 text-3xl">Serviços</h1>
-        </div>
-        <FormularioServico
-          gatilho={
-            <Button className="shrink-0 rounded-full">
-              <Plus className="h-4 w-4" /> Novo serviço
-            </Button>
-          }
-        />
+      <PageHeader
+        eyebrow="Catálogo"
+        title="Serviços"
+        description="Defina duração, preço e disponibilidade para a agenda."
+        action={
+          <Button className="rounded-full" onClick={() => setEditing(null)}>
+            <Plus className="h-4 w-4" /> Novo serviço
+          </Button>
+        }
+      />
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <SearchField value={search} onChange={setSearch} placeholder="Buscar serviço" />
+        <select
+          aria-label="Filtrar categoria"
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+          className="h-10 rounded-md border bg-background px-3 text-sm"
+        >
+          <option value="all">Todas as categorias</option>
+          {categories.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
       </div>
 
-      <div className="mt-8 grid gap-3">
-        {servicos.map((s) => (
-          <Card key={s.id} className="grid gap-4 p-5 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
-            <img
-              src={s.fotos[0]}
-              alt={s.nome}
-              loading="lazy"
-              width={800}
-              height={800}
-              className="h-20 w-20 rounded-lg object-cover"
-            />
-            <div className="min-w-0">
-              <p className="text-eyebrow">
-                {s.categoria} · {s.responsavel}
-              </p>
-              <p className="text-lg">{s.nome}</p>
-              <p className="line-clamp-2 text-sm text-muted-foreground">{s.descricao}</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                <Badge variant="secondary" className="rounded-full font-normal">
-                  {s.duracao}
+      {filtered.length === 0 ? (
+        <EmptyState
+          title="Nenhum serviço encontrado"
+          description="Cadastre os serviços oferecidos pela empresa."
+        />
+      ) : (
+        <div className="mt-6 grid gap-3 lg:grid-cols-2">
+          {filtered.map((service) => (
+            <Card key={service.id} className="gap-4 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-medium">{service.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {service.category || "Sem categoria"}
+                  </p>
+                </div>
+                <Badge variant={service.active ? "secondary" : "outline"}>
+                  {service.active ? "Ativo" : "Inativo"}
                 </Badge>
-                <Badge variant="outline" className="rounded-full font-normal">
-                  No local {brl(s.precoLocal)}
-                </Badge>
-                {s.formato !== "espaco" && (
-                  <Badge variant="outline" className="rounded-full font-normal">
-                    Domicílio{" "}
-                    {s.mesmoPreco ? brl(s.precoLocal) : brl(s.precoDomicilio ?? s.precoLocal)}
-                  </Badge>
-                )}
-                {s.cobrarTaxa && (
-                  <Badge variant="outline" className="rounded-full font-normal">
-                    Taxa {s.tipoTaxa === "fixa" ? brl(s.valorTaxa ?? 0) : "a combinar"}
-                  </Badge>
-                )}
-                {!s.disponivel && (
-                  <Badge variant="destructive" className="rounded-full font-normal">
-                    Indisponível
-                  </Badge>
-                )}
               </div>
-            </div>
-            <FormularioServico
-              servico={s}
-              gatilho={
-                <Button variant="outline" size="sm" className="rounded-full">
-                  <Pencil className="h-3.5 w-3.5" /> Editar
+              {service.description ? (
+                <p className="text-sm text-muted-foreground">{service.description}</p>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-4 text-sm">
+                <span className="font-medium">{brl(service.price_cents)}</span>
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Clock className="h-4 w-4" /> {service.duration_minutes} min
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => setEditing(service)}>
+                  <Pencil className="h-4 w-4" /> Editar
                 </Button>
-              }
-            />
-          </Card>
-        ))}
-      </div>
+                <DeleteButton
+                  label={service.name}
+                  pending={action.pending}
+                  onConfirm={() =>
+                    void action.run(() => remove({ data: { id: service.id } }), "Serviço excluído.")
+                  }
+                />
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+      {editing !== undefined ? (
+        <ServiceDialog service={editing} onClose={() => setEditing(undefined)} />
+      ) : null}
     </div>
   );
 }
 
-function FormularioServico({ servico, gatilho }: { servico?: Servico; gatilho: React.ReactNode }) {
-  const { categorias } = useDemo();
-  const [aberto, setAberto] = useState(false);
-  const [mesmoPreco, setMesmoPreco] = useState(servico?.mesmoPreco ?? true);
+function ServiceDialog({ service, onClose }: { service: Service | null; onClose: () => void }) {
+  const save = useServerFn(saveService);
+  const action = useMvpAction();
 
-  const [cobrarTaxa, setCobrarTaxa] = useState(servico?.cobrarTaxa ?? false);
-  const [tipoTaxa, setTipoTaxa] = useState<TipoTaxa>(servico?.tipoTaxa ?? "sem");
-  const [formato, setFormato] = useState(servico?.formato ?? "ambos");
-  const [disponivel, setDisponivel] = useState(servico?.disponivel ?? true);
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const ok = await action.run(
+      () =>
+        save({
+          data: {
+            id: service?.id,
+            name: String(form.get("name")),
+            category: String(form.get("category")),
+            description: String(form.get("description")),
+            durationMinutes: Number(form.get("durationMinutes")),
+            priceCents: centsFromInput(String(form.get("price"))),
+            active: form.get("active") === "on",
+          },
+        }),
+      service ? "Serviço atualizado." : "Serviço cadastrado.",
+    );
+    if (ok) onClose();
+  }
 
   return (
-    <Dialog open={aberto} onOpenChange={setAberto}>
-      <DialogTrigger asChild>{gatilho}</DialogTrigger>
-
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-2xl">
-            {servico ? "Editar serviço" : "Novo serviço"}
-          </DialogTitle>
+          <DialogTitle>{service ? "Editar serviço" : "Novo serviço"}</DialogTitle>
+          <DialogDescription>
+            As alterações ficam disponíveis imediatamente na agenda.
+          </DialogDescription>
         </DialogHeader>
-
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" defaultValue={servico?.nome} />
-          </div>
-
-          <div className="grid gap-2">
-            <Label>Categoria</Label>
-            <Select defaultValue={servico?.categoria ?? ""}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {categorias.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="desc">Descrição</Label>
-            <Textarea id="desc" rows={3} defaultValue={servico?.descricao} />
-          </div>
-
+        <form onSubmit={onSubmit} className="grid gap-4">
+          <Field label="Nome" name="name" defaultValue={service?.name ?? ""} required />
+          <Field label="Categoria" name="category" defaultValue={service?.category ?? ""} />
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="duracao">Duração</Label>
-              <Input id="duracao" defaultValue={servico?.duracao} placeholder="1h30" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="resp">Profissional responsável</Label>
-              <Input id="resp" defaultValue={servico?.responsavel} />
-            </div>
+            <Field
+              label="Duração (minutos)"
+              name="durationMinutes"
+              type="number"
+              min={5}
+              defaultValue={service?.duration_minutes ?? 60}
+              required
+            />
+            <Field
+              label="Preço (R$)"
+              name="price"
+              inputMode="decimal"
+              defaultValue={service ? (service.price_cents / 100).toFixed(2).replace(".", ",") : ""}
+              required
+            />
           </div>
-
           <div className="grid gap-2">
-            <Label>Fotos do serviço</Label>
-            <div className="flex gap-2">
-              {servico?.fotos.map((f: string, i: number) => (
-                <img
-                  key={i}
-                  src={f}
-                  alt=""
-                  loading="lazy"
-                  width={800}
-                  height={800}
-                  className="h-16 w-16 rounded-lg object-cover"
-                />
-              ))}
-              <button className="grid h-16 w-16 place-items-center rounded-lg border border-dashed text-muted-foreground">
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
+            <Label htmlFor="description">Descrição</Label>
+            <Textarea
+              id="description"
+              name="description"
+              defaultValue={service?.description ?? ""}
+            />
           </div>
-
-          <Separator />
-
-          <div className="grid gap-2">
-            <Label>Formato de atendimento</Label>
-            <Select value={formato} onValueChange={(v) => setFormato(v as Servico["formato"])}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="espaco">Somente no meu espaço</SelectItem>
-                <SelectItem value="domicilio">Somente em domicílio</SelectItem>
-                <SelectItem value="ambos">No meu espaço e em domicílio</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="precoLocal">Preço no local</Label>
-            <Input id="precoLocal" defaultValue={servico?.precoLocal} placeholder="R$ 0,00" />
-          </div>
-
-          {formato !== "espaco" && (
-            <>
-              <label className="flex items-center justify-between rounded-lg border p-3">
-                <span className="text-sm">Utilizar o mesmo preço nos dois formatos</span>
-                <Switch checked={mesmoPreco} onCheckedChange={setMesmoPreco} />
-              </label>
-
-              {!mesmoPreco && (
-                <div className="grid gap-2">
-                  <Label htmlFor="precoDom">Preço em domicílio</Label>
-                  <Input
-                    id="precoDom"
-                    defaultValue={servico?.precoDomicilio ?? ""}
-                    placeholder="R$ 0,00"
-                  />
-                </div>
-              )}
-
-              <label className="flex items-center justify-between rounded-lg border p-3">
-                <span className="text-sm">Cobrar taxa de deslocamento</span>
-                <Switch
-                  checked={cobrarTaxa}
-                  onCheckedChange={(v) => {
-                    setCobrarTaxa(v);
-                    setTipoTaxa(v ? "fixa" : "sem");
-                  }}
-                />
-              </label>
-
-              {cobrarTaxa && (
-                <div className="grid gap-2">
-                  <Label>Tipo de taxa de deslocamento</Label>
-                  <Select value={tipoTaxa} onValueChange={(v) => setTipoTaxa(v as TipoTaxa)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fixa">Taxa fixa</SelectItem>
-                      <SelectItem value="combinar">Taxa a combinar</SelectItem>
-                      <SelectItem value="sem">Sem taxa</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {cobrarTaxa && tipoTaxa === "fixa" && (
-                <div className="grid gap-2">
-                  <Label htmlFor="valorTaxa">Valor da taxa</Label>
-                  <Input
-                    id="valorTaxa"
-                    defaultValue={servico?.valorTaxa ?? ""}
-                    placeholder="R$ 0,00"
-                  />
-                </div>
-              )}
-
-              {cobrarTaxa && tipoTaxa === "combinar" && (
-                <p className="rounded-lg bg-secondary px-4 py-3 text-sm text-secondary-foreground">
-                  O cliente verá: “O valor da taxa de deslocamento será confirmado após a análise do
-                  endereço.”
-                </p>
-              )}
-            </>
-          )}
-
-          <Separator />
-
-          <label className="flex items-center justify-between rounded-lg border p-3">
-            <span className="text-sm">Disponível para agendamento</span>
-            <Switch checked={disponivel} onCheckedChange={setDisponivel} />
+          <label className="flex items-center gap-2 text-sm">
+            <input name="active" type="checkbox" defaultChecked={service?.active ?? true} />{" "}
+            Disponível
           </label>
-
-          <div className="flex flex-col gap-2 sm:flex-row-reverse">
-            <Button
-              className="rounded-full sm:flex-1"
-              onClick={() => {
-                setAberto(false);
-                avisoDemo(servico ? "Serviço atualizado" : "Serviço criado");
-              }}
-            >
-              Salvar serviço
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-full sm:flex-1"
-              onClick={() => setAberto(false)}
-            >
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-          </div>
-        </div>
+            <Button type="submit" disabled={action.pending}>
+              {action.pending ? "Salvando…" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function Field({
+  label,
+  name,
+  ...props
+}: { label: string; name: string } & React.ComponentProps<typeof Input>) {
+  return (
+    <div className="grid gap-2">
+      <Label htmlFor={name}>{label}</Label>
+      <Input id={name} name={name} {...props} />
+    </div>
   );
 }

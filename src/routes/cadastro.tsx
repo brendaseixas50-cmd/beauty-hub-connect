@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, MailCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { z } from "zod";
 
 import { MarcaProduto } from "@/components/marca-produto";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { getSession, signup } from "@/modules/auth/server";
 
 export const Route = createFileRoute("/cadastro")({
+  validateSearch: z.object({ produto: z.enum(["beauty", "barber"]).catch("beauty") }),
   beforeLoad: async () => {
     if (await getSession()) throw redirect({ to: "/painel" });
   },
@@ -27,6 +29,8 @@ export const Route = createFileRoute("/cadastro")({
 });
 
 function Cadastro() {
+  const { produto } = Route.useSearch();
+  const tipo = produto === "barber" ? "barbearia" : "beleza";
   const signupFn = useServerFn(signup);
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
@@ -42,6 +46,7 @@ function Cadastro() {
     try {
       await signupFn({
         data: {
+          productType: produto,
           fullName: String(form.get("fullName")),
           businessName: String(form.get("businessName")),
           email,
@@ -58,7 +63,9 @@ function Cadastro() {
   }
 
   return (
-    <main className="min-h-screen bg-secondary/40 px-4 py-10">
+    <main
+      className={`${tipo === "barbearia" ? "tema-barbearia" : "tema-beleza"} min-h-screen bg-secondary/40 px-4 py-10`}
+    >
       <div className="mx-auto w-full max-w-lg">
         <Link
           to="/"
@@ -70,7 +77,7 @@ function Cadastro() {
         <Card className="border-border/70 shadow-xl">
           <CardHeader className="space-y-4 text-center">
             <div className="flex justify-center">
-              <MarcaProduto />
+              <MarcaProduto tipo={tipo} />
             </div>
             {emailEnviado ? (
               <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground">
@@ -130,7 +137,9 @@ function Cadastro() {
                   </p>
                 ) : null}
                 <Button type="submit" size="lg" disabled={pending}>
-                  {pending ? "Criando conta…" : "Criar conta"}
+                  {pending
+                    ? "Criando conta…"
+                    : `Criar conta no ${produto === "barber" ? "LuBarber Pro" : "LuBeauty Pro"}`}
                 </Button>
                 <p className="text-center text-sm text-muted-foreground">
                   Já possui uma conta?{" "}

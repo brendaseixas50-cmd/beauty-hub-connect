@@ -1,8 +1,14 @@
 import { Scissors, Sparkles } from "lucide-react";
-import { useNegocio } from "@/data/negocio";
+import { marcasProduto } from "@/products/catalog";
 
-export function MarcaProduto({ compacta = false }: { compacta?: boolean }) {
-  const { marca, tipo } = useNegocio();
+export function MarcaProduto({
+  compacta = false,
+  tipo = "beleza",
+}: {
+  compacta?: boolean;
+  tipo?: "beleza" | "barbearia";
+}) {
+  const marca = marcasProduto[tipo];
   const Icone = tipo === "barbearia" ? Scissors : Sparkles;
 
   return (

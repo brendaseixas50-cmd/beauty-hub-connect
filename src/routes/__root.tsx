@@ -11,7 +11,6 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { NegocioProvider, useNegocio } from "@/data/negocio";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -118,7 +117,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <head>
         <HeadContent />
       </head>
@@ -131,17 +130,8 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function Casca({ children }: { children: ReactNode }) {
-  const { tema } = useNegocio();
-
-  // Também no <html> para que portais (modais, sheets, selects) herdem o tema.
-  useEffect(() => {
-    const el = document.documentElement;
-    el.classList.add(tema);
-    return () => el.classList.remove(tema);
-  }, [tema]);
-
   return (
-    <div className={`${tema} min-h-screen bg-background text-foreground`}>
+    <div className="min-h-screen bg-background text-foreground">
       {children}
       <Toaster position="top-center" />
     </div>
@@ -153,12 +143,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NegocioProvider>
-        <Casca>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-        </Casca>
-      </NegocioProvider>
+      <Casca>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+      </Casca>
     </QueryClientProvider>
   );
 }

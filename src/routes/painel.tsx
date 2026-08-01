@@ -7,12 +7,10 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CalendarDays,
-  Images,
   LayoutGrid,
-  Megaphone,
   Menu,
   Package,
   Scissors,
@@ -20,8 +18,9 @@ import {
   Users,
   UserCog,
   Wallet,
-  ExternalLink,
   LogOut,
+  Building2,
+  BarChart3,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -46,14 +45,15 @@ export const Route = createFileRoute("/painel")({
 
 const itens = [
   { to: "/painel", label: "Visão geral", icon: LayoutGrid, exact: true },
+  { to: "/painel/empresa", label: "Empresa", icon: Building2 },
   { to: "/painel/agenda", label: "Agenda", icon: CalendarDays },
   { to: "/painel/servicos", label: "Serviços", icon: Scissors },
   { to: "/painel/profissionais", label: "Profissionais", icon: UserCog },
   { to: "/painel/clientes", label: "Clientes", icon: Users },
-  { to: "/painel/galeria", label: "Galeria", icon: Images },
+  { to: "/painel/produtos", label: "Produtos", icon: Package },
   { to: "/painel/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/painel/estoque", label: "Estoque", icon: Package },
-  { to: "/painel/marketing", label: "Marketing", icon: Megaphone },
+  { to: "/painel/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/painel/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 
@@ -110,6 +110,13 @@ function PainelLayout() {
   const { session } = Route.useRouteContext();
   const navigate = useNavigate();
   const logoutFn = useServerFn(logout);
+  const tipo = session.user.productType === "barber" ? "barbearia" : "beleza";
+  const tema = tipo === "barbearia" ? "tema-barbearia" : "tema-beleza";
+
+  useEffect(() => {
+    document.documentElement.classList.add(tema);
+    return () => document.documentElement.classList.remove(tema);
+  }, [tema]);
 
   async function handleLogout() {
     await logoutFn();
@@ -118,9 +125,9 @@ function PainelLayout() {
 
   return (
     <AuthProvider session={session}>
-      <div className="min-h-screen bg-background lg:flex">
+      <div className={`${tema} min-h-screen bg-background lg:flex`}>
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-sidebar p-4 lg:flex">
-          <MarcaProduto />
+          <MarcaProduto tipo={tipo} />
           <div className="my-4 border-t" />
           <Marca session={session} />
           <div className="mt-6 flex-1">
@@ -128,11 +135,6 @@ function PainelLayout() {
           </div>
           <div className="grid gap-3">
             <p className="truncate px-1 text-xs text-muted-foreground">{session.user.email}</p>
-            <Button asChild variant="outline" size="sm" className="w-full rounded-full">
-              <Link to="/">
-                <ExternalLink className="h-3.5 w-3.5" /> Ver página pública
-              </Link>
-            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -159,11 +161,6 @@ function PainelLayout() {
                   <Navegacao onNavigate={() => setAberto(false)} />
                 </div>
                 <div className="mt-4 grid gap-3">
-                  <Button asChild variant="outline" size="sm" className="w-full rounded-full">
-                    <Link to="/">
-                      <ExternalLink className="h-3.5 w-3.5" /> Ver página pública
-                    </Link>
-                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"

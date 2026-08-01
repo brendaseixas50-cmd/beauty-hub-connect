@@ -22,6 +22,8 @@ export interface AuthUser {
   id: string;
   tenantId: string;
   tenantName: string;
+  tenantSlug: string;
+  productType: "beauty" | "barber";
   email: string;
   name: string;
   role: Role;

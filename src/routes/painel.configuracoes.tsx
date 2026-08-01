@@ -1,244 +1,123 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { Home, Store } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { useServerFn } from "@tanstack/react-start";
+import type { FormEvent } from "react";
+
+import { PageHeader } from "@/components/mvp-page";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { type FormatoAtendimento } from "@/data/demo";
-import { useDemo } from "@/data/negocio";
-import { BotaoDemo } from "@/components/acao-demo";
+import { getCompany, updateCompany } from "@/modules/mvp/server";
+import { useMvpAction } from "@/modules/mvp/use-action";
 
 export const Route = createFileRoute("/painel/configuracoes")({
-  head: () => ({
-    meta: [
-      { title: "Configurações da página pública — Lu IA Studio" },
-      {
-        name: "description",
-        content: "Personalize logo, cores, políticas, horários e formatos de atendimento.",
-      },
-      { property: "og:title", content: "Configurações da página pública — Lu IA Studio" },
-      { property: "og:description", content: "Personalize a sua página pública." },
-    ],
-  }),
-  component: Configuracoes,
+  loader: () => getCompany(),
+  head: () => ({ meta: [{ title: "Configurações — Beauty Hub Connect" }] }),
+  component: SettingsPage,
 });
 
-const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+const days = [
+  ["monday", "Segunda-feira"],
+  ["tuesday", "Terça-feira"],
+  ["wednesday", "Quarta-feira"],
+  ["thursday", "Quinta-feira"],
+  ["friday", "Sexta-feira"],
+  ["saturday", "Sábado"],
+  ["sunday", "Domingo"],
+] as const;
 
-function Configuracoes() {
-  const { estudio } = useDemo();
-  const [formato, setFormato] = useState<FormatoAtendimento>(estudio.formatoAtendimento);
+function SettingsPage() {
+  const company = Route.useLoaderData();
+  const save = useServerFn(updateCompany);
+  const action = useMvpAction();
+  const hours = (company.business_hours ?? {}) as Record<string, string>;
 
-  const [domicilioAtivo, setDomicilioAtivo] = useState(estudio.domicilioAtivo);
-  const [dias, setDias] = useState<string[]>(estudio.diasDomicilio);
-
-  const toggleDia = (d: string) =>
-    setDias((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const businessHours = Object.fromEntries(days.map(([key]) => [key, String(form.get(key))]));
+    await action.run(
+      () =>
+        save({
+          data: {
+            name: company.name,
+            productType: String(form.get("productType")) as "beauty" | "barber",
+            document: company.document ?? "",
+            email: company.email ?? "",
+            phone: company.phone ?? "",
+            whatsapp: company.whatsapp ?? "",
+            instagram: company.instagram ?? "",
+            description: company.description ?? "",
+            addressLine: company.address_line ?? "",
+            city: company.city ?? "",
+            state: company.state ?? "",
+            postalCode: company.postal_code ?? "",
+            businessHours,
+          },
+        }),
+      "Configurações atualizadas.",
+    );
+  }
 
   return (
     <div className="max-w-3xl">
-      <p className="text-eyebrow">Sua marca</p>
-      <h1 className="mt-1 text-3xl">Configurações da página pública</h1>
-
-      <Bloco titulo="Identidade">
-        <div className="flex flex-wrap items-center gap-4">
-          <img
-            src={estudio.fotoPerfil}
-            alt="Logo atual"
-            loading="lazy"
-            width={800}
-            height={800}
-            className="h-16 w-16 rounded-full object-cover"
-          />
-          <BotaoDemo
-            variant="outline"
-            size="sm"
-            className="rounded-full"
-            mensagem="Envio de logo disponível em breve"
-            descricao="O upload de imagens entra junto com o armazenamento de arquivos."
-          >
-            Alterar logo
-          </BotaoDemo>
-        </div>
-        <Campo label="Nome do espaço" valor={estudio.nome} />
-        <Campo label="Nome da profissional" valor={estudio.profissional} />
-        <div className="grid gap-2">
-          <Label>Descrição</Label>
-          <Textarea rows={4} defaultValue={estudio.descricao} />
-        </div>
-        <div className="grid gap-2">
-          <Label>Cores da página</Label>
-          <div className="flex gap-2">
-            {["bg-primary", "bg-accent", "bg-gold", "bg-secondary"].map((c) => (
-              <span key={c} className={`h-9 w-9 rounded-full border ${c}`} />
-            ))}
-            <BotaoDemo
-              variant="outline"
-              size="sm"
-              className="rounded-full"
-              mensagem="Paleta personalizada aplicada"
-              descricao="No protótipo o tema segue o tipo de negócio escolhido no cadastro."
+      <PageHeader
+        eyebrow="Preferências"
+        title="Configurações"
+        description="Defina o produto utilizado e os horários padrão da empresa."
+      />
+      <form onSubmit={onSubmit} className="mt-8 grid gap-6">
+        <Card className="grid gap-4 p-6">
+          <h2 className="text-xl">Produto</h2>
+          <div className="grid gap-2">
+            <Label htmlFor="productType">Experiência da empresa</Label>
+            <select
+              id="productType"
+              name="productType"
+              defaultValue={company.product_type}
+              className="h-10 rounded-md border bg-background px-3 text-sm"
             >
-              Personalizar
-            </BotaoDemo>
+              <option value="beauty">LuBeauty Pro</option>
+              <option value="barber">LuBarber Pro</option>
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Esta escolha altera a identidade visual e os textos do painel sem afetar os dados.
+            </p>
           </div>
-        </div>
-      </Bloco>
+        </Card>
 
-      <Bloco titulo="Banner">
-        <img
-          src={estudio.banner}
-          alt="Banner atual"
-          loading="lazy"
-          width={1600}
-          height={900}
-          className="h-36 w-full rounded-xl object-cover"
-        />
-        <BotaoDemo
-          variant="outline"
-          size="sm"
-          className="w-fit rounded-full"
-          mensagem="Troca de banner disponível em breve"
-        >
-          Trocar banner
-        </BotaoDemo>
-      </Bloco>
-
-      <Bloco titulo="Contato e localização">
-        <Campo label="Endereço" valor={estudio.endereco} />
-        <Campo label="Região atendida" valor={estudio.regiao} />
-        <Campo label="WhatsApp" valor={estudio.whatsapp} />
-        <Campo label="Instagram" valor={estudio.instagram} />
-      </Bloco>
-
-      <Bloco titulo="Formato de atendimento">
-        <div className="grid gap-2">
-          {(
-            [
-              { id: "espaco", label: "Somente no meu espaço", icon: Store },
-              { id: "domicilio", label: "Somente em domicílio", icon: Home },
-              { id: "ambos", label: "Atendimento no meu espaço e em domicílio", icon: Store },
-            ] as const
-          ).map((op) => (
-            <button
-              key={op.id}
-              onClick={() => setFormato(op.id)}
-              className={`flex items-center gap-3 rounded-xl border p-4 text-left text-sm ${
-                formato === op.id ? "border-primary bg-secondary" : "border-border"
-              }`}
-            >
-              <op.icon className="h-4 w-4 text-muted-foreground" />
-              {op.label}
-            </button>
+        <Card className="grid gap-4 p-6">
+          <h2 className="text-xl">Horários de funcionamento</h2>
+          <p className="text-sm text-muted-foreground">
+            Use o formato 09:00-18:00 ou escreva “closed” para dias fechados.
+          </p>
+          {days.map(([key, label]) => (
+            <div key={key} className="grid items-center gap-2 sm:grid-cols-[12rem_minmax(0,1fr)]">
+              <Label htmlFor={key}>{label}</Label>
+              <Input id={key} name={key} defaultValue={hours[key] ?? "closed"} required />
+            </div>
           ))}
-        </div>
+        </Card>
 
-        {formato === "ambos" && (
-          <label className="flex items-center justify-between rounded-xl border p-4">
-            <span className="min-w-0 pr-4 text-sm">
-              Exibir a opção de atendimento em domicílio na página pública
-              <span className="mt-0.5 block text-xs text-muted-foreground">
-                Quando desativado, a cliente vê apenas o atendimento no espaço.
-              </span>
-            </span>
-            <Switch checked={domicilioAtivo} onCheckedChange={setDomicilioAtivo} />
-          </label>
-        )}
+        <Card className="grid gap-3 p-6">
+          <h2 className="text-xl">Segurança da conta</h2>
+          <p className="text-sm text-muted-foreground">
+            Para trocar a senha, solicite um link seguro de recuperação no e-mail da conta.
+          </p>
+          <Button asChild variant="outline" className="w-fit">
+            <Link to="/recuperar-senha">Alterar senha</Link>
+          </Button>
+        </Card>
 
-        <Separator />
-
-        <Campo label="Nome ou identificação do local de atendimento" valor={estudio.nomeLocal} />
-        <Campo label="Endereço ou região do espaço" valor={estudio.endereco} />
-
-        {(formato === "domicilio" || (formato === "ambos" && domicilioAtivo)) && (
-          <>
-            <div className="grid gap-2">
-              <Label>Cidades, bairros ou regiões atendidas em domicílio</Label>
-              <Textarea rows={2} defaultValue={estudio.regioesDomicilio} />
-            </div>
-            <div className="grid gap-2">
-              <Label>Observações sobre atendimento externo</Label>
-              <Textarea rows={3} defaultValue={estudio.observacoesDomicilio} />
-            </div>
-            <div className="grid gap-2">
-              <Label>Dias disponíveis para atendimento em domicílio</Label>
-              <div className="flex flex-wrap gap-2">
-                {DIAS.map((d) => (
-                  <button key={d} onClick={() => toggleDia(d)}>
-                    <Badge
-                      variant={dias.includes(d) ? "default" : "outline"}
-                      className="rounded-full px-3 py-1.5 font-normal"
-                    >
-                      {d}
-                    </Badge>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-      </Bloco>
-
-      <Bloco titulo="Horários de funcionamento">
-        {estudio.horarios.map((h) => (
-          <div key={h.dia} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
-            <Label className="min-w-0">{h.dia}</Label>
-            <Input defaultValue={h.horario} className="w-36 shrink-0" />
-          </div>
-        ))}
-      </Bloco>
-
-      <Bloco titulo="Políticas">
-        {estudio.politicas.map((p) => (
-          <div key={p.titulo} className="grid gap-2">
-            <Label>{p.titulo}</Label>
-            <Textarea rows={3} defaultValue={p.texto} />
-          </div>
-        ))}
-      </Bloco>
-
-      <div className="mt-8 flex flex-wrap gap-2">
-        <Button asChild variant="outline" className="rounded-full">
-          <Link to="/">Pré-visualizar página pública</Link>
-        </Button>
-        <Button asChild variant="ghost" className="rounded-full">
-          <Link to="/cadastro">Refazer escolha do negócio</Link>
-        </Button>
-      </div>
-
-      <div className="sticky bottom-4 mt-6">
-        <BotaoDemo
-          className="w-full rounded-full"
+        <Button
+          type="submit"
           size="lg"
-          mensagem="Configurações salvas"
-          descricao="No protótipo as alterações valem apenas nesta sessão."
+          className="w-full rounded-full sm:w-fit"
+          disabled={action.pending}
         >
-          Salvar alterações
-        </BotaoDemo>
-      </div>
-    </div>
-  );
-}
-
-function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode }) {
-  return (
-    <Card className="mt-6 gap-4 p-6">
-      <h2 className="text-2xl">{titulo}</h2>
-      {children}
-    </Card>
-  );
-}
-
-function Campo({ label, valor }: { label: string; valor: string }) {
-  return (
-    <div className="grid gap-2">
-      <Label>{label}</Label>
-      <Input defaultValue={valor} />
+          {action.pending ? "Salvando…" : "Salvar configurações"}
+        </Button>
+      </form>
     </div>
   );
 }

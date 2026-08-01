@@ -1,219 +1,251 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, TrendingUp } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { useServerFn } from "@tanstack/react-start";
+import { Pencil, Plus } from "lucide-react";
+import { useState, type FormEvent } from "react";
+
+import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useDemo } from "@/data/negocio";
-import { brl } from "@/data/demo";
-import { DialogoInfo } from "@/components/dialogo-info";
-import { avisoDemo } from "@/components/acao-demo";
+import { Textarea } from "@/components/ui/textarea";
+import type { Professional } from "@/modules/mvp/domain";
+import { deleteProfessional, listProfessionals, saveProfessional } from "@/modules/mvp/server";
+import { useMvpAction } from "@/modules/mvp/use-action";
 
 export const Route = createFileRoute("/painel/profissionais")({
-  head: () => ({
-    meta: [
-      { title: "Profissionais — Painel Lu IA Studio" },
-      {
-        name: "description",
-        content: "Equipe, agenda individual, comissão e desempenho de cada profissional.",
-      },
-      { property: "og:title", content: "Profissionais — Painel Lu IA Studio" },
-      { property: "og:description", content: "Equipe, comissões e desempenho individual." },
-    ],
-  }),
-  component: Profissionais,
+  loader: () => listProfessionals(),
+  head: () => ({ meta: [{ title: "Profissionais — Beauty Hub Connect" }] }),
+  component: ProfessionalsPage,
 });
 
-function Profissionais() {
-  const { profissionais, rotulos, fila, financeiro } = useDemo();
-  const maior = Math.max(...profissionais.map((p) => p.faturamento));
+function ProfessionalsPage() {
+  const professionals = Route.useLoaderData();
+  const remove = useServerFn(deleteProfessional);
+  const action = useMvpAction();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
+  const [editing, setEditing] = useState<Professional | null>();
+  const term = search.trim().toLowerCase();
+  const filtered = professionals.filter((professional) => {
+    const matches =
+      !term ||
+      [professional.name, professional.specialty, professional.email].some((value) =>
+        value?.toLowerCase().includes(term),
+      );
+    return (
+      matches &&
+      (status === "all" || (status === "active" ? professional.active : !professional.active))
+    );
+  });
 
   return (
     <div>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
-        <div className="min-w-0">
-          <p className="text-eyebrow">{rotulos.equipeEyebrow}</p>
-          <h1 className="mt-1 text-3xl">{rotulos.profissionais}</h1>
-        </div>
-        <DialogoInfo
-          gatilho={
-            <Button className="shrink-0 rounded-full">
-              <Plus className="h-4 w-4" /> Novo {rotulos.profissionalSingular.toLowerCase()}
-            </Button>
-          }
-          titulo={`Novo ${rotulos.profissionalSingular.toLowerCase()}`}
-          descricao="Cadastro demonstrativo da equipe."
-          acao="Salvar"
-          onAcao={() => avisoDemo("Profissional adicionado à equipe")}
+      <PageHeader
+        eyebrow="Equipe"
+        title="Profissionais"
+        description="Organize a equipe, comissões e disponibilidade na agenda."
+        action={
+          <Button className="rounded-full" onClick={() => setEditing(null)}>
+            <Plus className="h-4 w-4" /> Novo profissional
+          </Button>
+        }
+      />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <SearchField value={search} onChange={setSearch} placeholder="Buscar profissional" />
+        <select
+          aria-label="Filtrar profissionais"
+          value={status}
+          onChange={(event) => setStatus(event.target.value as typeof status)}
+          className="h-10 rounded-md border bg-background px-3 text-sm"
         >
-          <div className="grid gap-1.5">
-            <Label htmlFor="prof-nome">Nome</Label>
-            <Input id="prof-nome" placeholder="Nome completo" />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="prof-funcao">Função</Label>
-            <Input id="prof-funcao" placeholder="Ex.: Barbeiro sênior" />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="prof-com">Comissão (%)</Label>
-            <Input id="prof-com" type="number" defaultValue={40} />
-          </div>
-        </DialogoInfo>
+          <option value="all">Todos</option>
+          <option value="active">Ativos</option>
+          <option value="inactive">Inativos</option>
+        </select>
       </div>
 
-      <div className="mt-8 grid gap-3">
-        {profissionais.map((p) => (
-          <Card key={p.id} className="gap-4 p-5">
-            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4">
-              <img
-                src={p.foto}
-                alt={p.nome}
-                loading="lazy"
-                width={800}
-                height={800}
-                className="h-14 w-14 rounded-full object-cover"
-              />
-              <div className="min-w-0">
-                <p className="truncate text-lg">{p.nome}</p>
-                <p className="truncate text-sm text-muted-foreground">{p.funcao}</p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {p.especialidades.map((e) => (
-                    <Badge key={e} variant="outline" className="rounded-full font-normal">
-                      {e}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <Badge variant="secondary" className="shrink-0 rounded-full font-normal">
-                {p.comissao}% comissão
-              </Badge>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <p className="text-eyebrow">Atendimentos no mês</p>
-                <p className="font-display text-2xl">{p.atendimentosMes}</p>
-              </div>
-              <div>
-                <p className="text-eyebrow">Faturamento gerado</p>
-                <p className="font-display text-2xl">{brl(p.faturamento)}</p>
-              </div>
-              <div>
-                <p className="text-eyebrow">Comissão estimada</p>
-                <p className="font-display text-2xl">
-                  {brl(Math.round((p.faturamento * p.comissao) / 100))}
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">
-                <TrendingUp className="h-3.5 w-3.5" /> Desempenho relativo
-              </div>
-              <Progress value={(p.faturamento / maior) * 100} />
-            </div>
-
-            <div>
-              <p className="text-eyebrow">Agenda individual de hoje</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {p.agendaHoje.length === 0 ? (
-                  <span className="text-sm text-muted-foreground">Sem atendimentos hoje</span>
-                ) : (
-                  p.agendaHoje.map((a) => (
-                    <span key={a} className="rounded-md bg-secondary px-2 py-1 text-xs">
-                      {a}
-                    </span>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <DialogoInfo
-                gatilho={
-                  <Button variant="outline" size="sm" className="rounded-full">
-                    Ver agenda
-                  </Button>
-                }
-                titulo={`Agenda de ${p.nome}`}
-                descricao={`${p.funcao} · ${p.agendaHoje.length} atendimentos hoje`}
-                acao="Abrir novo horário"
-                onAcao={() => avisoDemo(`Horário extra liberado para ${p.nome}`)}
-              >
-                {p.agendaHoje.length === 0 ? (
-                  <p className="text-muted-foreground">Nenhum atendimento marcado hoje.</p>
-                ) : (
-                  p.agendaHoje.map((a) => (
-                    <p key={a} className="rounded-lg border px-3 py-2">
-                      {a}
-                    </p>
-                  ))
-                )}
-              </DialogoInfo>
-              <DialogoInfo
-                gatilho={
-                  <Button variant="outline" size="sm" className="rounded-full">
-                    Editar comissão
-                  </Button>
-                }
-                titulo={`Comissão de ${p.nome}`}
-                descricao="Percentual aplicado sobre o faturamento gerado."
-                acao="Salvar comissão"
-                onAcao={() => avisoDemo(`Comissão de ${p.nome} atualizada`)}
-              >
-                <div className="grid gap-1.5">
-                  <Label htmlFor={`com-${p.id}`}>Percentual (%)</Label>
-                  <Input id={`com-${p.id}`} type="number" defaultValue={p.comissao} />
-                </div>
-                <p className="text-muted-foreground">
-                  Comissão atual estimada: {brl(Math.round((p.faturamento * p.comissao) / 100))}
-                </p>
-              </DialogoInfo>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      <div className="mt-10 grid gap-6 lg:grid-cols-2">
-        <section>
-          <h2 className="mb-3 text-2xl">Fila de atendimento</h2>
-          <Card className="divide-y p-0">
-            {fila.map((f) => (
-              <div key={f.cliente} className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 px-5 py-4">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{f.cliente}</p>
+      {filtered.length === 0 ? (
+        <EmptyState
+          title="Nenhum profissional encontrado"
+          description="Cadastre quem atende na empresa para usar a agenda."
+        />
+      ) : (
+        <div className="mt-6 grid gap-3 lg:grid-cols-2">
+          {filtered.map((professional) => (
+            <Card key={professional.id} className="gap-4 p-5">
+              <div className="flex items-start gap-4">
+                <span
+                  className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-sm font-semibold text-white"
+                  style={{ backgroundColor: professional.color }}
+                >
+                  {initials(professional.name)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-lg font-medium">{professional.name}</p>
                   <p className="truncate text-sm text-muted-foreground">
-                    {f.servico} · {f.profissional}
+                    {professional.specialty || "Especialidade não informada"}
                   </p>
                 </div>
-                <Badge variant="outline" className="shrink-0 rounded-full font-normal">
-                  {f.espera}
+                <Badge variant={professional.active ? "secondary" : "outline"}>
+                  {professional.active ? "Ativo" : "Inativo"}
                 </Badge>
               </div>
-            ))}
-          </Card>
-        </section>
-
-        <section>
-          <h2 className="mb-3 text-2xl">Rateio do faturamento</h2>
-          <Card className="gap-3 p-5">
-            <p className="text-sm text-muted-foreground">
-              Faturamento do mês:{" "}
-              <span className="font-medium text-foreground">{brl(financeiro.mes)}</span>
-            </p>
-            {profissionais.map((p) => (
-              <div key={p.id} className="flex items-center justify-between text-sm">
-                <span className="truncate">{p.nome}</span>
-                <span className="shrink-0 font-medium">
-                  {Math.round((p.faturamento / financeiro.mes) * 100)}%
-                </span>
+              <div className="grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
+                <p>Comissão: {Number(professional.commission_percent).toLocaleString("pt-BR")}%</p>
+                <p>{professional.phone || professional.email || "Sem contato"}</p>
               </div>
-            ))}
-          </Card>
-        </section>
-      </div>
+              {professional.notes ? (
+                <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                  {professional.notes}
+                </p>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => setEditing(professional)}>
+                  <Pencil className="h-4 w-4" /> Editar
+                </Button>
+                <DeleteButton
+                  label={professional.name}
+                  pending={action.pending}
+                  onConfirm={() =>
+                    void action.run(
+                      () => remove({ data: { id: professional.id } }),
+                      "Profissional excluído.",
+                    )
+                  }
+                />
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+      {editing !== undefined ? (
+        <ProfessionalDialog professional={editing} onClose={() => setEditing(undefined)} />
+      ) : null}
     </div>
   );
+}
+
+function ProfessionalDialog({
+  professional,
+  onClose,
+}: {
+  professional: Professional | null;
+  onClose: () => void;
+}) {
+  const save = useServerFn(saveProfessional);
+  const action = useMvpAction();
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const ok = await action.run(
+      () =>
+        save({
+          data: {
+            id: professional?.id,
+            name: String(form.get("name")),
+            specialty: String(form.get("specialty")),
+            email: String(form.get("email")),
+            phone: String(form.get("phone")),
+            commissionPercent: Number(form.get("commissionPercent")),
+            color: String(form.get("color")),
+            active: form.get("active") === "on",
+            notes: String(form.get("notes")),
+          },
+        }),
+      professional ? "Profissional atualizado." : "Profissional cadastrado.",
+    );
+    if (ok) onClose();
+  }
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{professional ? "Editar profissional" : "Novo profissional"}</DialogTitle>
+          <DialogDescription>
+            Este cadastro ficará disponível para criação de agendamentos.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={onSubmit} className="grid gap-4">
+          <Field label="Nome" name="name" defaultValue={professional?.name ?? ""} required />
+          <Field
+            label="Especialidade"
+            name="specialty"
+            defaultValue={professional?.specialty ?? ""}
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Telefone" name="phone" defaultValue={professional?.phone ?? ""} />
+            <Field
+              label="E-mail"
+              name="email"
+              type="email"
+              defaultValue={professional?.email ?? ""}
+            />
+            <Field
+              label="Comissão (%)"
+              name="commissionPercent"
+              type="number"
+              min={0}
+              max={100}
+              step="0.01"
+              defaultValue={professional?.commission_percent ?? 0}
+            />
+            <Field
+              label="Cor na agenda"
+              name="color"
+              type="color"
+              defaultValue={professional?.color ?? "#8b5e67"}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="notes">Observações</Label>
+            <Textarea id="notes" name="notes" defaultValue={professional?.notes ?? ""} />
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input name="active" type="checkbox" defaultChecked={professional?.active ?? true} />{" "}
+            Profissional ativo
+          </label>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={action.pending}>
+              {action.pending ? "Salvando…" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Field({
+  label,
+  name,
+  ...props
+}: { label: string; name: string } & React.ComponentProps<typeof Input>) {
+  return (
+    <div className="grid gap-2">
+      <Label htmlFor={name}>{label}</Label>
+      <Input id={name} name={name} {...props} />
+    </div>
+  );
+}
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 }

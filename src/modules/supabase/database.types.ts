@@ -12,7 +12,10 @@ export type Database = {
         Row: {
           client_id: string;
           created_at: string;
+          ends_at: string;
           id: string;
+          notes: string | null;
+          price_cents: number;
           professional_id: string;
           service_id: string;
           starts_at: string;
@@ -23,7 +26,10 @@ export type Database = {
         Insert: {
           client_id: string;
           created_at?: string;
+          ends_at: string;
           id?: string;
+          notes?: string | null;
+          price_cents?: number;
           professional_id: string;
           service_id: string;
           starts_at: string;
@@ -34,7 +40,10 @@ export type Database = {
         Update: {
           client_id?: string;
           created_at?: string;
+          ends_at?: string;
           id?: string;
+          notes?: string | null;
+          price_cents?: number;
           professional_id?: string;
           service_id?: string;
           starts_at?: string;
@@ -51,10 +60,10 @@ export type Database = {
             referencedColumns: ["id", "tenant_id"];
           },
           {
-            foreignKeyName: "appointments_professional_id_tenant_id_fkey";
+            foreignKeyName: "appointments_professional_tenant_fk";
             columns: ["professional_id", "tenant_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "professionals";
             referencedColumns: ["id", "tenant_id"];
           },
           {
@@ -75,7 +84,11 @@ export type Database = {
       };
       clients: {
         Row: {
+          active: boolean;
+          address: string | null;
+          birth_date: string | null;
           created_at: string;
+          email: string | null;
           id: string;
           name: string;
           notes: string | null;
@@ -84,7 +97,11 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          active?: boolean;
+          address?: string | null;
+          birth_date?: string | null;
           created_at?: string;
+          email?: string | null;
           id?: string;
           name: string;
           notes?: string | null;
@@ -93,7 +110,11 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          active?: boolean;
+          address?: string | null;
+          birth_date?: string | null;
           created_at?: string;
+          email?: string | null;
           id?: string;
           name?: string;
           notes?: string | null;
@@ -104,6 +125,235 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "clients_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      financial_entries: {
+        Row: {
+          amount_cents: number;
+          appointment_id: string | null;
+          category: string | null;
+          created_at: string;
+          description: string;
+          due_date: string;
+          entry_type: string;
+          id: string;
+          notes: string | null;
+          paid_at: string | null;
+          payment_method: string | null;
+          status: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          amount_cents: number;
+          appointment_id?: string | null;
+          category?: string | null;
+          created_at?: string;
+          description: string;
+          due_date?: string;
+          entry_type: string;
+          id?: string;
+          notes?: string | null;
+          paid_at?: string | null;
+          payment_method?: string | null;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount_cents?: number;
+          appointment_id?: string | null;
+          category?: string | null;
+          created_at?: string;
+          description?: string;
+          due_date?: string;
+          entry_type?: string;
+          id?: string;
+          notes?: string | null;
+          paid_at?: string | null;
+          payment_method?: string | null;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "financial_entries_appointment_id_tenant_id_fkey";
+            columns: ["appointment_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "appointments";
+            referencedColumns: ["id", "tenant_id"];
+          },
+          {
+            foreignKeyName: "financial_entries_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      inventory_movements: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          id: string;
+          notes: string | null;
+          product_id: string;
+          quantity_delta: number;
+          reason: string;
+          tenant_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          notes?: string | null;
+          product_id: string;
+          quantity_delta: number;
+          reason: string;
+          tenant_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          notes?: string | null;
+          product_id?: string;
+          quantity_delta?: number;
+          reason?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_product_id_tenant_id_fkey";
+            columns: ["product_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id", "tenant_id"];
+          },
+          {
+            foreignKeyName: "inventory_movements_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      products: {
+        Row: {
+          active: boolean;
+          category: string | null;
+          cost_cents: number;
+          created_at: string;
+          description: string | null;
+          id: string;
+          minimum_stock: number;
+          name: string;
+          sale_price_cents: number;
+          sku: string | null;
+          stock_quantity: number;
+          tenant_id: string;
+          unit: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          category?: string | null;
+          cost_cents?: number;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          minimum_stock?: number;
+          name: string;
+          sale_price_cents?: number;
+          sku?: string | null;
+          stock_quantity?: number;
+          tenant_id?: string;
+          unit?: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          category?: string | null;
+          cost_cents?: number;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          minimum_stock?: number;
+          name?: string;
+          sale_price_cents?: number;
+          sku?: string | null;
+          stock_quantity?: number;
+          tenant_id?: string;
+          unit?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "products_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      professionals: {
+        Row: {
+          active: boolean;
+          color: string;
+          commission_percent: number;
+          created_at: string;
+          email: string | null;
+          id: string;
+          name: string;
+          notes: string | null;
+          phone: string | null;
+          specialty: string | null;
+          tenant_id: string;
+          updated_at: string;
+          user_id: string | null;
+        };
+        Insert: {
+          active?: boolean;
+          color?: string;
+          commission_percent?: number;
+          created_at?: string;
+          email?: string | null;
+          id?: string;
+          name: string;
+          notes?: string | null;
+          phone?: string | null;
+          specialty?: string | null;
+          tenant_id?: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          active?: boolean;
+          color?: string;
+          commission_percent?: number;
+          created_at?: string;
+          email?: string | null;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          phone?: string | null;
+          specialty?: string | null;
+          tenant_id?: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "professionals_tenant_id_fkey";
             columns: ["tenant_id"];
             isOneToOne: false;
             referencedRelation: "tenants";
@@ -149,7 +399,9 @@ export type Database = {
       services: {
         Row: {
           active: boolean;
+          category: string | null;
           created_at: string;
+          description: string | null;
           duration_minutes: number;
           id: string;
           name: string;
@@ -159,7 +411,9 @@ export type Database = {
         };
         Insert: {
           active?: boolean;
+          category?: string | null;
           created_at?: string;
+          description?: string | null;
           duration_minutes: number;
           id?: string;
           name: string;
@@ -169,7 +423,9 @@ export type Database = {
         };
         Update: {
           active?: boolean;
+          category?: string | null;
           created_at?: string;
+          description?: string | null;
           duration_minutes?: number;
           id?: string;
           name?: string;
@@ -189,31 +445,70 @@ export type Database = {
       };
       tenants: {
         Row: {
+          address_line: string | null;
+          business_hours: Json;
+          city: string | null;
           created_at: string;
+          description: string | null;
+          document: string | null;
+          email: string | null;
           id: string;
+          instagram: string | null;
           name: string;
           owner_id: string;
+          phone: string | null;
+          postal_code: string | null;
+          product_type: string;
           slug: string;
+          state: string | null;
           status: string;
+          timezone: string;
           updated_at: string;
+          whatsapp: string | null;
         };
         Insert: {
+          address_line?: string | null;
+          business_hours?: Json;
+          city?: string | null;
           created_at?: string;
+          description?: string | null;
+          document?: string | null;
+          email?: string | null;
           id?: string;
+          instagram?: string | null;
           name: string;
           owner_id: string;
+          phone?: string | null;
+          postal_code?: string | null;
+          product_type?: string;
           slug: string;
+          state?: string | null;
           status?: string;
+          timezone?: string;
           updated_at?: string;
+          whatsapp?: string | null;
         };
         Update: {
+          address_line?: string | null;
+          business_hours?: Json;
+          city?: string | null;
           created_at?: string;
+          description?: string | null;
+          document?: string | null;
+          email?: string | null;
           id?: string;
+          instagram?: string | null;
           name?: string;
           owner_id?: string;
+          phone?: string | null;
+          postal_code?: string | null;
+          product_type?: string;
           slug?: string;
+          state?: string | null;
           status?: string;
+          timezone?: string;
           updated_at?: string;
+          whatsapp?: string | null;
         };
         Relationships: [];
       };

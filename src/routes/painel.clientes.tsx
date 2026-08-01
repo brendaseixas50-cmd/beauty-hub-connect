@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Plus, Search } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { useServerFn } from "@tanstack/react-start";
+import { Pencil, Plus } from "lucide-react";
+import { useState, type FormEvent } from "react";
+
+import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -14,237 +14,202 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { useDemo } from "@/data/negocio";
-import { DialogoInfo } from "@/components/dialogo-info";
-import { avisoDemo } from "@/components/acao-demo";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import type { Client } from "@/modules/mvp/domain";
+import { deleteClient, listClients, saveClient } from "@/modules/mvp/server";
+import { useMvpAction } from "@/modules/mvp/use-action";
 
 export const Route = createFileRoute("/painel/clientes")({
-  head: () => ({
-    meta: [
-      { title: "Clientes — Painel Lu IA Studio" },
-      {
-        name: "description",
-        content: "Ficha das clientes com histórico, aniversário e observações.",
-      },
-      { property: "og:title", content: "Clientes — Painel Lu IA Studio" },
-      {
-        property: "og:description",
-        content: "Histórico, contatos e observações das suas clientes.",
-      },
-    ],
-  }),
-  component: Clientes,
+  loader: () => listClients(),
+  head: () => ({ meta: [{ title: "Clientes — Beauty Hub Connect" }] }),
+  component: ClientsPage,
 });
 
-type Cliente = ReturnType<typeof useDemo>["clientes"][number];
-
-function Clientes() {
-  const { clientes, rotulos, servicos } = useDemo();
-  const feminino = rotulos.clientes.toLowerCase().includes("cadastradas");
-  const [busca, setBusca] = useState("");
-  const [novos, setNovos] = useState<Cliente[]>([]);
-
-  const todos = [...novos, ...clientes];
-  const termo = busca.trim().toLowerCase();
-  const lista = termo
-    ? todos.filter(
-        (c) => c.nome.toLowerCase().includes(termo) || c.telefone.toLowerCase().includes(termo),
-      )
-    : todos;
+function ClientsPage() {
+  const clients = Route.useLoaderData();
+  const remove = useServerFn(deleteClient);
+  const action = useMvpAction();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
+  const [editing, setEditing] = useState<Client | null>();
+  const term = search.trim().toLowerCase();
+  const filtered = clients.filter((client) => {
+    const matchesSearch =
+      !term ||
+      [client.name, client.phone, client.email].some((value) =>
+        value?.toLowerCase().includes(term),
+      );
+    const matchesStatus =
+      status === "all" || (status === "active" ? client.active : !client.active);
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
-        <div className="min-w-0">
-          <p className="text-eyebrow">Relacionamento</p>
-          <h1 className="mt-1 text-3xl">Clientes</h1>
-        </div>
-        <NovoCliente feminino={feminino} onCriar={(c) => setNovos((l) => [c, ...l])} />
-      </div>
+      <PageHeader
+        eyebrow="Relacionamento"
+        title="Clientes"
+        description="Cadastre e mantenha os dados dos seus clientes."
+        action={
+          <Button className="rounded-full" onClick={() => setEditing(null)}>
+            <Plus className="h-4 w-4" /> Novo cliente
+          </Button>
+        }
+      />
 
-      <div className="relative mt-6 max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar por nome ou telefone"
-          className="pl-9"
-          aria-label="Buscar cliente"
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por nome, telefone ou e-mail"
         />
+        <select
+          aria-label="Filtrar clientes"
+          value={status}
+          onChange={(event) => setStatus(event.target.value as typeof status)}
+          className="h-10 rounded-md border bg-background px-3 text-sm sm:mb-0"
+        >
+          <option value="all">Todos</option>
+          <option value="active">Ativos</option>
+          <option value="inactive">Inativos</option>
+        </select>
       </div>
 
-      <div className="mt-6 grid gap-3">
-        {lista.length === 0 && (
-          <Card className="p-5 text-sm text-muted-foreground">
-            Nenhum resultado para “{busca}”.
-          </Card>
-        )}
-        {lista.map((c) => (
-          <Card key={c.id} className="gap-3 p-5">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
-              <div className="min-w-0">
-                <p className="truncate text-lg">{c.nome}</p>
-                <p className="text-sm text-muted-foreground">{c.telefone}</p>
-              </div>
-              <Badge variant="secondary" className="shrink-0 rounded-full font-normal">
-                {c.historico} atendimentos
-              </Badge>
-            </div>
-            <div className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-              <Info label="Aniversário" valor={c.aniversario} />
-              <Info label="Endereço" valor={c.endereco} />
-              <Info label="Último atendimento" valor={c.ultimo} />
-              <Info label="Próximo agendamento" valor={c.proximo} />
-            </div>
-            <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-              {c.observacoes}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <DialogoInfo
-                gatilho={
-                  <Button variant="outline" size="sm" className="rounded-full">
-                    Ver histórico
-                  </Button>
-                }
-                titulo={`Histórico de ${c.nome}`}
-                descricao={`${c.historico} atendimentos registrados`}
-                acao="Enviar mensagem"
-                onAcao={() => avisoDemo(`Mensagem preparada para ${c.nome}`)}
-              >
-                {servicos.slice(0, 4).map((s, i) => (
-                  <div
-                    key={s.id}
-                    className="flex items-center justify-between gap-4 rounded-lg border px-3 py-2"
-                  >
-                    <span className="min-w-0 truncate">{s.nome}</span>
-                    <span className="shrink-0 text-muted-foreground">
-                      {["12/07", "26/06", "05/06", "18/05"][i]}
-                    </span>
-                  </div>
-                ))}
-                <p className="text-muted-foreground">
-                  Último: {c.ultimo} · Próximo: {c.proximo}
-                </p>
-              </DialogoInfo>
-              <DialogoInfo
-                gatilho={
-                  <Button variant="outline" size="sm" className="rounded-full">
-                    Editar ficha
-                  </Button>
-                }
-                titulo={`Ficha de ${c.nome}`}
-                descricao="Alterações ficam apenas nesta sessão de demonstração."
-                acao="Salvar ficha"
-                onAcao={() => avisoDemo("Ficha atualizada")}
-              >
-                <Campo rotulo="Telefone" valor={c.telefone} />
-                <Campo rotulo="Aniversário" valor={c.aniversario} />
-                <Campo rotulo="Endereço" valor={c.endereco} />
-                <div className="grid gap-1.5">
-                  <Label htmlFor={`obs-${c.id}`}>Observações</Label>
-                  <Textarea id={`obs-${c.id}`} defaultValue={c.observacoes} />
+      {filtered.length === 0 ? (
+        <EmptyState
+          title="Nenhum cliente encontrado"
+          description="Cadastre seu primeiro cliente ou altere os filtros."
+        />
+      ) : (
+        <div className="mt-6 grid gap-3 lg:grid-cols-2">
+          {filtered.map((client) => (
+            <Card key={client.id} className="gap-4 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-medium">{client.name}</p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {client.phone || client.email || "Sem contato informado"}
+                  </p>
                 </div>
-              </DialogoInfo>
-            </div>
-          </Card>
-        ))}
-      </div>
+                <Badge variant={client.active ? "secondary" : "outline"}>
+                  {client.active ? "Ativo" : "Inativo"}
+                </Badge>
+              </div>
+              <div className="grid gap-1 text-sm text-muted-foreground">
+                {client.email ? <p>E-mail: {client.email}</p> : null}
+                {client.birth_date ? (
+                  <p>
+                    Nascimento:{" "}
+                    {new Date(client.birth_date + "T12:00:00").toLocaleDateString("pt-BR")}
+                  </p>
+                ) : null}
+                {client.address ? <p>Endereço: {client.address}</p> : null}
+                {client.notes ? <p className="rounded-lg bg-muted p-3">{client.notes}</p> : null}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => setEditing(client)}>
+                  <Pencil className="h-4 w-4" /> Editar
+                </Button>
+                <DeleteButton
+                  label={client.name}
+                  pending={action.pending}
+                  onConfirm={() =>
+                    void action.run(() => remove({ data: { id: client.id } }), "Cliente excluído.")
+                  }
+                />
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {editing !== undefined ? (
+        <ClientDialog client={editing} onClose={() => setEditing(undefined)} />
+      ) : null}
     </div>
   );
 }
 
-function NovoCliente({ feminino, onCriar }: { feminino: boolean; onCriar: (c: Cliente) => void }) {
-  const [aberto, setAberto] = useState(false);
-  const [nome, setNome] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [observacoes, setObservacoes] = useState("");
+function ClientDialog({ client, onClose }: { client: Client | null; onClose: () => void }) {
+  const save = useServerFn(saveClient);
+  const action = useMvpAction();
 
-  const salvar = () => {
-    const nomeFinal = nome.trim() || (feminino ? "Nova cliente" : "Novo cliente");
-    onCriar({
-      id: `novo-${Date.now()}`,
-      nome: nomeFinal,
-      telefone: telefone.trim() || "(00) 00000-0000",
-      aniversario: "—",
-      endereco: "—",
-      ultimo: "—",
-      proximo: "—",
-      historico: 0,
-      observacoes: observacoes.trim() || "Cadastro criado no modo demonstração.",
-    });
-    setAberto(false);
-    setNome("");
-    setTelefone("");
-    setObservacoes("");
-    avisoDemo(`${nomeFinal} adicionado à lista`);
-  };
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const ok = await action.run(
+      () =>
+        save({
+          data: {
+            id: client?.id,
+            name: String(form.get("name")),
+            phone: String(form.get("phone")),
+            email: String(form.get("email")),
+            birthDate: String(form.get("birthDate")),
+            address: String(form.get("address")),
+            notes: String(form.get("notes")),
+            active: form.get("active") === "on",
+          },
+        }),
+      client ? "Cliente atualizado." : "Cliente cadastrado.",
+    );
+    if (ok) onClose();
+  }
 
   return (
-    <Dialog open={aberto} onOpenChange={setAberto}>
-      <DialogTrigger asChild>
-        <Button className="shrink-0 rounded-full">
-          <Plus className="h-4 w-4" /> {feminino ? "Nova cliente" : "Novo cliente"}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{feminino ? "Nova cliente" : "Novo cliente"}</DialogTitle>
-          <DialogDescription>
-            Cadastro demonstrativo — os dados ficam apenas nesta sessão.
-          </DialogDescription>
+          <DialogTitle>{client ? "Editar cliente" : "Novo cliente"}</DialogTitle>
+          <DialogDescription>Os dados serão salvos na empresa atual.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4">
-          <div className="grid gap-1.5">
-            <Label htmlFor="cli-nome">Nome</Label>
-            <Input id="cli-nome" value={nome} onChange={(e) => setNome(e.target.value)} />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="cli-tel">Telefone</Label>
-            <Input
-              id="cli-tel"
-              value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
-              placeholder="(11) 90000-0000"
+        <form onSubmit={onSubmit} className="grid gap-4">
+          <Field label="Nome" name="name" defaultValue={client?.name ?? ""} required />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Telefone" name="phone" defaultValue={client?.phone ?? ""} />
+            <Field label="E-mail" name="email" type="email" defaultValue={client?.email ?? ""} />
+            <Field
+              label="Data de nascimento"
+              name="birthDate"
+              type="date"
+              defaultValue={client?.birth_date ?? ""}
             />
+            <Field label="Endereço" name="address" defaultValue={client?.address ?? ""} />
           </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="cli-obs">Observações</Label>
-            <Textarea
-              id="cli-obs"
-              value={observacoes}
-              onChange={(e) => setObservacoes(e.target.value)}
-            />
+          <div className="grid gap-2">
+            <Label htmlFor="notes">Observações</Label>
+            <Textarea id="notes" name="notes" defaultValue={client?.notes ?? ""} />
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" className="rounded-full" onClick={() => setAberto(false)}>
-            Cancelar
-          </Button>
-          <Button className="rounded-full" onClick={salvar}>
-            Salvar
-          </Button>
-        </DialogFooter>
+          <label className="flex items-center gap-2 text-sm">
+            <input name="active" type="checkbox" defaultChecked={client?.active ?? true} /> Cliente
+            ativo
+          </label>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={action.pending}>
+              {action.pending ? "Salvando…" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
 }
 
-function Campo({ rotulo, valor }: { rotulo: string; valor: string }) {
+function Field({
+  label,
+  name,
+  ...props
+}: { label: string; name: string } & React.ComponentProps<typeof Input>) {
   return (
-    <div className="grid gap-1.5">
-      <Label>{rotulo}</Label>
-      <Input defaultValue={valor} />
+    <div className="grid gap-2">
+      <Label htmlFor={name}>{label}</Label>
+      <Input id={name} name={name} {...props} />
     </div>
-  );
-}
-
-function Info({ label, valor }: { label: string; valor: string }) {
-  return (
-    <p className="min-w-0">
-      <span className="text-muted-foreground">{label}: </span>
-      {valor}
-    </p>
   );
 }
