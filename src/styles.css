@@ -218,6 +218,31 @@
   text-transform: none;
 }
 
+.product-mark {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  box-shadow: 0 8px 24px color-mix(in oklab, var(--color-primary) 22%, transparent);
+}
+
+.product-wordmark {
+  color: var(--color-foreground);
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.tema-barbearia .product-mark {
+  border: 1px solid color-mix(in oklab, var(--color-primary) 60%, white);
+  border-radius: 0.375rem;
+}
+
+.tema-barbearia .product-wordmark {
+  font-family: "Oswald", "Karla", ui-sans-serif, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

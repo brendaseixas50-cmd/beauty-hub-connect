@@ -26,6 +26,7 @@ import {
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { TrocaTipo } from "@/components/troca-tipo";
+import { MarcaProduto } from "@/components/marca-produto";
 import { useDemo, useNegocio } from "@/data/negocio";
 import { getSession, logout } from "@/modules/auth/server";
 import { AuthProvider } from "@/modules/auth/context";
@@ -108,7 +109,7 @@ function Marca() {
 
 function PainelLayout() {
   const [aberto, setAberto] = useState(false);
-  const { tipo } = useNegocio();
+  const { marca } = useNegocio();
   const { session } = Route.useRouteContext();
   const navigate = useNavigate();
   const logoutFn = useServerFn(logout);
@@ -122,6 +123,8 @@ function PainelLayout() {
     <AuthProvider session={session}>
       <div className="min-h-screen bg-background lg:flex">
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-sidebar p-4 lg:flex">
+          <MarcaProduto />
+          <div className="my-4 border-t" />
           <Marca />
           <div className="mt-6 flex-1">
             <Navegacao />
@@ -191,9 +194,7 @@ function PainelLayout() {
 
           <div className="border-b bg-secondary/40 px-4 py-2 text-center text-xs text-muted-foreground">
             Modo demonstração · experiência{" "}
-            <span className="font-medium text-foreground">
-              {tipo === "barbearia" ? "Barbearia" : "Beleza"}
-            </span>
+            <span className="font-medium text-foreground">{marca.nome}</span>
           </div>
 
           <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-10">

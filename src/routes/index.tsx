@@ -21,7 +21,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { brl } from "@/data/demo";
-import { useDemo } from "@/data/negocio";
+import { useDemo, useNegocio } from "@/data/negocio";
 import { linkInstagram, linkWhatsapp } from "@/lib/contato";
 
 export const Route = createFileRoute("/")({
@@ -45,6 +45,7 @@ export const Route = createFileRoute("/")({
 
 function PaginaPublica() {
   const { estudio, servicos, categorias, galeria, avaliacoes } = useDemo();
+  const { marca } = useNegocio();
 
   const [categoria, setCategoria] = useState<string>("Todos");
 
@@ -273,7 +274,7 @@ function PaginaPublica() {
         )}
 
         <footer className="mt-14 border-t pt-6 text-center text-xs text-muted-foreground">
-          {estudio.nome} · Plataforma Lu IA Studio
+          {estudio.nome} · Página criada com {marca.nome} por Lu IA Studio
         </footer>
       </main>
 

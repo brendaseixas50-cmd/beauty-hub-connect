@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MarcaProduto } from "@/components/marca-produto";
 import { getSession, login } from "@/modules/auth/server";
 
 const searchSchema = z.object({
@@ -54,6 +55,9 @@ function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-secondary/40 px-4 py-12">
       <Card className="w-full max-w-md border-border/70 shadow-xl">
         <CardHeader className="space-y-4 text-center">
+          <div className="flex justify-center">
+            <MarcaProduto />
+          </div>
           <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground">
             <LockKeyhole className="h-5 w-5" />
           </div>

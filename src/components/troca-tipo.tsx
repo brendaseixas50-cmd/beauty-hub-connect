@@ -1,13 +1,14 @@
 import { Scissors, Sparkles } from "lucide-react";
 import { useNegocio } from "@/data/negocio";
+import { marcasProduto } from "@/products/catalog";
 
 /** Controle visual de demonstração para alternar entre as duas experiências. */
 export function TrocaTipo({ compacto = false }: { compacto?: boolean }) {
   const { tipo, definirTipo } = useNegocio();
 
   const opcoes = [
-    { id: "beleza" as const, label: "Beleza", icon: Sparkles },
-    { id: "barbearia" as const, label: "Barbearia", icon: Scissors },
+    { id: "beleza" as const, label: marcasProduto.beleza.nome, icon: Sparkles },
+    { id: "barbearia" as const, label: marcasProduto.barbearia.nome, icon: Scissors },
   ];
 
   return (

@@ -2,8 +2,9 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { dadosBelezaPorArea, type AreaBeleza } from "./demo";
 import { dadosBarbearia } from "./demo-barbearia";
 import type { DadosNegocio } from "./tipos";
+import { marcaDoProduto, type MarcaProduto, type TipoNegocio } from "@/products/catalog";
 
-export type TipoNegocio = "beleza" | "barbearia";
+export type { TipoNegocio } from "@/products/catalog";
 
 type Perfil = { tipo: TipoNegocio; area: AreaBeleza | null; concluido: boolean };
 
@@ -13,6 +14,7 @@ type Contexto = Perfil & {
   concluir: () => void;
   reiniciar: () => void;
   dados: DadosNegocio;
+  marca: MarcaProduto;
   tema: string;
 };
 
@@ -24,6 +26,7 @@ const NegocioContext = createContext<Contexto | null>(null);
 export function NegocioProvider({ children }: { children: ReactNode }) {
   const [perfil, setPerfil] = useState<Perfil>(PADRAO);
 
+  // Preferência visual anônima. Nunca é usada para autorizar acesso a um produto.
   // Lido após a hidratação para não divergir do HTML renderizado no servidor.
   useEffect(() => {
     try {
@@ -48,6 +51,7 @@ export function NegocioProvider({ children }: { children: ReactNode }) {
     return {
       ...perfil,
       dados,
+      marca: marcaDoProduto(perfil.tipo),
       tema: perfil.tipo === "barbearia" ? "tema-barbearia" : "tema-beleza",
       definirTipo: (tipo) =>
         salvar({ ...perfil, tipo, area: tipo === "barbearia" ? null : perfil.area }),

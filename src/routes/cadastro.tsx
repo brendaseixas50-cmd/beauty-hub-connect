@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNegocio, type TipoNegocio } from "@/data/negocio";
 import { areasBeleza } from "@/data/demo";
+import { marcasProduto } from "@/products/catalog";
 
 export const Route = createFileRoute("/cadastro")({
   head: () => ({
@@ -13,12 +14,12 @@ export const Route = createFileRoute("/cadastro")({
       {
         name: "description",
         content:
-          "Primeiro passo do cadastro: escolha entre Beleza ou Barbearia e receba um painel e uma página pública já no estilo do seu negócio.",
+          "Primeiro passo do cadastro: escolha entre LuBeauty ou LuBarber e conheça a experiência visual de cada produto.",
       },
       { property: "og:title", content: "Escolha o tipo do seu negócio — Lu IA Studio" },
       {
         property: "og:description",
-        content: "Duas experiências completas: Beleza e Barbearia.",
+        content: "Duas identidades próprias: LuBeauty e LuBarber.",
       },
     ],
   }),
@@ -51,18 +52,18 @@ function Cadastro() {
           ativo={tipo === "beleza"}
           onClick={() => definirTipo("beleza")}
           icone={Sparkles}
-          titulo="Beleza"
-          texto="Painel claro, elegante e acolhedor. Para unhas, cabelos, cílios, estética, massoterapia, depilação e maquiagem."
-          exemplo="Tons claros, rosé e bege"
+          titulo={marcasProduto.beleza.nome}
+          texto={marcasProduto.beleza.descricao}
+          exemplo={marcasProduto.beleza.estilo}
         />
         <Opcao
           id="barbearia"
           ativo={tipo === "barbearia"}
           onClick={() => definirTipo("barbearia")}
           icone={Scissors}
-          titulo="Barbearia"
-          texto="Painel escuro, forte e profissional. Vários barbeiros, fila de atendimento, combos e assinaturas."
-          exemplo="Preto, grafite, madeira e cobre"
+          titulo={marcasProduto.barbearia.nome}
+          texto={marcasProduto.barbearia.descricao}
+          exemplo={marcasProduto.barbearia.estilo}
         />
       </div>
 
