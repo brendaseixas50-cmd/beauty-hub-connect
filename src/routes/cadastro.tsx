@@ -1,25 +1,25 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Check, Scissors, Sparkles } from "lucide-react";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { ArrowLeft, MailCheck } from "lucide-react";
+import { useState, type FormEvent } from "react";
+
+import { MarcaProduto } from "@/components/marca-produto";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useNegocio, type TipoNegocio } from "@/data/negocio";
-import { areasBeleza } from "@/data/demo";
-import { marcasProduto } from "@/products/catalog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { getSession, signup } from "@/modules/auth/server";
 
 export const Route = createFileRoute("/cadastro")({
+  beforeLoad: async () => {
+    if (await getSession()) throw redirect({ to: "/painel" });
+  },
   head: () => ({
     meta: [
-      { title: "Criar conta — escolha o tipo do seu negócio | Lu IA Studio" },
+      { title: "Criar conta — Lu IA Studio" },
       {
         name: "description",
-        content:
-          "Primeiro passo do cadastro: escolha entre LuBeauty ou LuBarber e conheça a experiência visual de cada produto.",
-      },
-      { property: "og:title", content: "Escolha o tipo do seu negócio — Lu IA Studio" },
-      {
-        property: "og:description",
-        content: "Duas identidades próprias: LuBeauty e LuBarber.",
+        content: "Crie sua conta profissional com confirmação segura por e-mail.",
       },
     ],
   }),
@@ -27,151 +27,150 @@ export const Route = createFileRoute("/cadastro")({
 });
 
 function Cadastro() {
-  const { tipo, area, concluido, definirTipo, definirArea, concluir } = useNegocio();
-  const navigate = useNavigate();
+  const signupFn = useServerFn(signup);
+  const [error, setError] = useState<string>();
+  const [pending, setPending] = useState(false);
+  const [emailEnviado, setEmailEnviado] = useState<string>();
 
-  const escolhido = concluido || area !== null;
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError(undefined);
+    const form = new FormData(event.currentTarget);
+    const email = String(form.get("email"));
 
-  const finalizar = () => {
-    concluir();
-    void navigate({ to: "/painel" });
-  };
+    try {
+      await signupFn({
+        data: {
+          fullName: String(form.get("fullName")),
+          businessName: String(form.get("businessName")),
+          email,
+          password: String(form.get("password")),
+          passwordConfirmation: String(form.get("passwordConfirmation")),
+        },
+      });
+      setEmailEnviado(email);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível criar sua conta.");
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-10 sm:py-16">
-      <p className="text-eyebrow">Lu IA Studio · cadastro</p>
-      <h1 className="mt-2 text-4xl">Qual é o tipo do seu negócio?</h1>
-      <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
-        Esta escolha é obrigatória e define todo o visual do painel, os exemplos de serviços e o
-        modelo da sua página pública.
-      </p>
-
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        <Opcao
-          id="beleza"
-          ativo={tipo === "beleza"}
-          onClick={() => definirTipo("beleza")}
-          icone={Sparkles}
-          titulo={marcasProduto.beleza.nome}
-          texto={marcasProduto.beleza.descricao}
-          exemplo={marcasProduto.beleza.estilo}
-        />
-        <Opcao
-          id="barbearia"
-          ativo={tipo === "barbearia"}
-          onClick={() => definirTipo("barbearia")}
-          icone={Scissors}
-          titulo={marcasProduto.barbearia.nome}
-          texto={marcasProduto.barbearia.descricao}
-          exemplo={marcasProduto.barbearia.estilo}
-        />
-      </div>
-
-      {tipo === "beleza" && (
-        <section className="mt-12">
-          <p className="text-eyebrow">Etapa 2</p>
-          <h2 className="mt-1 text-3xl">Qual é a sua principal área de atuação?</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Isso muda apenas os exemplos de serviços e textos demonstrativos — o tema de beleza
-            continua o mesmo.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {areasBeleza.map((a) => (
-              <button
-                key={a.id}
-                onClick={() => definirArea(a.id)}
-                className={`rounded-full border px-4 py-2 text-sm transition-colors ${
-                  area === a.id
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card text-muted-foreground hover:bg-secondary"
-                }`}
-              >
-                {a.label}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {tipo === "barbearia" && (
-        <Card className="mt-12 gap-3 p-6">
-          <p className="text-eyebrow">Etapa 2</p>
-          <h2 className="text-2xl">Sua barbearia já vem preparada para</h2>
-          <div className="flex flex-wrap gap-2">
-            {[
-              "Vários barbeiros",
-              "Agenda individual",
-              "Qualquer profissional disponível",
-              "Fila de atendimento",
-              "Encaixes",
-              "Combos",
-              "Assinaturas mensais",
-              "Fidelidade",
-              "Comissão por barbeiro",
-              "Venda de produtos",
-              "Desempenho por barbeiro",
-            ].map((r) => (
-              <Badge key={r} variant="outline" className="rounded-full font-normal">
-                {r}
-              </Badge>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-        <Button
-          size="lg"
-          className="rounded-full px-8"
-          disabled={tipo === "beleza" && !escolhido}
-          onClick={finalizar}
+    <main className="min-h-screen bg-secondary/40 px-4 py-10">
+      <div className="mx-auto w-full max-w-lg">
+        <Link
+          to="/"
+          className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
-          Criar meu painel <ArrowRight className="h-4 w-4" />
-        </Button>
-        <Button asChild variant="outline" size="lg" className="rounded-full px-8">
-          <Link to="/">Ver modelo de página pública</Link>
-        </Button>
-      </div>
+          <ArrowLeft className="h-4 w-4" /> Voltar
+        </Link>
 
-      {tipo === "beleza" && !escolhido && (
-        <p className="mt-3 text-sm text-muted-foreground">
-          Selecione a sua principal área de atuação para continuar.
-        </p>
-      )}
-    </div>
+        <Card className="border-border/70 shadow-xl">
+          <CardHeader className="space-y-4 text-center">
+            <div className="flex justify-center">
+              <MarcaProduto />
+            </div>
+            {emailEnviado ? (
+              <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground">
+                <MailCheck className="h-5 w-5" />
+              </div>
+            ) : null}
+            <div>
+              <CardTitle className="text-2xl">
+                {emailEnviado ? "Confirme seu e-mail" : "Crie sua conta profissional"}
+              </CardTitle>
+              <CardDescription className="mt-2">
+                {emailEnviado
+                  ? `Enviamos um link de confirmação para ${emailEnviado}.`
+                  : "Seus dados e os dados da sua empresa ficarão isolados em um ambiente próprio."}
+              </CardDescription>
+            </div>
+          </CardHeader>
+
+          <CardContent>
+            {emailEnviado ? (
+              <div className="grid gap-4 text-center">
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Abra o link recebido para ativar sua conta. Depois da confirmação, sua sessão será
+                  criada e você poderá entrar no painel.
+                </p>
+                <Button asChild>
+                  <Link to="/login" search={{ redirect: "/painel" }}>
+                    Ir para o login
+                  </Link>
+                </Button>
+              </div>
+            ) : (
+              <form className="grid gap-4" onSubmit={handleSubmit}>
+                <Campo id="fullName" label="Nome completo" autoComplete="name" />
+                <Campo id="businessName" label="Nome da empresa" autoComplete="organization" />
+                <Campo id="email" label="E-mail" type="email" autoComplete="email" />
+                <Campo
+                  id="password"
+                  label="Senha"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                />
+                <Campo
+                  id="passwordConfirmation"
+                  label="Confirmar senha"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Use pelo menos 8 caracteres, incluindo letras e números.
+                </p>
+                {error ? (
+                  <p role="alert" className="text-sm text-destructive">
+                    {error}
+                  </p>
+                ) : null}
+                <Button type="submit" size="lg" disabled={pending}>
+                  {pending ? "Criando conta…" : "Criar conta"}
+                </Button>
+                <p className="text-center text-sm text-muted-foreground">
+                  Já possui uma conta?{" "}
+                  <Link to="/login" search={{ redirect: "/painel" }} className="text-primary">
+                    Entrar
+                  </Link>
+                </p>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </main>
   );
 }
 
-function Opcao({
-  ativo,
-  onClick,
-  icone: Icone,
-  titulo,
-  texto,
-  exemplo,
+function Campo({
+  id,
+  label,
+  type = "text",
+  autoComplete,
+  minLength,
 }: {
-  id: TipoNegocio;
-  ativo: boolean;
-  onClick: () => void;
-  icone: typeof Sparkles;
-  titulo: string;
-  texto: string;
-  exemplo: string;
+  id: string;
+  label: string;
+  type?: "text" | "email" | "password";
+  autoComplete: string;
+  minLength?: number;
 }) {
   return (
-    <Card
-      onClick={onClick}
-      className={`cursor-pointer gap-3 p-6 transition-shadow hover:shadow-md ${
-        ativo ? "ring-2 ring-ring" : ""
-      }`}
-    >
-      <div className="flex items-center justify-between">
-        <Icone className="h-5 w-5 text-primary" />
-        {ativo && <Check className="h-4 w-4 text-primary" />}
-      </div>
-      <h2 className="text-2xl">{titulo}</h2>
-      <p className="text-sm leading-relaxed text-muted-foreground">{texto}</p>
-      <p className="text-eyebrow">{exemplo}</p>
-    </Card>
+    <div className="grid gap-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        name={id}
+        type={type}
+        autoComplete={autoComplete}
+        minLength={minLength}
+        required
+      />
+    </div>
   );
 }

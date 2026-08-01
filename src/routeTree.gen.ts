@@ -14,6 +14,9 @@ import { Route as AgendarRouteImport } from './routes/agendar'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PainelRouteImport } from './routes/painel'
+import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
+import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as PainelIndexRouteImport } from './routes/painel.index'
 import { Route as PainelAgendaRouteImport } from './routes/painel.agenda'
 import { Route as PainelClientesRouteImport } from './routes/painel.clientes'
@@ -49,6 +52,21 @@ const LoginRoute = LoginRouteImport.update({
 const PainelRoute = PainelRouteImport.update({
   id: '/painel',
   path: '/painel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
+  id: '/recuperar-senha',
+  path: '/recuperar-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
+  id: '/redefinir-senha',
+  path: '/redefinir-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PainelIndexRoute = PainelIndexRouteImport.update({
@@ -113,6 +131,9 @@ export interface FileRoutesByFullPath {
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
   '/painel': typeof PainelRouteWithChildren
+  '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
@@ -130,6 +151,9 @@ export interface FileRoutesByTo {
   '/agendar': typeof AgendarRoute
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
@@ -149,6 +173,9 @@ export interface FileRoutesById {
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
   '/painel': typeof PainelRouteWithChildren
+  '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
@@ -169,6 +196,9 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/login'
     | '/painel'
+    | '/recuperar-senha'
+    | '/redefinir-senha'
+    | '/auth/confirm'
     | '/painel/agenda'
     | '/painel/clientes'
     | '/painel/configuracoes'
@@ -186,6 +216,9 @@ export interface FileRouteTypes {
     | '/agendar'
     | '/cadastro'
     | '/login'
+    | '/recuperar-senha'
+    | '/redefinir-senha'
+    | '/auth/confirm'
     | '/painel/agenda'
     | '/painel/clientes'
     | '/painel/configuracoes'
@@ -204,6 +237,9 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/login'
     | '/painel'
+    | '/recuperar-senha'
+    | '/redefinir-senha'
+    | '/auth/confirm'
     | '/painel/agenda'
     | '/painel/clientes'
     | '/painel/configuracoes'
@@ -223,6 +259,9 @@ export interface RootRouteChildren {
   CadastroRoute: typeof CadastroRoute
   LoginRoute: typeof LoginRoute
   PainelRoute: typeof PainelRouteWithChildren
+  RecuperarSenhaRoute: typeof RecuperarSenhaRoute
+  RedefinirSenhaRoute: typeof RedefinirSenhaRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
   ServicoIdRoute: typeof ServicoIdRoute
 }
 
@@ -261,6 +300,27 @@ declare module '@tanstack/react-router' {
       path: '/painel'
       fullPath: '/painel'
       preLoaderRoute: typeof PainelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recuperar-senha': {
+      id: '/recuperar-senha'
+      path: '/recuperar-senha'
+      fullPath: '/recuperar-senha'
+      preLoaderRoute: typeof RecuperarSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/redefinir-senha': {
+      id: '/redefinir-senha'
+      path: '/redefinir-senha'
+      fullPath: '/redefinir-senha'
+      preLoaderRoute: typeof RedefinirSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/painel/': {
@@ -378,6 +438,9 @@ const rootRouteChildren: RootRouteChildren = {
   CadastroRoute: CadastroRoute,
   LoginRoute: LoginRoute,
   PainelRoute: PainelRouteWithChildren,
+  RecuperarSenhaRoute: RecuperarSenhaRoute,
+  RedefinirSenhaRoute: RedefinirSenhaRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
   ServicoIdRoute: ServicoIdRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,18 +1,25 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { LockKeyhole } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 
+import { MarcaProduto } from "@/components/marca-produto";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MarcaProduto } from "@/components/marca-produto";
 import { getSession, login } from "@/modules/auth/server";
 
+const safeRedirect = z
+  .string()
+  .startsWith("/")
+  .refine((value) => !value.startsWith("//"))
+  .catch("/painel");
+
 const searchSchema = z.object({
-  redirect: z.string().startsWith("/").catch("/painel"),
+  redirect: safeRedirect,
+  message: z.string().max(240).optional().catch(undefined),
 });
 
 export const Route = createFileRoute("/login")({
@@ -20,6 +27,7 @@ export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
     if (await getSession()) throw redirect({ to: "/painel" });
   },
+  head: () => ({ meta: [{ title: "Entrar — Lu IA Studio" }] }),
   component: LoginPage,
 });
 
@@ -64,39 +72,49 @@ function LoginPage() {
           <div>
             <CardTitle className="text-2xl">Acesso profissional</CardTitle>
             <CardDescription className="mt-2">
-              Entre para acessar o painel privado da sua empresa.
+              Entre com a conta confirmada da sua empresa.
             </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
           <form className="grid gap-4" onSubmit={handleSubmit}>
+            {search.message ? (
+              <p className="rounded-lg bg-secondary px-3 py-2 text-sm" role="status">
+                {search.message}
+              </p>
+            ) : null}
             <div className="grid gap-2">
               <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                defaultValue="demo@beautyhub.local"
-                required
-              />
+              <Input id="email" name="email" type="email" autoComplete="email" required />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Senha</Label>
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="password">Senha</Label>
+                <Link to="/recuperar-senha" className="text-xs text-primary hover:underline">
+                  Esqueci minha senha
+                </Link>
+              </div>
               <Input
                 id="password"
                 name="password"
                 type="password"
-                defaultValue="demo123"
-                minLength={6}
+                autoComplete="current-password"
                 required
               />
             </div>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {error ? (
+              <p role="alert" className="text-sm text-destructive">
+                {error}
+              </p>
+            ) : null}
             <Button type="submit" className="w-full" disabled={pending}>
               {pending ? "Entrando…" : "Entrar no painel"}
             </Button>
-            <p className="text-center text-xs text-muted-foreground">
-              Ambiente demonstrativo: use os dados já preenchidos.
+            <p className="text-center text-sm text-muted-foreground">
+              Ainda não possui conta?{" "}
+              <Link to="/cadastro" className="text-primary hover:underline">
+                Criar conta
+              </Link>
             </p>
           </form>
         </CardContent>

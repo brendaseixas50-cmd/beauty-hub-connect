@@ -25,11 +25,10 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { TrocaTipo } from "@/components/troca-tipo";
 import { MarcaProduto } from "@/components/marca-produto";
-import { useDemo, useNegocio } from "@/data/negocio";
 import { getSession, logout } from "@/modules/auth/server";
 import { AuthProvider } from "@/modules/auth/context";
+import type { Session } from "@/modules/auth/domain";
 
 export const Route = createFileRoute("/painel")({
   beforeLoad: async ({ location }) => {
@@ -85,23 +84,22 @@ function Navegacao({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function Marca() {
-  const { estudio } = useDemo();
-  const { rotulos } = useDemo();
+function Marca({ session }: { session: Session }) {
+  const initials = session.user.tenantName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <img
-        src={estudio.fotoPerfil}
-        alt={estudio.profissional}
-        width={800}
-        height={800}
-        className="h-10 w-10 shrink-0 rounded-full object-cover"
-      />
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+        {initials}
+      </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{estudio.nome}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {estudio.profissional} · {rotulos.profissionalSingular}
-        </p>
+        <p className="truncate text-sm font-medium">{session.user.tenantName}</p>
+        <p className="truncate text-xs text-muted-foreground">{session.user.name}</p>
       </div>
     </div>
   );
@@ -109,7 +107,6 @@ function Marca() {
 
 function PainelLayout() {
   const [aberto, setAberto] = useState(false);
-  const { marca } = useNegocio();
   const { session } = Route.useRouteContext();
   const navigate = useNavigate();
   const logoutFn = useServerFn(logout);
@@ -125,23 +122,16 @@ function PainelLayout() {
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-sidebar p-4 lg:flex">
           <MarcaProduto />
           <div className="my-4 border-t" />
-          <Marca />
+          <Marca session={session} />
           <div className="mt-6 flex-1">
             <Navegacao />
           </div>
           <div className="grid gap-3">
             <p className="truncate px-1 text-xs text-muted-foreground">{session.user.email}</p>
-            <div>
-              <p className="text-eyebrow mb-1.5">Demonstração do tipo</p>
-              <TrocaTipo />
-            </div>
             <Button asChild variant="outline" size="sm" className="w-full rounded-full">
               <Link to="/">
                 <ExternalLink className="h-3.5 w-3.5" /> Ver página pública
               </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="w-full rounded-full">
-              <Link to="/cadastro">Refazer escolha do negócio</Link>
             </Button>
             <Button
               variant="ghost"
@@ -155,9 +145,8 @@ function PainelLayout() {
         </aside>
 
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
-            <Marca />
-            <TrocaTipo compacto />
+          <header className="sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
+            <Marca session={session} />
             <Sheet open={aberto} onOpenChange={setAberto}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon" aria-label="Abrir menu">
@@ -170,14 +159,10 @@ function PainelLayout() {
                   <Navegacao onNavigate={() => setAberto(false)} />
                 </div>
                 <div className="mt-4 grid gap-3">
-                  <TrocaTipo />
                   <Button asChild variant="outline" size="sm" className="w-full rounded-full">
                     <Link to="/">
                       <ExternalLink className="h-3.5 w-3.5" /> Ver página pública
                     </Link>
-                  </Button>
-                  <Button asChild variant="ghost" size="sm" className="w-full rounded-full">
-                    <Link to="/cadastro">Refazer escolha do negócio</Link>
                   </Button>
                   <Button
                     variant="ghost"
@@ -191,11 +176,6 @@ function PainelLayout() {
               </SheetContent>
             </Sheet>
           </header>
-
-          <div className="border-b bg-secondary/40 px-4 py-2 text-center text-xs text-muted-foreground">
-            Modo demonstração · experiência{" "}
-            <span className="font-medium text-foreground">{marca.nome}</span>
-          </div>
 
           <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-10">
             <Outlet />

@@ -21,6 +21,7 @@ export type Permission = (typeof permissions)[number];
 export interface AuthUser {
   id: string;
   tenantId: string;
+  tenantName: string;
   email: string;
   name: string;
   role: Role;
