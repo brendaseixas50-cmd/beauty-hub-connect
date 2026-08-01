@@ -2,7 +2,7 @@
 
 SaaS multiempresa da Lu IA Studio para profissionais de beleza e barbearias. A aplicação usa React 19, TanStack Start, Supabase Auth/Postgres e Vercel.
 
-## Funcionalidades de infraestrutura
+## MVP operacional
 
 - Cadastro com confirmação obrigatória por e-mail;
 - login e logout reais pelo Supabase Auth;
@@ -11,6 +11,13 @@ SaaS multiempresa da Lu IA Studio para profissionais de beleza e barbearias. A a
 - provisionamento automático de uma empresa e perfil proprietário por cadastro;
 - painel protegido no servidor;
 - isolamento multiempresa por Row Level Security;
+- cadastro e edição da empresa;
+- CRUD de profissionais, clientes, serviços e produtos;
+- agenda com criação, edição, filtros, status e bloqueio de conflito de horários;
+- estoque com saldo atual e histórico imutável de entradas e saídas;
+- financeiro com receitas, despesas, status e exportação CSV;
+- dashboard e relatórios calculados com dados reais;
+- experiências LuBeauty Pro e LuBarber Pro vinculadas à empresa no banco;
 - nenhuma chave `service_role` no código ou no navegador.
 
 ## Desenvolvimento local
@@ -47,6 +54,9 @@ O schema oficial está em `supabase/migrations/`. As migrations criam:
 - `clients`;
 - `services`;
 - `appointments`;
+- `professionals`;
+- `products` e `inventory_movements`;
+- `financial_entries`;
 - triggers de provisionamento e atualização;
 - funções internas no schema não exposto `private`;
 - índices, permissões e políticas RLS.
@@ -71,3 +81,9 @@ bun run build
 - `/auth/confirm` — troca segura do código/token enviado por e-mail;
 - `/redefinir-senha` — definição da nova senha;
 - `/painel` — área autenticada.
+- `/painel/empresa` — cadastro da empresa;
+- `/painel/profissionais`, `/clientes` e `/servicos` — operação comercial;
+- `/painel/agenda` — agendamentos;
+- `/painel/produtos` e `/estoque` — catálogo e inventário;
+- `/painel/financeiro` e `/relatorios` — gestão financeira e indicadores;
+- `/painel/configuracoes` — produto e horários da empresa.
