@@ -1,9 +1,11 @@
-import { type AuthError, type EmailOtpType } from "@supabase/supabase-js";
+import { type AuthError, type EmailOtpType, type SupabaseClient } from "@supabase/supabase-js";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestUrl } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
+import { createSupabaseAdminClient } from "@/modules/supabase/admin-client";
+import type { Database } from "@/modules/supabase/database.types";
 import {
   getPermissionsForRole,
   roles,
@@ -12,6 +14,7 @@ import {
   type Role,
   type Session,
 } from "./domain";
+import { signupAttemptFingerprint } from "./signup-rate-limit";
 
 const passwordSchema = z
   .string()
@@ -21,7 +24,7 @@ const passwordSchema = z
   .regex(/[0-9]/, "Inclua pelo menos um número na senha.");
 
 const loginSchema = z.object({
-  email: z.string().trim().email("Informe um e-mail válido."),
+  email: z.string().trim().email("Informe um e-mail válido.").max(254),
   password: z.string().min(1, "Informe a senha."),
 });
 
@@ -30,7 +33,7 @@ const signupSchema = z
     productType: z.enum(["beauty", "barber"]),
     fullName: z.string().trim().min(2, "Informe seu nome completo.").max(120),
     businessName: z.string().trim().min(2, "Informe o nome da empresa.").max(120),
-    email: z.string().trim().email("Informe um e-mail válido."),
+    email: z.string().trim().email("Informe um e-mail válido.").max(254),
     password: passwordSchema,
     passwordConfirmation: z.string(),
   })
@@ -40,7 +43,7 @@ const signupSchema = z
   });
 
 const emailSchema = z.object({
-  email: z.string().trim().email("Informe um e-mail válido."),
+  email: z.string().trim().email("Informe um e-mail válido.").max(254),
 });
 
 const switchCompanySchema = z.object({ tenantId: z.string().uuid() });
@@ -92,8 +95,9 @@ function authErrorMessage(error: AuthError, fallback: string): string {
   }
 }
 
-export async function resolveSession(): Promise<Session | null> {
-  const supabase = createSupabaseServerClient();
+export async function resolveSession(
+  supabase: SupabaseClient<Database> = createSupabaseServerClient(),
+): Promise<Session | null> {
   const {
     data: { user },
     error: userError,
@@ -165,7 +169,7 @@ export async function resolveSession(): Promise<Session | null> {
   };
 }
 
-export const getSession = createServerFn({ method: "GET" }).handler(resolveSession);
+export const getSession = createServerFn({ method: "GET" }).handler(() => resolveSession());
 
 export const login = createServerFn({ method: "POST" })
   .validator(loginSchema)
@@ -178,7 +182,7 @@ export const login = createServerFn({ method: "POST" })
 
     if (error) throw new Error(authErrorMessage(error, "Não foi possível entrar."));
 
-    const session = await resolveSession();
+    const session = await resolveSession(supabase);
     if (!session) {
       await supabase.auth.signOut({ scope: "local" });
       throw new Error("Sua conta não possui acesso ativo a uma empresa.");
@@ -193,19 +197,40 @@ export const signup = createServerFn({ method: "POST" })
     const supabase = createSupabaseServerClient();
     const email = data.email.toLowerCase();
 
-    const { data: existingAccount, error: existingError } = await supabase.auth.signInWithPassword({
-      email,
-      password: data.password,
-    });
+    const admin = createSupabaseAdminClient();
+    const { data: accountExists, error: lookupError } = await admin.rpc(
+      "check_signup_attempt_and_account",
+      {
+        request_fingerprint: signupAttemptFingerprint(email),
+        target_email: email,
+      },
+    );
 
-    if (existingAccount.session && !existingError) {
+    if (lookupError?.code === "P0001") {
+      throw new Error("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
+    }
+    if (lookupError) throw new Error("Não foi possível concluir o cadastro. Tente novamente.");
+
+    if (accountExists) {
+      const { data: existingAccount, error: existingError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password: data.password,
+        });
+
+      if (existingError || !existingAccount.session) {
+        throw new Error(
+          "Não foi possível concluir o cadastro. Confira os dados e tente novamente.",
+        );
+      }
+
       const { error: companyError } = await supabase.rpc("create_company_for_current_user", {
         company_name: data.businessName,
         selected_product: data.productType,
       });
       if (companyError) throw new Error("Não foi possível adicionar esta empresa à sua conta.");
 
-      const session = await resolveSession();
+      const session = await resolveSession(supabase);
       if (!session) throw new Error("A empresa foi criada, mas não foi possível abrir o painel.");
       return { success: true, requiresEmailConfirmation: false, session } as const;
     }
@@ -260,7 +285,7 @@ export const switchCompany = createServerFn({ method: "POST" })
       target_tenant_id: data.tenantId,
     });
     if (error) throw new Error("Você não possui acesso a esta empresa.");
-    const session = await resolveSession();
+    const session = await resolveSession(supabase);
     if (!session) throw new Error("Não foi possível trocar de empresa.");
     return session;
   });

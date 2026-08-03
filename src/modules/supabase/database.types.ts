@@ -579,6 +579,10 @@ export type Database = {
         Args: { company_name: string; selected_product: string };
         Returns: string;
       };
+      check_signup_attempt_and_account: {
+        Args: { request_fingerprint: string; target_email: string };
+        Returns: boolean;
+      };
       switch_active_tenant: {
         Args: { target_tenant_id: string };
         Returns: undefined;
