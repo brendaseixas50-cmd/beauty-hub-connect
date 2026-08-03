@@ -361,6 +361,64 @@ export type Database = {
           },
         ];
       };
+      tenant_memberships: {
+        Row: {
+          created_at: string;
+          role: string;
+          tenant_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          role?: string;
+          tenant_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          role?: string;
+          tenant_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tenant_memberships_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      user_active_tenants: {
+        Row: {
+          tenant_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          tenant_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          tenant_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_active_tenants_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -517,7 +575,18 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      create_company_for_current_user: {
+        Args: { company_name: string; selected_product: string };
+        Returns: string;
+      };
+      check_signup_attempt_and_account: {
+        Args: { request_fingerprint: string; target_email: string };
+        Returns: boolean;
+      };
+      switch_active_tenant: {
+        Args: { target_tenant_id: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;

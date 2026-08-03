@@ -9,6 +9,7 @@ type ConfirmSearch = {
   tokenHash: string | undefined;
   type: "signup" | "invite" | "magiclink" | "recovery" | "email_change" | "email" | undefined;
   next: "/painel" | "/redefinir-senha";
+  errorDescription: string | undefined;
 };
 
 export const Route = createFileRoute("/auth/confirm")({
@@ -20,8 +21,21 @@ export const Route = createFileRoute("/auth/confirm")({
         ? (search["type"] as ConfirmSearch["type"])
         : undefined,
     next: search["next"] === "/redefinir-senha" ? "/redefinir-senha" : "/painel",
+    errorDescription:
+      typeof search["error_description"] === "string"
+        ? search["error_description"].slice(0, 240)
+        : undefined,
   }),
   beforeLoad: async ({ search }) => {
+    if (search.errorDescription) {
+      throw redirect({
+        to: "/login",
+        search: {
+          redirect: "/painel",
+          message: "O link de confirmação expirou ou não é mais válido. Solicite um novo link.",
+        },
+      });
+    }
     try {
       await confirmAuth({
         data: {

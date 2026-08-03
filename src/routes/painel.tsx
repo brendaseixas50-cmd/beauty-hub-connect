@@ -25,7 +25,7 @@ import {
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { MarcaProduto } from "@/components/marca-produto";
-import { getSession, logout } from "@/modules/auth/server";
+import { getSession, logout, switchCompany } from "@/modules/auth/server";
 import { AuthProvider } from "@/modules/auth/context";
 import type { Session } from "@/modules/auth/domain";
 
@@ -105,6 +105,42 @@ function Marca({ session }: { session: Session }) {
   );
 }
 
+function CompanySwitcher({ session }: { session: Session }) {
+  const switchFn = useServerFn(switchCompany);
+  const [pending, setPending] = useState(false);
+
+  if (session.user.companies.length < 2) return null;
+
+  async function handleChange(tenantId: string) {
+    if (tenantId === session.user.tenantId) return;
+    setPending(true);
+    try {
+      await switchFn({ data: { tenantId } });
+      window.location.assign("/painel");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <label className="grid gap-1 text-xs text-muted-foreground">
+      Empresa ativa
+      <select
+        className="h-9 w-full rounded-md border bg-background px-2 text-sm text-foreground"
+        value={session.user.tenantId}
+        disabled={pending}
+        onChange={(event) => void handleChange(event.currentTarget.value)}
+      >
+        {session.user.companies.map((company) => (
+          <option key={company.tenantId} value={company.tenantId}>
+            {company.tenantName} · {company.productType === "barber" ? "LuBarber" : "LuBeauty"}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function PainelLayout() {
   const [aberto, setAberto] = useState(false);
   const { session } = Route.useRouteContext();
@@ -130,6 +166,9 @@ function PainelLayout() {
           <MarcaProduto tipo={tipo} />
           <div className="my-4 border-t" />
           <Marca session={session} />
+          <div className="mt-4">
+            <CompanySwitcher session={session} />
+          </div>
           <div className="mt-6 flex-1">
             <Navegacao />
           </div>

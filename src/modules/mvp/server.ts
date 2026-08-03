@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import { resolveSession } from "@/modules/auth/server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 import type {
   Appointment,
@@ -35,14 +36,15 @@ async function tenantContext() {
   } = await supabase.auth.getUser();
   if (userError || !user) throw new Error("Sua sessão expirou. Entre novamente.");
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("tenant_id, role")
-    .eq("id", user.id)
-    .single();
-  if (profileError || !profile) throw new Error("Sua conta não possui uma empresa ativa.");
+  const session = await resolveSession();
+  if (!session) throw new Error("Sua conta não possui uma empresa ativa.");
 
-  return { supabase, user, tenantId: profile.tenant_id, role: profile.role };
+  return {
+    supabase,
+    user,
+    tenantId: session.user.tenantId,
+    role: session.user.role,
+  };
 }
 
 function databaseError(error: { code?: string; message: string } | null, fallback: string): never {
