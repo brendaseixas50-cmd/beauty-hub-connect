@@ -10,6 +10,7 @@ import {
   getPermissionsForRole,
   roles,
   selectActiveCompany,
+  selectCompanyForProduct,
   type CompanyAccess,
   type Role,
   type Session,
@@ -26,6 +27,7 @@ const passwordSchema = z
 const loginSchema = z.object({
   email: z.string().trim().email("Informe um e-mail válido.").max(254),
   password: z.string().min(1, "Informe a senha."),
+  productType: z.enum(["beauty", "barber"]).optional(),
 });
 
 const signupSchema = z
@@ -184,10 +186,20 @@ export const login = createServerFn({ method: "POST" })
 
     if (error) throw new Error(authErrorMessage(error, "Não foi possível entrar."));
 
-    const session = await resolveSession(supabase);
+    let session = await resolveSession(supabase);
     if (!session) {
       await supabase.auth.signOut({ scope: "local" });
       throw new Error("Sua conta não possui acesso ativo a uma empresa.");
+    }
+
+    const preferredCompany = selectCompanyForProduct(session.user.companies, data.productType);
+    if (preferredCompany && preferredCompany.tenantId !== session.user.tenantId) {
+      const { error: switchError } = await supabase.rpc("switch_active_tenant", {
+        target_tenant_id: preferredCompany.tenantId,
+      });
+      if (switchError) throw new Error("Não foi possível abrir o produto escolhido.");
+      session = await resolveSession(supabase);
+      if (!session) throw new Error("Não foi possível abrir o produto escolhido.");
     }
 
     return session;

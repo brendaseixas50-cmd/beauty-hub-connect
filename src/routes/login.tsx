@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getSession, login } from "@/modules/auth/server";
+import { getSession, login, switchCompany } from "@/modules/auth/server";
 
 const safeRedirect = z
   .string()
@@ -20,12 +20,22 @@ const safeRedirect = z
 const searchSchema = z.object({
   redirect: safeRedirect,
   message: z.string().max(240).optional().catch(undefined),
+  produto: z.enum(["beauty", "barber"]).optional().catch(undefined),
 });
 
 export const Route = createFileRoute("/login")({
   validateSearch: searchSchema,
-  beforeLoad: async () => {
-    if (await getSession()) throw redirect({ to: "/painel" });
+  beforeLoad: async ({ search }) => {
+    const session = await getSession();
+    if (session) {
+      const preferred = search.produto
+        ? session.user.companies.find((company) => company.productType === search.produto)
+        : undefined;
+      if (preferred && preferred.tenantId !== session.user.tenantId) {
+        await switchCompany({ data: { tenantId: preferred.tenantId } });
+      }
+      throw redirect({ href: search.redirect });
+    }
   },
   head: () => ({ meta: [{ title: "Entrar — Lu IA Studio" }] }),
   component: LoginPage,
@@ -49,6 +59,7 @@ function LoginPage() {
         data: {
           email: String(form.get("email")),
           password: String(form.get("password")),
+          productType: search.produto,
         },
       });
       await navigate({ href: search.redirect });
@@ -112,7 +123,11 @@ function LoginPage() {
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Ainda não possui conta?{" "}
-              <Link to="/cadastro" className="text-primary hover:underline">
+              <Link
+                to="/cadastro"
+                search={{ produto: search.produto ?? "beauty" }}
+                className="inline-flex min-h-11 items-center px-2 text-primary hover:underline"
+              >
                 Criar conta
               </Link>
             </p>

@@ -9,6 +9,10 @@ import type {
   Company,
   FinancialEntry,
   InventoryMovement,
+  MarketingAction,
+  MarketingCampaign,
+  MarketingClient,
+  MarketingTemplate,
   Product,
   Professional,
   Service,
@@ -68,6 +72,7 @@ const companySchema = z.object({
     .transform((value) => value || null),
   phone: optionalShortText,
   whatsapp: optionalShortText,
+  whatsappInitialMessage: optionalText,
   instagram: optionalShortText,
   description: optionalText,
   addressLine: optionalShortText,
@@ -179,6 +184,7 @@ export const updateCompany = createServerFn({ method: "POST" })
         email: data.email,
         phone: data.phone,
         whatsapp: data.whatsapp,
+        whatsapp_initial_message: data.whatsappInitialMessage,
         instagram: data.instagram,
         description: data.description,
         address_line: data.addressLine,
@@ -311,20 +317,46 @@ const clientSchema = z.object({
     .transform((value) => value || null),
   address: optionalShortText,
   notes: optionalText,
+  contactAllowed: z.boolean(),
+  contactPreference: z.enum(["whatsapp", "phone", "email", "none"]),
   active: z.boolean(),
 });
 
 export const listClients = createServerFn({ method: "GET" }).handler(
-  async (): Promise<Client[]> => {
+  async (): Promise<MarketingClient[]> => {
     const { supabase, tenantId } = await tenantContext();
-    const { data, error } = await supabase
-      .from("clients")
-      .select("*")
-      .eq("tenant_id", tenantId)
-      .order("active", { ascending: false })
-      .order("name");
-    if (error) databaseError(error, "Não foi possível carregar os clientes.");
-    return data;
+    const [clientsResult, appointmentsResult] = await Promise.all([
+      supabase
+        .from("clients")
+        .select("*")
+        .eq("tenant_id", tenantId)
+        .order("active", { ascending: false })
+        .order("name"),
+      supabase
+        .from("appointments")
+        .select("client_id, starts_at, services(name), professionals(name)")
+        .eq("tenant_id", tenantId)
+        .in("status", ["completed", "confirmed"])
+        .order("starts_at", { ascending: false }),
+    ]);
+    if (clientsResult.error || appointmentsResult.error)
+      databaseError(
+        clientsResult.error ?? appointmentsResult.error,
+        "Não foi possível carregar os clientes.",
+      );
+    const latest = new Map<string, NonNullable<typeof appointmentsResult.data>[number]>();
+    for (const appointment of appointmentsResult.data ?? []) {
+      if (!latest.has(appointment.client_id)) latest.set(appointment.client_id, appointment);
+    }
+    return (clientsResult.data ?? []).map((client) => {
+      const appointment = latest.get(client.id);
+      return {
+        ...client,
+        lastAppointmentAt: appointment?.starts_at ?? null,
+        lastServiceName: appointment?.services?.name ?? null,
+        lastProfessionalName: appointment?.professionals?.name ?? null,
+      };
+    });
   },
 );
 
@@ -340,6 +372,8 @@ export const saveClient = createServerFn({ method: "POST" })
       birth_date: data.birthDate,
       address: data.address,
       notes: data.notes,
+      contact_allowed: data.contactAllowed,
+      contact_preference: data.contactPreference,
       active: data.active,
     };
     const query = data.id
@@ -361,6 +395,187 @@ export const deleteClient = createServerFn({ method: "POST" })
       .eq("tenant_id", tenantId);
     if (error) databaseError(error, "Não foi possível excluir o cliente.");
     return { success: true } as const;
+  });
+
+const campaignType = z.enum([
+  "post_service",
+  "birthday",
+  "promotion",
+  "win_back",
+  "return_reminder",
+  "custom",
+]);
+
+export const getMarketing = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabase, tenantId } = await tenantContext();
+  const [
+    clientsResult,
+    appointmentsResult,
+    templatesResult,
+    campaignsResult,
+    actionsResult,
+    companyResult,
+  ] = await Promise.all([
+    supabase.from("clients").select("*").eq("tenant_id", tenantId).eq("active", true).order("name"),
+    supabase
+      .from("appointments")
+      .select("client_id, starts_at, status, services(name), professionals(name)")
+      .eq("tenant_id", tenantId)
+      .in("status", ["completed", "confirmed"])
+      .order("starts_at", { ascending: false }),
+    supabase.from("marketing_templates").select("*").eq("tenant_id", tenantId).order("name"),
+    supabase
+      .from("marketing_campaigns")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("marketing_actions")
+      .select("*, clients(name, phone)")
+      .eq("tenant_id", tenantId)
+      .order("created_at", { ascending: false })
+      .limit(200),
+    supabase.from("tenants").select("name, slug, product_type").eq("id", tenantId).single(),
+  ]);
+  const error =
+    clientsResult.error ??
+    appointmentsResult.error ??
+    templatesResult.error ??
+    campaignsResult.error ??
+    actionsResult.error ??
+    companyResult.error;
+  if (error) databaseError(error, "Não foi possível carregar o Marketing.");
+
+  const latest = new Map<string, NonNullable<typeof appointmentsResult.data>[number]>();
+  for (const appointment of appointmentsResult.data ?? []) {
+    if (!latest.has(appointment.client_id)) latest.set(appointment.client_id, appointment);
+  }
+  const clients: MarketingClient[] = (clientsResult.data ?? []).map((client) => {
+    const appointment = latest.get(client.id);
+    return {
+      ...client,
+      lastAppointmentAt: appointment?.starts_at ?? null,
+      lastServiceName: appointment?.services?.name ?? null,
+      lastProfessionalName: appointment?.professionals?.name ?? null,
+    };
+  });
+  return {
+    clients,
+    templates: (templatesResult.data ?? []) as MarketingTemplate[],
+    campaigns: (campaignsResult.data ?? []) as MarketingCampaign[],
+    actions: (actionsResult.data ?? []) as MarketingAction[],
+    company: companyResult.data!,
+  };
+});
+
+const templateSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().trim().min(2).max(120),
+  campaignType,
+  body: z.string().trim().min(2).max(2000),
+  active: z.boolean(),
+});
+export const saveMarketingTemplate = createServerFn({ method: "POST" })
+  .validator(templateSchema)
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const values = {
+      tenant_id: tenantId,
+      name: data.name,
+      campaign_type: data.campaignType,
+      body: data.body,
+      active: data.active,
+    };
+    const query = data.id
+      ? supabase
+          .from("marketing_templates")
+          .update(values)
+          .eq("id", data.id)
+          .eq("tenant_id", tenantId)
+      : supabase.from("marketing_templates").insert(values);
+    const { data: saved, error } = await query.select().single();
+    if (error || !saved) databaseError(error, "Não foi possível salvar o modelo.");
+    return saved;
+  });
+
+const campaignSchema = z.object({
+  id: z.string().uuid().optional(),
+  templateId: z.string().uuid().nullable().optional(),
+  name: z.string().trim().min(2).max(120),
+  campaignType,
+  message: z.string().trim().min(2).max(2000),
+  status: z.enum(["draft", "active", "completed"]),
+});
+export const saveMarketingCampaign = createServerFn({ method: "POST" })
+  .validator(campaignSchema)
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const values = {
+      tenant_id: tenantId,
+      template_id: data.templateId ?? null,
+      name: data.name,
+      campaign_type: data.campaignType,
+      message: data.message,
+      status: data.status,
+    };
+    const query = data.id
+      ? supabase
+          .from("marketing_campaigns")
+          .update(values)
+          .eq("id", data.id)
+          .eq("tenant_id", tenantId)
+      : supabase.from("marketing_campaigns").insert(values);
+    const { data: saved, error } = await query.select().single();
+    if (error || !saved) databaseError(error, "Não foi possível salvar a campanha.");
+    return saved;
+  });
+
+const actionSchema = z.object({
+  id: z.string().uuid().optional(),
+  campaignId: z.string().uuid().nullable().optional(),
+  clientId: z.string().uuid(),
+  message: z.string().trim().min(2).max(2000),
+  status: z.enum(["queued", "initiated", "sent", "responded", "converted"]),
+});
+export const saveMarketingAction = createServerFn({ method: "POST" })
+  .validator(actionSchema)
+  .handler(async ({ data }) => {
+    const { supabase, tenantId } = await tenantContext();
+    if (data.status === "initiated") {
+      const { data: client, error: clientError } = await supabase
+        .from("clients")
+        .select("contact_allowed, phone_normalized")
+        .eq("id", data.clientId)
+        .eq("tenant_id", tenantId)
+        .single();
+      if (clientError || !client?.contact_allowed || !client.phone_normalized) {
+        throw new Error("Este cliente não possui WhatsApp e autorização de contato válidos.");
+      }
+    }
+    const now = new Date().toISOString();
+    const values = {
+      tenant_id: tenantId,
+      campaign_id: data.campaignId ?? null,
+      client_id: data.clientId,
+      message_snapshot: data.message,
+      status: data.status,
+      initiated_at: data.status === "initiated" ? now : null,
+      sent_at: data.status === "sent" ? now : null,
+      responded_at: data.status === "responded" ? now : null,
+      converted_at: data.status === "converted" ? now : null,
+    };
+    const query = data.id
+      ? supabase
+          .from("marketing_actions")
+          .update(values)
+          .eq("id", data.id)
+          .eq("tenant_id", tenantId)
+      : supabase.from("marketing_actions").insert(values);
+    const { data: saved, error } = await query.select().single();
+    if (error || !saved) databaseError(error, "Não foi possível registrar a ação.");
+    return saved;
   });
 
 const serviceSchema = z.object({

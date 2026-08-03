@@ -8,6 +8,7 @@ const companySchema = z.object({
   description: z.string().nullable(),
   productType: z.enum(["beauty", "barber"]),
   whatsapp: z.string().nullable(),
+  whatsappInitialMessage: z.string().nullable(),
   instagram: z.string().nullable(),
   addressLine: z.string().nullable(),
   city: z.string().nullable(),

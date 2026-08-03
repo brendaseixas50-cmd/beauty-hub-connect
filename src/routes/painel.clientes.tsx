@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { Client } from "@/modules/mvp/domain";
+import type { Client, MarketingClient } from "@/modules/mvp/domain";
 import { deleteClient, listClients, saveClient } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
 
@@ -106,6 +106,14 @@ function ClientsPage() {
                     {new Date(client.birth_date + "T12:00:00").toLocaleDateString("pt-BR")}
                   </p>
                 ) : null}
+                {client.lastAppointmentAt ? (
+                  <p>
+                    Último atendimento:{" "}
+                    {new Date(client.lastAppointmentAt).toLocaleDateString("pt-BR")}
+                    {client.lastServiceName ? ` · ${client.lastServiceName}` : ""}
+                  </p>
+                ) : null}
+                <p>Contato: {client.contact_allowed ? "autorizado" : "não autorizado"}</p>
                 {client.address ? <p>Endereço: {client.address}</p> : null}
                 {client.notes ? <p className="rounded-lg bg-muted p-3">{client.notes}</p> : null}
               </div>
@@ -133,7 +141,13 @@ function ClientsPage() {
   );
 }
 
-function ClientDialog({ client, onClose }: { client: Client | null; onClose: () => void }) {
+function ClientDialog({
+  client,
+  onClose,
+}: {
+  client: Client | MarketingClient | null;
+  onClose: () => void;
+}) {
   const save = useServerFn(saveClient);
   const action = useMvpAction();
 
@@ -151,6 +165,9 @@ function ClientDialog({ client, onClose }: { client: Client | null; onClose: () 
             birthDate: String(form.get("birthDate")),
             address: String(form.get("address")),
             notes: String(form.get("notes")),
+            contactAllowed: form.get("contactAllowed") === "on",
+            contactPreference: String(form.get("contactPreference")) as
+              "whatsapp" | "phone" | "email" | "none",
             active: form.get("active") === "on",
           },
         }),
@@ -183,6 +200,29 @@ function ClientDialog({ client, onClose }: { client: Client | null; onClose: () 
             <Label htmlFor="notes">Observações</Label>
             <Textarea id="notes" name="notes" defaultValue={client?.notes ?? ""} />
           </div>
+          <div className="grid gap-2">
+            <Label htmlFor="contactPreference">Preferência de contato</Label>
+            <select
+              id="contactPreference"
+              name="contactPreference"
+              defaultValue={client?.contact_preference ?? "whatsapp"}
+              className="h-10 rounded-md border bg-background px-3 text-sm"
+            >
+              <option value="whatsapp">WhatsApp</option>
+              <option value="phone">Telefone</option>
+              <option value="email">E-mail</option>
+              <option value="none">Não contatar</option>
+            </select>
+          </div>
+          <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+            <input
+              name="contactAllowed"
+              type="checkbox"
+              className="mt-1"
+              defaultChecked={client?.contact_allowed ?? false}
+            />
+            Cliente autorizou receber comunicações e campanhas
+          </label>
           <label className="flex items-center gap-2 text-sm">
             <input name="active" type="checkbox" defaultChecked={client?.active ?? true} /> Cliente
             ativo

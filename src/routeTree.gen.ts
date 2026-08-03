@@ -25,6 +25,8 @@ import { Route as PainelConfiguracoesRouteImport } from './routes/painel.configu
 import { Route as PainelEmpresaRouteImport } from './routes/painel.empresa'
 import { Route as PainelEstoqueRouteImport } from './routes/painel.estoque'
 import { Route as PainelFinanceiroRouteImport } from './routes/painel.financeiro'
+import { Route as PainelMarketingRouteImport } from './routes/painel.marketing'
+import { Route as PainelPaginaPublicaRouteImport } from './routes/painel.pagina-publica'
 import { Route as PainelProdutosRouteImport } from './routes/painel.produtos'
 import { Route as PainelProfissionaisRouteImport } from './routes/painel.profissionais'
 import { Route as PainelRelatoriosRouteImport } from './routes/painel.relatorios'
@@ -110,6 +112,16 @@ const PainelFinanceiroRoute = PainelFinanceiroRouteImport.update({
   path: '/financeiro',
   getParentRoute: () => PainelRoute,
 } as any)
+const PainelMarketingRoute = PainelMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => PainelRoute,
+} as any)
+const PainelPaginaPublicaRoute = PainelPaginaPublicaRouteImport.update({
+  id: '/pagina-publica',
+  path: '/pagina-publica',
+  getParentRoute: () => PainelRoute,
+} as any)
 const PainelProdutosRoute = PainelProdutosRouteImport.update({
   id: '/produtos',
   path: '/produtos',
@@ -147,6 +159,8 @@ export interface FileRoutesByFullPath {
   '/painel/empresa': typeof PainelEmpresaRoute
   '/painel/estoque': typeof PainelEstoqueRoute
   '/painel/financeiro': typeof PainelFinanceiroRoute
+  '/painel/marketing': typeof PainelMarketingRoute
+  '/painel/pagina-publica': typeof PainelPaginaPublicaRoute
   '/painel/produtos': typeof PainelProdutosRoute
   '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/relatorios': typeof PainelRelatoriosRoute
@@ -168,6 +182,8 @@ export interface FileRoutesByTo {
   '/painel/empresa': typeof PainelEmpresaRoute
   '/painel/estoque': typeof PainelEstoqueRoute
   '/painel/financeiro': typeof PainelFinanceiroRoute
+  '/painel/marketing': typeof PainelMarketingRoute
+  '/painel/pagina-publica': typeof PainelPaginaPublicaRoute
   '/painel/produtos': typeof PainelProdutosRoute
   '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/relatorios': typeof PainelRelatoriosRoute
@@ -191,6 +207,8 @@ export interface FileRoutesById {
   '/painel/empresa': typeof PainelEmpresaRoute
   '/painel/estoque': typeof PainelEstoqueRoute
   '/painel/financeiro': typeof PainelFinanceiroRoute
+  '/painel/marketing': typeof PainelMarketingRoute
+  '/painel/pagina-publica': typeof PainelPaginaPublicaRoute
   '/painel/produtos': typeof PainelProdutosRoute
   '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/relatorios': typeof PainelRelatoriosRoute
@@ -215,6 +233,8 @@ export interface FileRouteTypes {
     | '/painel/empresa'
     | '/painel/estoque'
     | '/painel/financeiro'
+    | '/painel/marketing'
+    | '/painel/pagina-publica'
     | '/painel/produtos'
     | '/painel/profissionais'
     | '/painel/relatorios'
@@ -236,6 +256,8 @@ export interface FileRouteTypes {
     | '/painel/empresa'
     | '/painel/estoque'
     | '/painel/financeiro'
+    | '/painel/marketing'
+    | '/painel/pagina-publica'
     | '/painel/produtos'
     | '/painel/profissionais'
     | '/painel/relatorios'
@@ -258,6 +280,8 @@ export interface FileRouteTypes {
     | '/painel/empresa'
     | '/painel/estoque'
     | '/painel/financeiro'
+    | '/painel/marketing'
+    | '/painel/pagina-publica'
     | '/painel/produtos'
     | '/painel/profissionais'
     | '/painel/relatorios'
@@ -391,6 +415,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PainelFinanceiroRouteImport
       parentRoute: typeof PainelRoute
     }
+    '/painel/marketing': {
+      id: '/painel/marketing'
+      path: '/marketing'
+      fullPath: '/painel/marketing'
+      preLoaderRoute: typeof PainelMarketingRouteImport
+      parentRoute: typeof PainelRoute
+    }
+    '/painel/pagina-publica': {
+      id: '/painel/pagina-publica'
+      path: '/pagina-publica'
+      fullPath: '/painel/pagina-publica'
+      preLoaderRoute: typeof PainelPaginaPublicaRouteImport
+      parentRoute: typeof PainelRoute
+    }
     '/painel/produtos': {
       id: '/painel/produtos'
       path: '/produtos'
@@ -429,6 +467,8 @@ interface PainelRouteChildren {
   PainelEmpresaRoute: typeof PainelEmpresaRoute
   PainelEstoqueRoute: typeof PainelEstoqueRoute
   PainelFinanceiroRoute: typeof PainelFinanceiroRoute
+  PainelMarketingRoute: typeof PainelMarketingRoute
+  PainelPaginaPublicaRoute: typeof PainelPaginaPublicaRoute
   PainelProdutosRoute: typeof PainelProdutosRoute
   PainelProfissionaisRoute: typeof PainelProfissionaisRoute
   PainelRelatoriosRoute: typeof PainelRelatoriosRoute
@@ -443,6 +483,8 @@ const PainelRouteChildren: PainelRouteChildren = {
   PainelEmpresaRoute: PainelEmpresaRoute,
   PainelEstoqueRoute: PainelEstoqueRoute,
   PainelFinanceiroRoute: PainelFinanceiroRoute,
+  PainelMarketingRoute: PainelMarketingRoute,
+  PainelPaginaPublicaRoute: PainelPaginaPublicaRoute,
   PainelProdutosRoute: PainelProdutosRoute,
   PainelProfissionaisRoute: PainelProfissionaisRoute,
   PainelRelatoriosRoute: PainelRelatoriosRoute,

@@ -46,6 +46,7 @@ function SettingsPage() {
             email: company.email ?? "",
             phone: company.phone ?? "",
             whatsapp: company.whatsapp ?? "",
+            whatsappInitialMessage: company.whatsapp_initial_message ?? "",
             instagram: company.instagram ?? "",
             description: company.description ?? "",
             addressLine: company.address_line ?? "",

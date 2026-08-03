@@ -4,6 +4,7 @@ import {
   Outlet,
   redirect,
   useNavigate,
+  useRouter,
   useRouterState,
 } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -21,6 +22,8 @@ import {
   LogOut,
   Building2,
   BarChart3,
+  Globe2,
+  Megaphone,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -30,6 +33,7 @@ import { AuthProvider } from "@/modules/auth/context";
 import type { Session } from "@/modules/auth/domain";
 
 export const Route = createFileRoute("/painel")({
+  staleTime: 5 * 60_000,
   beforeLoad: async ({ location }) => {
     const session = await getSession();
     if (!session) {
@@ -53,6 +57,8 @@ const itens = [
   { to: "/painel/servicos", label: "Serviços", icon: Scissors },
   { to: "/painel/profissionais", label: "Profissionais", icon: UserCog },
   { to: "/painel/clientes", label: "Clientes", icon: Users },
+  { to: "/painel/pagina-publica", label: "Minha página pública", icon: Globe2 },
+  { to: "/painel/marketing", label: "Marketing", icon: Megaphone },
   { to: "/painel/produtos", label: "Produtos", icon: Package },
   { to: "/painel/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/painel/estoque", label: "Estoque", icon: Package },
@@ -149,6 +155,7 @@ function PainelLayout() {
   const [aberto, setAberto] = useState(false);
   const { session } = Route.useRouteContext();
   const navigate = useNavigate();
+  const router = useRouter();
   const logoutFn = useServerFn(logout);
   const tipo = session.user.productType === "barber" ? "barbearia" : "beleza";
   const tema = tipo === "barbearia" ? "tema-barbearia" : "tema-beleza";
@@ -157,6 +164,23 @@ function PainelLayout() {
     document.documentElement.classList.add(tema);
     return () => document.documentElement.classList.remove(tema);
   }, [tema]);
+
+  useEffect(() => {
+    const preload = () => {
+      void Promise.allSettled([
+        router.preloadRoute({ to: "/painel/agenda" }),
+        router.preloadRoute({ to: "/painel/clientes" }),
+        router.preloadRoute({ to: "/painel/servicos" }),
+        router.preloadRoute({ to: "/painel/financeiro" }),
+      ]);
+    };
+    const idle = window.requestIdleCallback?.(preload, { timeout: 1800 });
+    const timer = idle === undefined ? window.setTimeout(preload, 400) : undefined;
+    return () => {
+      if (idle !== undefined) window.cancelIdleCallback?.(idle);
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [router, session.user.tenantId]);
 
   async function handleLogout() {
     await logoutFn();

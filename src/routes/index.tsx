@@ -54,7 +54,7 @@ function Home() {
             <p className="text-xs text-muted-foreground">Soluções para profissionais</p>
           </div>
           <Button asChild variant="outline" className="rounded-full">
-            <Link to="/login" search={{ redirect: "/painel" }}>
+            <Link to="/login" search={{ redirect: "/painel", produto: undefined }}>
               Entrar
             </Link>
           </Button>

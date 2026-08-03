@@ -75,3 +75,10 @@ export function selectActiveCompany(
 ): CompanyAccess | undefined {
   return companies.find((company) => company.tenantId === activeTenantId) ?? companies[0];
 }
+
+export function selectCompanyForProduct(
+  companies: readonly CompanyAccess[],
+  productType: "beauty" | "barber" | undefined,
+): CompanyAccess | undefined {
+  return productType ? companies.find((company) => company.productType === productType) : undefined;
+}
