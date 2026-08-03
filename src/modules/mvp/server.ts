@@ -30,18 +30,12 @@ const optionalShortText = z
 
 async function tenantContext() {
   const supabase = createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-  if (userError || !user) throw new Error("Sua sessão expirou. Entre novamente.");
-
-  const session = await resolveSession();
+  const session = await resolveSession(supabase);
   if (!session) throw new Error("Sua conta não possui uma empresa ativa.");
 
   return {
     supabase,
-    user,
+    user: { id: session.user.id },
     tenantId: session.user.tenantId,
     role: session.user.role,
   };
@@ -87,6 +81,42 @@ const companySchema = z.object({
     .transform((value) => value || null),
   postalCode: optionalShortText,
   businessHours: z.record(z.string(), z.string().max(40)),
+  publicPage: z
+    .object({
+      publicName: optionalShortText,
+      logoUrl: z
+        .string()
+        .url()
+        .max(1000)
+        .or(z.literal(""))
+        .transform((value) => value || null),
+      bannerUrl: z
+        .string()
+        .url()
+        .max(1000)
+        .or(z.literal(""))
+        .transform((value) => value || null),
+      primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      welcomeMessage: optionalText,
+      cancellationPolicy: optionalText,
+      publicInformation: z
+        .string()
+        .trim()
+        .max(1500)
+        .optional()
+        .transform((value) => value || null),
+      status: z.enum(["draft", "published", "disabled"]),
+      bookingIntervalMinutes: z.union([
+        z.literal(10),
+        z.literal(15),
+        z.literal(20),
+        z.literal(30),
+        z.literal(45),
+        z.literal(60),
+      ]),
+    })
+    .optional(),
 });
 
 export const getCompany = createServerFn({ method: "GET" }).handler(async (): Promise<Company> => {
@@ -101,6 +131,45 @@ export const updateCompany = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<Company> => {
     const { supabase, tenantId, role } = await tenantContext();
     requireManager(role);
+    if (data.publicPage?.status === "published") {
+      const [{ count: services }, { count: professionals }] = await Promise.all([
+        supabase
+          .from("services")
+          .select("id", { count: "exact", head: true })
+          .eq("tenant_id", tenantId)
+          .eq("active", true),
+        supabase
+          .from("professionals")
+          .select("id", { count: "exact", head: true })
+          .eq("tenant_id", tenantId)
+          .eq("active", true),
+      ]);
+      if (!services)
+        throw new Error("Cadastre ao menos um serviço ativo antes de publicar a página.");
+      if (!professionals)
+        throw new Error("Cadastre ao menos um profissional ativo antes de publicar a página.");
+      if (
+        !Object.values(data.businessHours).some(
+          (hours) => hours && hours.toLowerCase() !== "closed",
+        )
+      ) {
+        throw new Error("Configure ao menos um dia de funcionamento antes de publicar a página.");
+      }
+    }
+    const publicValues = data.publicPage
+      ? {
+          public_name: data.publicPage.publicName,
+          logo_url: data.publicPage.logoUrl,
+          banner_url: data.publicPage.bannerUrl,
+          primary_color: data.publicPage.primaryColor,
+          secondary_color: data.publicPage.secondaryColor,
+          welcome_message: data.publicPage.welcomeMessage,
+          cancellation_policy: data.publicPage.cancellationPolicy,
+          public_information: data.publicPage.publicInformation,
+          public_page_status: data.publicPage.status,
+          booking_interval_minutes: data.publicPage.bookingIntervalMinutes,
+        }
+      : {};
     const { data: updated, error } = await supabase
       .from("tenants")
       .update({
@@ -117,12 +186,41 @@ export const updateCompany = createServerFn({ method: "POST" })
         state: data.state,
         postal_code: data.postalCode,
         business_hours: data.businessHours,
+        ...publicValues,
       })
       .eq("id", tenantId)
       .select()
       .single();
     if (error || !updated) databaseError(error, "Não foi possível salvar a empresa.");
     return updated;
+  });
+
+const publicMediaSchema = z.object({
+  kind: z.enum(["logo", "banner"]),
+  mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  base64: z.string().max(4_200_000),
+});
+
+export const uploadPublicMedia = createServerFn({ method: "POST" })
+  .validator(publicMediaSchema)
+  .handler(async ({ data }): Promise<{ url: string }> => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const bytes = Buffer.from(data.base64, "base64");
+    if (!bytes.length || bytes.length > 3 * 1024 * 1024) {
+      throw new Error("A imagem deve ter no máximo 3 MB.");
+    }
+    const extension =
+      data.mimeType === "image/png" ? "png" : data.mimeType === "image/webp" ? "webp" : "jpg";
+    const path = `${tenantId}/${data.kind}.${extension}`;
+    const { error } = await supabase.storage.from("public-page-media").upload(path, bytes, {
+      contentType: data.mimeType,
+      cacheControl: "31536000",
+      upsert: true,
+    });
+    if (error) throw new Error("Não foi possível enviar a imagem.");
+    const { data: publicUrl } = supabase.storage.from("public-page-media").getPublicUrl(path);
+    return { url: `${publicUrl.publicUrl}?v=${Date.now()}` };
   });
 
 const professionalSchema = z.object({

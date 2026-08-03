@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 
 import { can, type AuthUser, type Permission, type Session } from "./domain";
 
@@ -12,12 +12,15 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ session, children }: { session: Session; children: ReactNode }) {
-  const value: AuthContextValue = {
-    session,
-    user: session.user,
-    tenantId: session.user.tenantId,
-    can: (permission) => can(session.user, permission),
-  };
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      session,
+      user: session.user,
+      tenantId: session.user.tenantId,
+      can: (permission) => can(session.user, permission),
+    }),
+    [session],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

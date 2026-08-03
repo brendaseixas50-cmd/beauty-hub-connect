@@ -45,6 +45,7 @@ const signupSchema = z
 const emailSchema = z.object({
   email: z.string().trim().email("Informe um e-mail válido.").max(254),
 });
+const resendSchema = emailSchema.extend({ productType: z.enum(["beauty", "barber"]) });
 
 const switchCompanySchema = z.object({ tenantId: z.string().uuid() });
 
@@ -69,7 +70,7 @@ const confirmSchema = z
     message: "Link de confirmação inválido.",
   });
 
-function callbackUrl(next: "/painel" | "/redefinir-senha"): string {
+function callbackUrl(next: "/painel" | "/onboarding" | "/redefinir-senha"): string {
   const url = new URL("/auth/confirm", getRequestUrl().origin);
   url.searchParams.set("next", next);
   return url.toString();
@@ -125,7 +126,7 @@ export async function resolveSession(
   const tenantIds = memberships.map((membership) => membership.tenant_id);
   const { data: tenants, error: tenantError } = await supabase
     .from("tenants")
-    .select("id, name, slug, status, product_type")
+    .select("id, name, slug, status, product_type, onboarding_completed_at")
     .in("id", tenantIds)
     .eq("status", "active");
 
@@ -141,6 +142,7 @@ export async function resolveSession(
         tenantName: tenant.name,
         tenantSlug: tenant.slug,
         productType: tenant.product_type === "barber" ? "barber" : "beauty",
+        onboardingCompleted: Boolean(tenant.onboarding_completed_at),
         role: role.data as Role,
         permissions: getPermissionsForRole(role.data as Role),
       },
@@ -244,7 +246,7 @@ export const signup = createServerFn({ method: "POST" })
           business_name: data.businessName,
           product_type: data.productType,
         },
-        emailRedirectTo: callbackUrl("/painel"),
+        emailRedirectTo: callbackUrl(data.productType === "beauty" ? "/onboarding" : "/painel"),
       },
     });
 
@@ -265,13 +267,15 @@ export const signup = createServerFn({ method: "POST" })
   });
 
 export const resendSignupConfirmation = createServerFn({ method: "POST" })
-  .validator(emailSchema)
+  .validator(resendSchema)
   .handler(async ({ data }) => {
     const supabase = createSupabaseServerClient();
     const { error } = await supabase.auth.resend({
       type: "signup",
       email: data.email.toLowerCase(),
-      options: { emailRedirectTo: callbackUrl("/painel") },
+      options: {
+        emailRedirectTo: callbackUrl(data.productType === "beauty" ? "/onboarding" : "/painel"),
+      },
     });
     if (error) throw new Error(authErrorMessage(error, "Não foi possível reenviar a confirmação."));
     return { success: true } as const;

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import type { FormEvent } from "react";
+import { Check, Copy, ExternalLink, ImageUp } from "lucide-react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 
 import { PageHeader } from "@/components/mvp-page";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { getCompany, updateCompany } from "@/modules/mvp/server";
+import { getCompany, updateCompany, uploadPublicMedia } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
 
 export const Route = createFileRoute("/painel/empresa")({
@@ -20,7 +21,12 @@ export const Route = createFileRoute("/painel/empresa")({
 function CompanyPage() {
   const company = Route.useLoaderData();
   const save = useServerFn(updateCompany);
+  const upload = useServerFn(uploadPublicMedia);
   const action = useMvpAction();
+  const [logoUrl, setLogoUrl] = useState(company.logo_url ?? "");
+  const [bannerUrl, setBannerUrl] = useState(company.banner_url ?? "");
+  const [uploading, setUploading] = useState<"logo" | "banner">();
+  const [copied, setCopied] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,10 +48,55 @@ function CompanyPage() {
             state: String(form.get("state")),
             postalCode: String(form.get("postalCode")),
             businessHours: (company.business_hours ?? {}) as Record<string, string>,
+            publicPage: {
+              publicName: String(form.get("publicName")),
+              logoUrl,
+              bannerUrl,
+              primaryColor: String(form.get("primaryColor")),
+              secondaryColor: String(form.get("secondaryColor")),
+              welcomeMessage: String(form.get("welcomeMessage")),
+              cancellationPolicy: String(form.get("cancellationPolicy")),
+              publicInformation: String(form.get("publicInformation")),
+              status: form.get("publicPageEnabled") === "on" ? "published" : "disabled",
+              bookingIntervalMinutes: Number(form.get("bookingIntervalMinutes")) as
+                10 | 15 | 20 | 30 | 45 | 60,
+            },
           },
         }),
       "Dados da empresa atualizados.",
     );
+  }
+
+  async function onMedia(event: ChangeEvent<HTMLInputElement>, kind: "logo" | "banner") {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
+    if (
+      !(["image/jpeg", "image/png", "image/webp"] as string[]).includes(file.type) ||
+      file.size > 3 * 1024 * 1024
+    ) {
+      await action.run(
+        () => Promise.reject(new Error("Use JPG, PNG ou WebP com no máximo 3 MB.")),
+        "",
+      );
+      return;
+    }
+    setUploading(kind);
+    try {
+      const base64 = await fileToBase64(file);
+      const result = await upload({
+        data: { kind, mimeType: file.type as "image/jpeg" | "image/png" | "image/webp", base64 },
+      });
+      if (kind === "logo") setLogoUrl(result.url);
+      else setBannerUrl(result.url);
+    } finally {
+      setUploading(undefined);
+    }
+  }
+
+  async function copyPublicLink() {
+    await navigator.clipboard.writeText(`${window.location.origin}/p/${company.slug}`);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
   }
 
   return (
@@ -85,6 +136,124 @@ function CompanyPage() {
         </Card>
 
         <Card className="grid gap-5 p-6">
+          <div>
+            <h2 className="text-xl">Página pública</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Personalize o link que clientes usam para conhecer seus serviços e solicitar horários.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" onClick={() => void copyPublicLink()}>
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? "Link copiado" : "Copiar link público"}
+            </Button>
+            <Button asChild type="button" variant="outline">
+              <a href={`/p/${company.slug}`} target="_blank" rel="noreferrer">
+                <ExternalLink className="h-4 w-4" /> Abrir página
+              </a>
+            </Button>
+          </div>
+
+          <Field
+            label="Nome exibido ao público"
+            name="publicName"
+            defaultValue={company.public_name ?? company.name}
+          />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <MediaField
+              label="Logo"
+              kind="logo"
+              url={logoUrl}
+              pending={uploading === "logo"}
+              onChange={onMedia}
+            />
+            <MediaField
+              label="Banner"
+              kind="banner"
+              url={bannerUrl}
+              pending={uploading === "banner"}
+              onChange={onMedia}
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Cor principal"
+              name="primaryColor"
+              type="color"
+              defaultValue={company.primary_color}
+            />
+            <Field
+              label="Cor secundária"
+              name="secondaryColor"
+              type="color"
+              defaultValue={company.secondary_color}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="welcomeMessage">Mensagem de boas-vindas</Label>
+            <Textarea
+              id="welcomeMessage"
+              name="welcomeMessage"
+              rows={3}
+              defaultValue={company.welcome_message ?? ""}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="cancellationPolicy">Política de cancelamento</Label>
+            <Textarea
+              id="cancellationPolicy"
+              name="cancellationPolicy"
+              rows={3}
+              defaultValue={company.cancellation_policy ?? ""}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="publicInformation">Informações públicas</Label>
+            <Textarea
+              id="publicInformation"
+              name="publicInformation"
+              rows={4}
+              maxLength={1500}
+              defaultValue={company.public_information ?? ""}
+            />
+          </div>
+          <div className="grid gap-2 sm:max-w-xs">
+            <Label htmlFor="bookingIntervalMinutes">Intervalo entre opções de horário</Label>
+            <select
+              id="bookingIntervalMinutes"
+              name="bookingIntervalMinutes"
+              defaultValue={company.booking_interval_minutes}
+              className="h-10 rounded-md border bg-background px-3 text-sm"
+            >
+              {[10, 15, 20, 30, 45, 60].map((minutes) => (
+                <option key={minutes} value={minutes}>
+                  {minutes} minutos
+                </option>
+              ))}
+            </select>
+          </div>
+          <label className="flex items-start gap-3 rounded-xl border p-4">
+            <input
+              name="publicPageEnabled"
+              type="checkbox"
+              className="mt-1 h-4 w-4"
+              defaultChecked={company.public_page_status === "published"}
+            />
+            <span>
+              <strong className="block text-sm">Página pública ativa</strong>
+              <span className="text-sm text-muted-foreground">
+                Ao ativar, o link ficará acessível sem login. Mantenha desativado enquanto configura
+                serviços e horários.
+              </span>
+            </span>
+          </label>
+        </Card>
+
+        <Card className="grid gap-5 p-6">
           <h2 className="text-xl">Endereço</h2>
           <Field
             label="Endereço completo"
@@ -109,6 +278,61 @@ function CompanyPage() {
       </form>
     </div>
   );
+}
+
+function MediaField({
+  label,
+  kind,
+  url,
+  pending,
+  onChange,
+}: {
+  label: string;
+  kind: "logo" | "banner";
+  url: string;
+  pending: boolean;
+  onChange: (event: ChangeEvent<HTMLInputElement>, kind: "logo" | "banner") => void;
+}) {
+  return (
+    <div className="grid gap-2">
+      <Label htmlFor={`${kind}-upload`}>{label}</Label>
+      {url ? (
+        <img
+          src={url}
+          alt={`Prévia de ${label.toLowerCase()}`}
+          className={`w-full rounded-xl border object-cover ${kind === "logo" ? "h-32" : "h-32"}`}
+        />
+      ) : (
+        <div className="grid h-32 place-items-center rounded-xl border border-dashed text-sm text-muted-foreground">
+          Sem imagem
+        </div>
+      )}
+      <label
+        htmlFor={`${kind}-upload`}
+        className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border bg-background px-4 text-sm font-medium hover:bg-accent"
+      >
+        <ImageUp className="h-4 w-4" /> {pending ? "Enviando…" : `Enviar ${label.toLowerCase()}`}
+      </label>
+      <input
+        id={`${kind}-upload`}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="sr-only"
+        disabled={pending}
+        onChange={(event) => void onChange(event, kind)}
+      />
+      <p className="text-xs text-muted-foreground">JPG, PNG ou WebP, até 3 MB.</p>
+    </div>
+  );
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+    reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+    reader.readAsDataURL(file);
+  });
 }
 
 function Field({

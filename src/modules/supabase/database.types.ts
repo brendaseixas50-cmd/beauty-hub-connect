@@ -17,7 +17,10 @@ export type Database = {
           notes: string | null;
           price_cents: number;
           professional_id: string;
+          public_code: string | null;
+          public_request_id: string | null;
           service_id: string;
+          source: string;
           starts_at: string;
           status: string;
           tenant_id: string;
@@ -31,7 +34,10 @@ export type Database = {
           notes?: string | null;
           price_cents?: number;
           professional_id: string;
+          public_code?: string | null;
+          public_request_id?: string | null;
           service_id: string;
+          source?: string;
           starts_at: string;
           status?: string;
           tenant_id?: string;
@@ -45,7 +51,10 @@ export type Database = {
           notes?: string | null;
           price_cents?: number;
           professional_id?: string;
+          public_code?: string | null;
+          public_request_id?: string | null;
           service_id?: string;
+          source?: string;
           starts_at?: string;
           status?: string;
           tenant_id?: string;
@@ -93,6 +102,7 @@ export type Database = {
           name: string;
           notes: string | null;
           phone: string | null;
+          phone_normalized: string | null;
           tenant_id: string;
           updated_at: string;
         };
@@ -106,6 +116,7 @@ export type Database = {
           name: string;
           notes?: string | null;
           phone?: string | null;
+          phone_normalized?: string | null;
           tenant_id?: string;
           updated_at?: string;
         };
@@ -119,6 +130,7 @@ export type Database = {
           name?: string;
           notes?: string | null;
           phone?: string | null;
+          phone_normalized?: string | null;
           tenant_id?: string;
           updated_at?: string;
         };
@@ -305,6 +317,57 @@ export type Database = {
           },
         ];
       };
+      professional_unavailability: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          ends_at: string;
+          id: string;
+          professional_id: string;
+          reason: string | null;
+          starts_at: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string;
+          ends_at: string;
+          id?: string;
+          professional_id: string;
+          reason?: string | null;
+          starts_at: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          ends_at?: string;
+          id?: string;
+          professional_id?: string;
+          reason?: string | null;
+          starts_at?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "professional_unavailability_professional_id_tenant_id_fkey";
+            columns: ["professional_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "professionals";
+            referencedColumns: ["id", "tenant_id"];
+          },
+          {
+            foreignKeyName: "professional_unavailability_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       professionals: {
         Row: {
           active: boolean;
@@ -320,6 +383,7 @@ export type Database = {
           tenant_id: string;
           updated_at: string;
           user_id: string | null;
+          working_hours: Json;
         };
         Insert: {
           active?: boolean;
@@ -335,6 +399,7 @@ export type Database = {
           tenant_id?: string;
           updated_at?: string;
           user_id?: string | null;
+          working_hours?: Json;
         };
         Update: {
           active?: boolean;
@@ -350,68 +415,11 @@ export type Database = {
           tenant_id?: string;
           updated_at?: string;
           user_id?: string | null;
+          working_hours?: Json;
         };
         Relationships: [
           {
             foreignKeyName: "professionals_tenant_id_fkey";
-            columns: ["tenant_id"];
-            isOneToOne: false;
-            referencedRelation: "tenants";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      tenant_memberships: {
-        Row: {
-          created_at: string;
-          role: string;
-          tenant_id: string;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          role?: string;
-          tenant_id: string;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          role?: string;
-          tenant_id?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "tenant_memberships_tenant_id_fkey";
-            columns: ["tenant_id"];
-            isOneToOne: false;
-            referencedRelation: "tenants";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      user_active_tenants: {
-        Row: {
-          tenant_id: string;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          tenant_id: string;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          tenant_id?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "user_active_tenants_tenant_id_fkey";
             columns: ["tenant_id"];
             isOneToOne: false;
             referencedRelation: "tenants";
@@ -501,10 +509,155 @@ export type Database = {
           },
         ];
       };
+      specialty_catalog: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          id: string;
+          name: string;
+          product_type: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          id: string;
+          name: string;
+          product_type: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          product_type?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      specialty_service_suggestions: {
+        Row: {
+          active: boolean;
+          category: string | null;
+          duration_minutes: number;
+          id: string;
+          name: string;
+          price_cents: number;
+          service_key: string;
+          sort_order: number;
+          specialty_id: string;
+        };
+        Insert: {
+          active?: boolean;
+          category?: string | null;
+          duration_minutes: number;
+          id?: string;
+          name: string;
+          price_cents?: number;
+          service_key: string;
+          sort_order?: number;
+          specialty_id: string;
+        };
+        Update: {
+          active?: boolean;
+          category?: string | null;
+          duration_minutes?: number;
+          id?: string;
+          name?: string;
+          price_cents?: number;
+          service_key?: string;
+          sort_order?: number;
+          specialty_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "specialty_service_suggestions_specialty_id_fkey";
+            columns: ["specialty_id"];
+            isOneToOne: false;
+            referencedRelation: "specialty_catalog";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tenant_memberships: {
+        Row: {
+          created_at: string;
+          role: string;
+          tenant_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          role?: string;
+          tenant_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          role?: string;
+          tenant_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tenant_memberships_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tenant_specialties: {
+        Row: {
+          created_at: string;
+          is_primary: boolean;
+          specialty_id: string;
+          tenant_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          is_primary?: boolean;
+          specialty_id: string;
+          tenant_id: string;
+        };
+        Update: {
+          created_at?: string;
+          is_primary?: boolean;
+          specialty_id?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tenant_specialties_specialty_id_fkey";
+            columns: ["specialty_id"];
+            isOneToOne: false;
+            referencedRelation: "specialty_catalog";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tenant_specialties_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tenants: {
         Row: {
           address_line: string | null;
+          banner_url: string | null;
+          booking_interval_minutes: number;
           business_hours: Json;
+          cancellation_policy: string | null;
           city: string | null;
           created_at: string;
           description: string | null;
@@ -512,21 +665,32 @@ export type Database = {
           email: string | null;
           id: string;
           instagram: string | null;
+          logo_url: string | null;
           name: string;
+          onboarding_completed_at: string | null;
           owner_id: string;
           phone: string | null;
           postal_code: string | null;
+          primary_color: string;
           product_type: string;
+          public_information: string | null;
+          public_name: string | null;
+          public_page_status: string;
+          secondary_color: string;
           slug: string;
           state: string | null;
           status: string;
           timezone: string;
           updated_at: string;
+          welcome_message: string | null;
           whatsapp: string | null;
         };
         Insert: {
           address_line?: string | null;
+          banner_url?: string | null;
+          booking_interval_minutes?: number;
           business_hours?: Json;
+          cancellation_policy?: string | null;
           city?: string | null;
           created_at?: string;
           description?: string | null;
@@ -534,21 +698,32 @@ export type Database = {
           email?: string | null;
           id?: string;
           instagram?: string | null;
+          logo_url?: string | null;
           name: string;
+          onboarding_completed_at?: string | null;
           owner_id: string;
           phone?: string | null;
           postal_code?: string | null;
+          primary_color?: string;
           product_type?: string;
+          public_information?: string | null;
+          public_name?: string | null;
+          public_page_status?: string;
+          secondary_color?: string;
           slug: string;
           state?: string | null;
           status?: string;
           timezone?: string;
           updated_at?: string;
+          welcome_message?: string | null;
           whatsapp?: string | null;
         };
         Update: {
           address_line?: string | null;
+          banner_url?: string | null;
+          booking_interval_minutes?: number;
           business_hours?: Json;
+          cancellation_policy?: string | null;
           city?: string | null;
           created_at?: string;
           description?: string | null;
@@ -556,33 +731,100 @@ export type Database = {
           email?: string | null;
           id?: string;
           instagram?: string | null;
+          logo_url?: string | null;
           name?: string;
+          onboarding_completed_at?: string | null;
           owner_id?: string;
           phone?: string | null;
           postal_code?: string | null;
+          primary_color?: string;
           product_type?: string;
+          public_information?: string | null;
+          public_name?: string | null;
+          public_page_status?: string;
+          secondary_color?: string;
           slug?: string;
           state?: string | null;
           status?: string;
           timezone?: string;
           updated_at?: string;
+          welcome_message?: string | null;
           whatsapp?: string | null;
         };
         Relationships: [];
+      };
+      user_active_tenants: {
+        Row: {
+          tenant_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          tenant_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          tenant_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_active_tenants_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_active_tenants_user_id_tenant_id_fkey";
+            columns: ["user_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenant_memberships";
+            referencedColumns: ["user_id", "tenant_id"];
+          },
+        ];
       };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      create_company_for_current_user: {
-        Args: { company_name: string; selected_product: string };
-        Returns: string;
-      };
       check_signup_attempt_and_account: {
         Args: { request_fingerprint: string; target_email: string };
         Returns: boolean;
       };
+      create_company_for_current_user: {
+        Args: { company_name: string; selected_product: string };
+        Returns: string;
+      };
+      create_public_booking: {
+        Args: {
+          p_customer_email: string;
+          p_customer_name: string;
+          p_customer_phone: string;
+          p_fingerprint: string;
+          p_honeypot?: string;
+          p_notes: string;
+          p_professional_id: string;
+          p_request_id: string;
+          p_service_id: string;
+          p_slug: string;
+          p_starts_at: string;
+        };
+        Returns: Json;
+      };
+      get_public_booking_availability: {
+        Args: {
+          p_date: string;
+          p_professional_id?: string;
+          p_service_id: string;
+          p_slug: string;
+        };
+        Returns: Json;
+      };
+      get_public_company_page: { Args: { p_slug: string }; Returns: Json };
       switch_active_tenant: {
         Args: { target_tenant_id: string };
         Returns: undefined;

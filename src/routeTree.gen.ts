@@ -12,10 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PainelRouteImport } from './routes/painel'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as PainelIndexRouteImport } from './routes/painel.index'
 import { Route as PainelAgendaRouteImport } from './routes/painel.agenda'
 import { Route as PainelClientesRouteImport } from './routes/painel.clientes'
@@ -43,6 +45,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PainelRoute = PainelRouteImport.update({
   id: '/painel',
   path: '/painel',
@@ -61,6 +68,11 @@ const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
 const AuthConfirmRoute = AuthConfirmRouteImport.update({
   id: '/auth/confirm',
   path: '/auth/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PainelIndexRoute = PainelIndexRouteImport.update({
@@ -123,10 +135,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
   '/painel': typeof PainelRouteWithChildren
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/p/$slug': typeof PSlugRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
@@ -143,9 +157,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/p/$slug': typeof PSlugRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
@@ -163,10 +179,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
   '/painel': typeof PainelRouteWithChildren
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/p/$slug': typeof PSlugRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
@@ -185,10 +203,12 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/login'
+    | '/onboarding'
     | '/painel'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/auth/confirm'
+    | '/p/$slug'
     | '/painel/agenda'
     | '/painel/clientes'
     | '/painel/configuracoes'
@@ -205,9 +225,11 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/login'
+    | '/onboarding'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/auth/confirm'
+    | '/p/$slug'
     | '/painel/agenda'
     | '/painel/clientes'
     | '/painel/configuracoes'
@@ -224,10 +246,12 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/login'
+    | '/onboarding'
     | '/painel'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/auth/confirm'
+    | '/p/$slug'
     | '/painel/agenda'
     | '/painel/clientes'
     | '/painel/configuracoes'
@@ -245,10 +269,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CadastroRoute: typeof CadastroRoute
   LoginRoute: typeof LoginRoute
+  OnboardingRoute: typeof OnboardingRoute
   PainelRoute: typeof PainelRouteWithChildren
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
+  PSlugRoute: typeof PSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -272,6 +298,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/painel': {
@@ -300,6 +333,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/confirm'
       fullPath: '/auth/confirm'
       preLoaderRoute: typeof AuthConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/painel/': {
@@ -417,10 +457,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CadastroRoute: CadastroRoute,
   LoginRoute: LoginRoute,
+  OnboardingRoute: OnboardingRoute,
   PainelRoute: PainelRouteWithChildren,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   AuthConfirmRoute: AuthConfirmRoute,
+  PSlugRoute: PSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
