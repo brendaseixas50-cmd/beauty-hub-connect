@@ -18,16 +18,20 @@ export const permissions = [
 
 export type Permission = (typeof permissions)[number];
 
-export interface AuthUser {
-  id: string;
+export interface CompanyAccess {
   tenantId: string;
   tenantName: string;
   tenantSlug: string;
   productType: "beauty" | "barber";
-  email: string;
-  name: string;
   role: Role;
   permissions: readonly Permission[];
+}
+
+export interface AuthUser extends CompanyAccess {
+  id: string;
+  email: string;
+  name: string;
+  companies: readonly CompanyAccess[];
 }
 
 export interface Session {
@@ -62,4 +66,11 @@ export function getPermissionsForRole(role: Role): readonly Permission[] {
 
 export function can(user: AuthUser, permission: Permission): boolean {
   return user.permissions.includes(permission);
+}
+
+export function selectActiveCompany(
+  companies: readonly CompanyAccess[],
+  activeTenantId: string | null | undefined,
+): CompanyAccess | undefined {
+  return companies.find((company) => company.tenantId === activeTenantId) ?? companies[0];
 }

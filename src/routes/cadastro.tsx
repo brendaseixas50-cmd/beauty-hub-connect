@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, MailCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -9,13 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getSession, signup } from "@/modules/auth/server";
+import { resendSignupConfirmation, signup } from "@/modules/auth/server";
 
 export const Route = createFileRoute("/cadastro")({
   validateSearch: z.object({ produto: z.enum(["beauty", "barber"]).catch("beauty") }),
-  beforeLoad: async () => {
-    if (await getSession()) throw redirect({ to: "/painel" });
-  },
   head: () => ({
     meta: [
       { title: "Criar conta — Lu IA Studio" },
@@ -31,10 +28,13 @@ export const Route = createFileRoute("/cadastro")({
 function Cadastro() {
   const { produto } = Route.useSearch();
   const tipo = produto === "barber" ? "barbearia" : "beleza";
+  const navigate = useNavigate();
   const signupFn = useServerFn(signup);
+  const resendFn = useServerFn(resendSignupConfirmation);
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
   const [emailEnviado, setEmailEnviado] = useState<string>();
+  const [reenvioStatus, setReenvioStatus] = useState<string>();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,7 +44,7 @@ function Cadastro() {
     const email = String(form.get("email"));
 
     try {
-      await signupFn({
+      const result = await signupFn({
         data: {
           productType: produto,
           fullName: String(form.get("fullName")),
@@ -54,9 +54,28 @@ function Cadastro() {
           passwordConfirmation: String(form.get("passwordConfirmation")),
         },
       });
-      setEmailEnviado(email);
+      if (result.requiresEmailConfirmation) {
+        setEmailEnviado(email);
+      } else {
+        await navigate({ to: "/painel" });
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível criar sua conta.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleResend() {
+    if (!emailEnviado) return;
+    setPending(true);
+    setError(undefined);
+    setReenvioStatus(undefined);
+    try {
+      await resendFn({ data: { email: emailEnviado } });
+      setReenvioStatus("Novo link enviado. Verifique também a caixa de spam.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível reenviar o e-mail.");
     } finally {
       setPending(false);
     }
@@ -103,6 +122,19 @@ function Cadastro() {
                   Abra o link recebido para ativar sua conta. Depois da confirmação, sua sessão será
                   criada e você poderá entrar no painel.
                 </p>
+                {reenvioStatus ? (
+                  <p role="status" className="text-sm text-primary">
+                    {reenvioStatus}
+                  </p>
+                ) : null}
+                {error ? (
+                  <p role="alert" className="text-sm text-destructive">
+                    {error}
+                  </p>
+                ) : null}
+                <Button type="button" variant="outline" disabled={pending} onClick={handleResend}>
+                  {pending ? "Reenviando…" : "Reenviar e-mail de confirmação"}
+                </Button>
                 <Button asChild>
                   <Link to="/login" search={{ redirect: "/painel" }}>
                     Ir para o login
@@ -130,6 +162,10 @@ function Cadastro() {
                 />
                 <p className="text-xs text-muted-foreground">
                   Use pelo menos 8 caracteres, incluindo letras e números.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Se você já usa outro produto Lu IA Studio, informe o mesmo e-mail e senha para
+                  adicionar esta empresa à sua conta atual.
                 </p>
                 {error ? (
                   <p role="alert" className="text-sm text-destructive">

@@ -18,6 +18,8 @@ SaaS multiempresa da Lu IA Studio para profissionais de beleza e barbearias. A a
 - financeiro com receitas, despesas, status e exportação CSV;
 - dashboard e relatórios calculados com dados reais;
 - experiências LuBeauty Pro e LuBarber Pro vinculadas à empresa no banco;
+- uma única conta pode acessar LuBeauty e LuBarber, com empresa e papel independentes;
+- troca segura da empresa ativa, validada pelas memberships e pelas políticas RLS;
 - nenhuma chave `service_role` no código ou no navegador.
 
 ## Desenvolvimento local
@@ -51,6 +53,7 @@ O schema oficial está em `supabase/migrations/`. As migrations criam:
 
 - `tenants`;
 - `profiles`;
+- `tenant_memberships` e `user_active_tenants`;
 - `clients`;
 - `services`;
 - `appointments`;
@@ -61,7 +64,7 @@ O schema oficial está em `supabase/migrations/`. As migrations criam:
 - funções internas no schema não exposto `private`;
 - índices, permissões e políticas RLS.
 
-Cada usuário novo recebe um tenant próprio e um perfil `owner`. As tabelas privadas usam `auth.uid()` para resolver o tenant da sessão, e as referências de agendamento usam chaves compostas para impedir associações entre empresas.
+Cada usuário novo recebe um tenant próprio, um perfil `owner`, uma membership e uma empresa ativa. Um usuário confirmado pode adicionar outro produto com o mesmo e-mail e senha, sem duplicar sua identidade no Supabase Auth. Os papéis ficam vinculados à combinação usuário–empresa. As tabelas privadas usam `auth.uid()` para resolver a membership e o tenant ativo, e as referências de agendamento usam chaves compostas para impedir associações entre empresas.
 
 ## Validação
 
