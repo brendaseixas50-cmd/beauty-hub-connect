@@ -95,12 +95,15 @@ export type Database = {
         Row: {
           active: boolean;
           address: string | null;
+          appointment_count: number;
           birth_date: string | null;
           contact_allowed: boolean;
           contact_preference: string;
           created_at: string;
           email: string | null;
           id: string;
+          last_appointment_at: string | null;
+          last_professional_id: string | null;
           name: string;
           notes: string | null;
           phone: string | null;
@@ -111,12 +114,15 @@ export type Database = {
         Insert: {
           active?: boolean;
           address?: string | null;
+          appointment_count?: number;
           birth_date?: string | null;
           contact_allowed?: boolean;
           contact_preference?: string;
           created_at?: string;
           email?: string | null;
           id?: string;
+          last_appointment_at?: string | null;
+          last_professional_id?: string | null;
           name: string;
           notes?: string | null;
           phone?: string | null;
@@ -127,12 +133,15 @@ export type Database = {
         Update: {
           active?: boolean;
           address?: string | null;
+          appointment_count?: number;
           birth_date?: string | null;
           contact_allowed?: boolean;
           contact_preference?: string;
           created_at?: string;
           email?: string | null;
           id?: string;
+          last_appointment_at?: string | null;
+          last_professional_id?: string | null;
           name?: string;
           notes?: string | null;
           phone?: string | null;
@@ -431,8 +440,10 @@ export type Database = {
           created_at: string;
           description: string | null;
           id: string;
+          image_url: string | null;
           minimum_stock: number;
           name: string;
+          public_visible: boolean;
           sale_price_cents: number;
           sku: string | null;
           stock_quantity: number;
@@ -447,8 +458,10 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id?: string;
+          image_url?: string | null;
           minimum_stock?: number;
           name: string;
+          public_visible?: boolean;
           sale_price_cents?: number;
           sku?: string | null;
           stock_quantity?: number;
@@ -463,8 +476,10 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id?: string;
+          image_url?: string | null;
           minimum_stock?: number;
           name?: string;
+          public_visible?: boolean;
           sale_price_cents?: number;
           sku?: string | null;
           stock_quantity?: number;
@@ -542,8 +557,10 @@ export type Database = {
           email: string | null;
           id: string;
           name: string;
+          bio: string | null;
           notes: string | null;
           phone: string | null;
+          photo_url: string | null;
           specialty: string | null;
           tenant_id: string;
           updated_at: string;
@@ -558,8 +575,10 @@ export type Database = {
           email?: string | null;
           id?: string;
           name: string;
+          bio?: string | null;
           notes?: string | null;
           phone?: string | null;
+          photo_url?: string | null;
           specialty?: string | null;
           tenant_id?: string;
           updated_at?: string;
@@ -574,8 +593,10 @@ export type Database = {
           email?: string | null;
           id?: string;
           name?: string;
+          bio?: string | null;
           notes?: string | null;
           phone?: string | null;
+          photo_url?: string | null;
           specialty?: string | null;
           tenant_id?: string;
           updated_at?: string;
@@ -748,6 +769,256 @@ export type Database = {
           },
         ];
       };
+      tenant_licenses: {
+        Row: {
+          created_at: string;
+          current_period_ends_at: string | null;
+          external_reference: string | null;
+          id: string;
+          product_type: string;
+          starts_at: string;
+          status: string;
+          suspended_at: string | null;
+          tenant_id: string;
+          trial_ends_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          current_period_ends_at?: string | null;
+          external_reference?: string | null;
+          id?: string;
+          product_type: string;
+          starts_at?: string;
+          status?: string;
+          suspended_at?: string | null;
+          tenant_id: string;
+          trial_ends_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          current_period_ends_at?: string | null;
+          external_reference?: string | null;
+          id?: string;
+          product_type?: string;
+          starts_at?: string;
+          status?: string;
+          suspended_at?: string | null;
+          tenant_id?: string;
+          trial_ends_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      notification_outbox: {
+        Row: {
+          appointment_id: string | null;
+          attempt_count: number;
+          available_at: string;
+          channel: string;
+          created_at: string;
+          event_type: string;
+          id: string;
+          last_error: string | null;
+          payload: Json;
+          provider: string;
+          recipient: string | null;
+          sent_at: string | null;
+          status: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          appointment_id?: string | null;
+          attempt_count?: number;
+          available_at?: string;
+          channel: string;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          last_error?: string | null;
+          payload?: Json;
+          provider?: string;
+          recipient?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          appointment_id?: string | null;
+          attempt_count?: number;
+          available_at?: string;
+          channel?: string;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          last_error?: string | null;
+          payload?: Json;
+          provider?: string;
+          recipient?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      public_gallery: {
+        Row: {
+          active: boolean;
+          alt_text: string | null;
+          created_at: string;
+          id: string;
+          image_url: string;
+          sort_order: number;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          alt_text?: string | null;
+          created_at?: string;
+          id?: string;
+          image_url: string;
+          sort_order?: number;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          alt_text?: string | null;
+          created_at?: string;
+          id?: string;
+          image_url?: string;
+          sort_order?: number;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      public_reviews: {
+        Row: {
+          active: boolean;
+          client_name: string;
+          comment: string;
+          created_at: string;
+          id: string;
+          rating: number;
+          sort_order: number;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          client_name: string;
+          comment: string;
+          created_at?: string;
+          id?: string;
+          rating: number;
+          sort_order?: number;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          client_name?: string;
+          comment?: string;
+          created_at?: string;
+          id?: string;
+          rating?: number;
+          sort_order?: number;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      professional_services: {
+        Row: { created_at: string; professional_id: string; service_id: string; tenant_id: string };
+        Insert: {
+          created_at?: string;
+          professional_id: string;
+          service_id: string;
+          tenant_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          professional_id?: string;
+          service_id?: string;
+          tenant_id?: string;
+        };
+        Relationships: [];
+      };
+      appointment_services: {
+        Row: {
+          appointment_id: string;
+          created_at: string;
+          duration_minutes: number;
+          position: number;
+          price_cents: number;
+          service_id: string;
+          tenant_id: string;
+        };
+        Insert: {
+          appointment_id: string;
+          created_at?: string;
+          duration_minutes: number;
+          position?: number;
+          price_cents: number;
+          service_id: string;
+          tenant_id: string;
+        };
+        Update: {
+          appointment_id?: string;
+          created_at?: string;
+          duration_minutes?: number;
+          position?: number;
+          price_cents?: number;
+          service_id?: string;
+          tenant_id?: string;
+        };
+        Relationships: [];
+      };
+      marketing_automation_rules: {
+        Row: {
+          active: boolean;
+          campaign_type: string;
+          created_at: string;
+          delay_days: number;
+          id: string;
+          inactive_days: number | null;
+          name: string;
+          template_id: string | null;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          campaign_type: string;
+          created_at?: string;
+          delay_days?: number;
+          id?: string;
+          inactive_days?: number | null;
+          name: string;
+          template_id?: string | null;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          campaign_type?: string;
+          created_at?: string;
+          delay_days?: number;
+          id?: string;
+          inactive_days?: number | null;
+          name?: string;
+          template_id?: string | null;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       tenant_memberships: {
         Row: {
           created_at: string;
@@ -818,23 +1089,35 @@ export type Database = {
       };
       tenants: {
         Row: {
+          accent_color: string;
           address_line: string | null;
+          background_color: string;
           banner_url: string | null;
           booking_interval_minutes: number;
           business_hours: Json;
+          button_color: string;
           cancellation_policy: string | null;
+          card_color: string;
           city: string | null;
           created_at: string;
           description: string | null;
           document: string | null;
           email: string | null;
+          facebook: string | null;
           id: string;
           instagram: string | null;
           logo_url: string | null;
+          map_url: string | null;
+          menu_color: string;
+          meta_access_token_secret_name: string;
+          meta_phone_number_id: string | null;
+          meta_waba_id: string | null;
+          meta_webhook_verify_secret_name: string;
           name: string;
           onboarding_completed_at: string | null;
           owner_id: string;
           phone: string | null;
+          photo_url: string | null;
           postal_code: string | null;
           primary_color: string;
           product_type: string;
@@ -845,30 +1128,46 @@ export type Database = {
           slug: string;
           state: string | null;
           status: string;
+          text_color: string;
           timezone: string;
+          title_color: string;
           updated_at: string;
           welcome_message: string | null;
           whatsapp: string | null;
+          whatsapp_integration_mode: string;
           whatsapp_initial_message: string | null;
+          whatsapp_notification_phone: string | null;
         };
         Insert: {
+          accent_color?: string;
           address_line?: string | null;
+          background_color?: string;
           banner_url?: string | null;
           booking_interval_minutes?: number;
           business_hours?: Json;
+          button_color?: string;
           cancellation_policy?: string | null;
+          card_color?: string;
           city?: string | null;
           created_at?: string;
           description?: string | null;
           document?: string | null;
           email?: string | null;
+          facebook?: string | null;
           id?: string;
           instagram?: string | null;
           logo_url?: string | null;
+          map_url?: string | null;
+          menu_color?: string;
+          meta_access_token_secret_name?: string;
+          meta_phone_number_id?: string | null;
+          meta_waba_id?: string | null;
+          meta_webhook_verify_secret_name?: string;
           name: string;
           onboarding_completed_at?: string | null;
           owner_id: string;
           phone?: string | null;
+          photo_url?: string | null;
           postal_code?: string | null;
           primary_color?: string;
           product_type?: string;
@@ -879,30 +1178,46 @@ export type Database = {
           slug: string;
           state?: string | null;
           status?: string;
+          text_color?: string;
           timezone?: string;
+          title_color?: string;
           updated_at?: string;
           welcome_message?: string | null;
           whatsapp?: string | null;
+          whatsapp_integration_mode?: string;
           whatsapp_initial_message?: string | null;
+          whatsapp_notification_phone?: string | null;
         };
         Update: {
+          accent_color?: string;
           address_line?: string | null;
+          background_color?: string;
           banner_url?: string | null;
           booking_interval_minutes?: number;
           business_hours?: Json;
+          button_color?: string;
           cancellation_policy?: string | null;
+          card_color?: string;
           city?: string | null;
           created_at?: string;
           description?: string | null;
           document?: string | null;
           email?: string | null;
+          facebook?: string | null;
           id?: string;
           instagram?: string | null;
           logo_url?: string | null;
+          map_url?: string | null;
+          menu_color?: string;
+          meta_access_token_secret_name?: string;
+          meta_phone_number_id?: string | null;
+          meta_waba_id?: string | null;
+          meta_webhook_verify_secret_name?: string;
           name?: string;
           onboarding_completed_at?: string | null;
           owner_id?: string;
           phone?: string | null;
+          photo_url?: string | null;
           postal_code?: string | null;
           primary_color?: string;
           product_type?: string;
@@ -913,11 +1228,15 @@ export type Database = {
           slug?: string;
           state?: string | null;
           status?: string;
+          text_color?: string;
           timezone?: string;
+          title_color?: string;
           updated_at?: string;
           welcome_message?: string | null;
           whatsapp?: string | null;
+          whatsapp_integration_mode?: string;
           whatsapp_initial_message?: string | null;
+          whatsapp_notification_phone?: string | null;
         };
         Relationships: [];
       };
@@ -983,6 +1302,23 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_public_booking_v2: {
+        Args: {
+          p_customer_birth_date: string | null;
+          p_customer_email: string;
+          p_customer_name: string;
+          p_customer_phone: string;
+          p_fingerprint: string;
+          p_honeypot?: string;
+          p_notes: string;
+          p_professional_id: string;
+          p_request_id: string;
+          p_service_ids: string[];
+          p_slug: string;
+          p_starts_at: string;
+        };
+        Returns: Json;
+      };
       get_public_booking_availability: {
         Args: {
           p_date: string;
@@ -992,7 +1328,17 @@ export type Database = {
         };
         Returns: Json;
       };
+      get_public_booking_availability_v2: {
+        Args: {
+          p_date: string;
+          p_professional_id?: string | null;
+          p_service_ids: string[];
+          p_slug: string;
+        };
+        Returns: Json;
+      };
       get_public_company_page: { Args: { p_slug: string }; Returns: Json };
+      get_public_company_page_v2: { Args: { p_slug: string }; Returns: Json };
       switch_active_tenant: {
         Args: { target_tenant_id: string };
         Returns: undefined;

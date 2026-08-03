@@ -126,25 +126,40 @@ export async function resolveSession(
   if (membershipError || !memberships?.length || !authSession.session) return null;
 
   const tenantIds = memberships.map((membership) => membership.tenant_id);
-  const { data: tenants, error: tenantError } = await supabase
-    .from("tenants")
-    .select("id, name, slug, status, product_type, onboarding_completed_at")
-    .in("id", tenantIds)
-    .eq("status", "active");
+  const [{ data: tenants, error: tenantError }, { data: licenses, error: licenseError }] =
+    await Promise.all([
+      supabase
+        .from("tenants")
+        .select("id, name, slug, status, product_type, onboarding_completed_at, logo_url")
+        .in("id", tenantIds)
+        .eq("status", "active"),
+      supabase
+        .from("tenant_licenses")
+        .select("tenant_id, product_type, status")
+        .in("tenant_id", tenantIds)
+        .in("status", ["trial", "active"]),
+    ]);
 
-  if (tenantError || !tenants?.length) return null;
+  if (tenantError || licenseError || !tenants?.length || !licenses?.length) return null;
 
   const companies = memberships.flatMap((membership): CompanyAccess[] => {
     const tenant = tenants.find((candidate) => candidate.id === membership.tenant_id);
+    const license = licenses.find(
+      (candidate) =>
+        candidate.tenant_id === membership.tenant_id &&
+        candidate.product_type === tenant?.product_type,
+    );
     const role = z.enum(roles).safeParse(membership.role);
-    if (!tenant || !role.success) return [];
+    if (!tenant || !license || !role.success) return [];
     return [
       {
         tenantId: tenant.id,
         tenantName: tenant.name,
         tenantSlug: tenant.slug,
+        logoUrl: tenant.logo_url,
         productType: tenant.product_type === "barber" ? "barber" : "beauty",
         onboardingCompleted: Boolean(tenant.onboarding_completed_at),
+        licenseStatus: license.status === "trial" ? "trial" : "active",
         role: role.data as Role,
         permissions: getPermissionsForRole(role.data as Role),
       },

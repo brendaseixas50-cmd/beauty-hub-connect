@@ -22,8 +22,10 @@ export interface CompanyAccess {
   tenantId: string;
   tenantName: string;
   tenantSlug: string;
+  logoUrl: string | null;
   productType: "beauty" | "barber";
   onboardingCompleted: boolean;
+  licenseStatus: "trial" | "active";
   role: Role;
   permissions: readonly Permission[];
 }

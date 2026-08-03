@@ -15,6 +15,7 @@ import type {
   MarketingTemplate,
   Product,
   Professional,
+  ProfessionalWithServices,
   Service,
 } from "./domain";
 
@@ -73,7 +74,12 @@ const companySchema = z.object({
   phone: optionalShortText,
   whatsapp: optionalShortText,
   whatsappInitialMessage: optionalText,
+  whatsappNotificationPhone: optionalShortText,
+  whatsappIntegrationMode: z.enum(["development", "cloud_api"]),
+  metaPhoneNumberId: optionalShortText,
+  metaWabaId: optionalShortText,
   instagram: optionalShortText,
+  facebook: optionalShortText,
   description: optionalText,
   addressLine: optionalShortText,
   city: optionalShortText,
@@ -85,6 +91,13 @@ const companySchema = z.object({
     .or(z.literal(""))
     .transform((value) => value || null),
   postalCode: optionalShortText,
+  mapUrl: z
+    .string()
+    .trim()
+    .url()
+    .max(1000)
+    .or(z.literal(""))
+    .transform((value) => value || null),
   businessHours: z.record(z.string(), z.string().max(40)),
   publicPage: z
     .object({
@@ -101,8 +114,21 @@ const companySchema = z.object({
         .max(1000)
         .or(z.literal(""))
         .transform((value) => value || null),
+      photoUrl: z
+        .string()
+        .url()
+        .max(1000)
+        .or(z.literal(""))
+        .transform((value) => value || null),
       primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
       secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      buttonColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      cardColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      menuColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      backgroundColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      titleColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      textColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
       welcomeMessage: optionalText,
       cancellationPolicy: optionalText,
       publicInformation: z
@@ -166,8 +192,16 @@ export const updateCompany = createServerFn({ method: "POST" })
           public_name: data.publicPage.publicName,
           logo_url: data.publicPage.logoUrl,
           banner_url: data.publicPage.bannerUrl,
+          photo_url: data.publicPage.photoUrl,
           primary_color: data.publicPage.primaryColor,
           secondary_color: data.publicPage.secondaryColor,
+          accent_color: data.publicPage.accentColor,
+          button_color: data.publicPage.buttonColor,
+          card_color: data.publicPage.cardColor,
+          menu_color: data.publicPage.menuColor,
+          background_color: data.publicPage.backgroundColor,
+          title_color: data.publicPage.titleColor,
+          text_color: data.publicPage.textColor,
           welcome_message: data.publicPage.welcomeMessage,
           cancellation_policy: data.publicPage.cancellationPolicy,
           public_information: data.publicPage.publicInformation,
@@ -179,18 +213,23 @@ export const updateCompany = createServerFn({ method: "POST" })
       .from("tenants")
       .update({
         name: data.name,
-        product_type: data.productType,
         document: data.document,
         email: data.email,
         phone: data.phone,
         whatsapp: data.whatsapp,
         whatsapp_initial_message: data.whatsappInitialMessage,
+        whatsapp_notification_phone: data.whatsappNotificationPhone,
+        whatsapp_integration_mode: data.whatsappIntegrationMode,
+        meta_phone_number_id: data.metaPhoneNumberId,
+        meta_waba_id: data.metaWabaId,
         instagram: data.instagram,
+        facebook: data.facebook,
         description: data.description,
         address_line: data.addressLine,
         city: data.city,
         state: data.state,
         postal_code: data.postalCode,
+        map_url: data.mapUrl,
         business_hours: data.businessHours,
         ...publicValues,
       })
@@ -202,9 +241,10 @@ export const updateCompany = createServerFn({ method: "POST" })
   });
 
 const publicMediaSchema = z.object({
-  kind: z.enum(["logo", "banner"]),
+  kind: z.enum(["logo", "banner", "photo", "gallery"]),
   mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
   base64: z.string().max(4_200_000),
+  key: z.string().uuid().optional(),
 });
 
 export const uploadPublicMedia = createServerFn({ method: "POST" })
@@ -218,7 +258,10 @@ export const uploadPublicMedia = createServerFn({ method: "POST" })
     }
     const extension =
       data.mimeType === "image/png" ? "png" : data.mimeType === "image/webp" ? "webp" : "jpg";
-    const path = `${tenantId}/${data.kind}.${extension}`;
+    const path =
+      data.kind === "gallery"
+        ? `${tenantId}/gallery/${data.key ?? crypto.randomUUID()}.${extension}`
+        : `${tenantId}/${data.kind}.${extension}`;
     const { error } = await supabase.storage.from("public-page-media").upload(path, bytes, {
       contentType: data.mimeType,
       cacheControl: "31536000",
@@ -227,6 +270,100 @@ export const uploadPublicMedia = createServerFn({ method: "POST" })
     if (error) throw new Error("Não foi possível enviar a imagem.");
     const { data: publicUrl } = supabase.storage.from("public-page-media").getPublicUrl(path);
     return { url: `${publicUrl.publicUrl}?v=${Date.now()}` };
+  });
+
+const gallerySchema = z.object({
+  id: z.string().uuid().optional(),
+  imageUrl: z.string().url().max(1000),
+  altText: optionalShortText,
+  sortOrder: z.number().int().min(0).max(10000),
+  active: z.boolean(),
+});
+const reviewSchema = z.object({
+  id: z.string().uuid().optional(),
+  clientName: z.string().trim().min(2).max(120),
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().trim().min(2).max(1000),
+  sortOrder: z.number().int().min(0).max(10000),
+  active: z.boolean(),
+});
+
+export const getPublicPageContent = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabase, tenantId } = await tenantContext();
+  const [gallery, reviews] = await Promise.all([
+    supabase.from("public_gallery").select("*").eq("tenant_id", tenantId).order("sort_order"),
+    supabase.from("public_reviews").select("*").eq("tenant_id", tenantId).order("sort_order"),
+  ]);
+  if (gallery.error || reviews.error)
+    databaseError(gallery.error ?? reviews.error, "Não foi possível carregar o conteúdo público.");
+  return { gallery: gallery.data ?? [], reviews: reviews.data ?? [] };
+});
+
+export const saveGalleryItem = createServerFn({ method: "POST" })
+  .validator(gallerySchema)
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const values = {
+      tenant_id: tenantId,
+      image_url: data.imageUrl,
+      alt_text: data.altText,
+      sort_order: data.sortOrder,
+      active: data.active,
+    };
+    const query = data.id
+      ? supabase.from("public_gallery").update(values).eq("id", data.id).eq("tenant_id", tenantId)
+      : supabase.from("public_gallery").insert(values);
+    const { data: saved, error } = await query.select().single();
+    if (error || !saved) databaseError(error, "Não foi possível salvar a foto.");
+    return saved;
+  });
+export const deleteGalleryItem = createServerFn({ method: "POST" })
+  .validator(idSchema)
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const { error } = await supabase
+      .from("public_gallery")
+      .delete()
+      .eq("id", data.id)
+      .eq("tenant_id", tenantId);
+    if (error) databaseError(error, "Não foi possível excluir a foto.");
+    return { success: true } as const;
+  });
+
+export const savePublicReview = createServerFn({ method: "POST" })
+  .validator(reviewSchema)
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const values = {
+      tenant_id: tenantId,
+      client_name: data.clientName,
+      rating: data.rating,
+      comment: data.comment,
+      sort_order: data.sortOrder,
+      active: data.active,
+    };
+    const query = data.id
+      ? supabase.from("public_reviews").update(values).eq("id", data.id).eq("tenant_id", tenantId)
+      : supabase.from("public_reviews").insert(values);
+    const { data: saved, error } = await query.select().single();
+    if (error || !saved) databaseError(error, "Não foi possível salvar a avaliação.");
+    return saved;
+  });
+export const deletePublicReview = createServerFn({ method: "POST" })
+  .validator(idSchema)
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const { error } = await supabase
+      .from("public_reviews")
+      .delete()
+      .eq("id", data.id)
+      .eq("tenant_id", tenantId);
+    if (error) databaseError(error, "Não foi possível excluir a avaliação.");
+    return { success: true } as const;
   });
 
 const professionalSchema = z.object({
@@ -244,19 +381,42 @@ const professionalSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   active: z.boolean(),
   notes: optionalText,
+  bio: optionalText,
+  photoUrl: z
+    .string()
+    .url()
+    .max(1000)
+    .or(z.literal(""))
+    .transform((value) => value || null),
+  serviceIds: z.array(z.string().uuid()).max(100),
 });
 
 export const listProfessionals = createServerFn({ method: "GET" }).handler(
-  async (): Promise<Professional[]> => {
+  async (): Promise<ProfessionalWithServices[]> => {
     const { supabase, tenantId } = await tenantContext();
-    const { data, error } = await supabase
-      .from("professionals")
-      .select("*")
-      .eq("tenant_id", tenantId)
-      .order("active", { ascending: false })
-      .order("name");
-    if (error) databaseError(error, "Não foi possível carregar os profissionais.");
-    return data;
+    const [professionals, links] = await Promise.all([
+      supabase
+        .from("professionals")
+        .select("*")
+        .eq("tenant_id", tenantId)
+        .order("active", { ascending: false })
+        .order("name"),
+      supabase
+        .from("professional_services")
+        .select("professional_id, service_id")
+        .eq("tenant_id", tenantId),
+    ]);
+    if (professionals.error || links.error)
+      databaseError(
+        professionals.error ?? links.error,
+        "Não foi possível carregar os profissionais.",
+      );
+    return (professionals.data ?? []).map((professional) => ({
+      ...professional,
+      serviceIds: (links.data ?? [])
+        .filter((link) => link.professional_id === professional.id)
+        .map((link) => link.service_id),
+    }));
   },
 );
 
@@ -275,12 +435,32 @@ export const saveProfessional = createServerFn({ method: "POST" })
       color: data.color,
       active: data.active,
       notes: data.notes,
+      bio: data.bio,
+      photo_url: data.photoUrl,
     };
     const query = data.id
       ? supabase.from("professionals").update(values).eq("id", data.id).eq("tenant_id", tenantId)
       : supabase.from("professionals").insert(values);
     const { data: saved, error } = await query.select().single();
     if (error || !saved) databaseError(error, "Não foi possível salvar o profissional.");
+    const { error: clearError } = await supabase
+      .from("professional_services")
+      .delete()
+      .eq("tenant_id", tenantId)
+      .eq("professional_id", saved.id);
+    if (clearError)
+      databaseError(clearError, "Não foi possível atualizar os serviços do profissional.");
+    if (data.serviceIds.length) {
+      const { error: linkError } = await supabase.from("professional_services").insert(
+        data.serviceIds.map((serviceId) => ({
+          tenant_id: tenantId,
+          professional_id: saved.id,
+          service_id: serviceId,
+        })),
+      );
+      if (linkError)
+        databaseError(linkError, "Não foi possível atualizar os serviços do profissional.");
+    }
     return saved;
   });
 
@@ -650,6 +830,13 @@ const productSchema = z.object({
   minimumStock: z.number().int().min(0),
   unit: z.string().trim().min(1).max(12),
   active: z.boolean(),
+  imageUrl: z
+    .string()
+    .url()
+    .max(1000)
+    .or(z.literal(""))
+    .transform((value) => value || null),
+  publicVisible: z.boolean(),
 });
 
 export const listProducts = createServerFn({ method: "GET" }).handler(
@@ -682,6 +869,8 @@ export const saveProduct = createServerFn({ method: "POST" })
       minimum_stock: data.minimumStock,
       unit: data.unit,
       active: data.active,
+      image_url: data.imageUrl,
+      public_visible: data.publicVisible,
     };
     if (data.id) {
       const { data: saved, error } = await supabase
@@ -962,42 +1151,50 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(async () =
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-  const [appointments, clients, professionals, services, finances, lowStock] = await Promise.all([
-    supabase
-      .from("appointments")
-      .select("*, clients(name, phone), services(name, duration_minutes), professionals(name)")
-      .eq("tenant_id", tenantId)
-      .gte("starts_at", todayStart.toISOString())
-      .lt("starts_at", todayEnd.toISOString())
-      .order("starts_at"),
-    supabase
-      .from("clients")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .eq("active", true),
-    supabase
-      .from("professionals")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .eq("active", true),
-    supabase
-      .from("services")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .eq("active", true),
-    supabase
-      .from("financial_entries")
-      .select("entry_type, amount_cents")
-      .eq("tenant_id", tenantId)
-      .eq("status", "paid")
-      .gte("due_date", monthStart.toISOString().slice(0, 10))
-      .lt("due_date", monthEnd.toISOString().slice(0, 10)),
-    supabase
-      .from("products")
-      .select("stock_quantity, minimum_stock")
-      .eq("tenant_id", tenantId)
-      .eq("active", true),
-  ]);
+  const [appointments, clients, professionals, services, finances, lowStock, notifications] =
+    await Promise.all([
+      supabase
+        .from("appointments")
+        .select("*, clients(name, phone), services(name, duration_minutes), professionals(name)")
+        .eq("tenant_id", tenantId)
+        .gte("starts_at", todayStart.toISOString())
+        .lt("starts_at", todayEnd.toISOString())
+        .order("starts_at"),
+      supabase
+        .from("clients")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId)
+        .eq("active", true),
+      supabase
+        .from("professionals")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId)
+        .eq("active", true),
+      supabase
+        .from("services")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId)
+        .eq("active", true),
+      supabase
+        .from("financial_entries")
+        .select("entry_type, amount_cents")
+        .eq("tenant_id", tenantId)
+        .eq("status", "paid")
+        .gte("due_date", monthStart.toISOString().slice(0, 10))
+        .lt("due_date", monthEnd.toISOString().slice(0, 10)),
+      supabase
+        .from("products")
+        .select("stock_quantity, minimum_stock")
+        .eq("tenant_id", tenantId)
+        .eq("active", true),
+      supabase
+        .from("notification_outbox")
+        .select("*")
+        .eq("tenant_id", tenantId)
+        .in("status", ["pending", "development", "failed"])
+        .order("created_at", { ascending: false })
+        .limit(10),
+    ]);
   const error =
     appointments.error ??
     clients.error ??
@@ -1005,6 +1202,7 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(async () =
     services.error ??
     finances.error ??
     lowStock.error;
+  // Notification errors must not make the operational dashboard unavailable during rollout.
   if (error) databaseError(error, "Não foi possível carregar o dashboard.");
   const revenue = (finances.data ?? []).reduce(
     (total, item) =>
@@ -1019,6 +1217,7 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(async () =
     monthBalanceCents: revenue,
     lowStock: (lowStock.data ?? []).filter((item) => item.stock_quantity <= item.minimum_stock)
       .length,
+    notifications: notifications.data ?? [],
   };
 });
 

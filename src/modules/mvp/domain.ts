@@ -23,6 +23,7 @@ export type MarketingClient = Client & {
 };
 export type Product = Tables<"products">;
 export type Professional = Tables<"professionals">;
+export type ProfessionalWithServices = Professional & { serviceIds: string[] };
 export type Service = Tables<"services">;
 
 export type ProductType = "beauty" | "barber";

@@ -51,19 +51,17 @@ export const Route = createFileRoute("/painel")({
 });
 
 const itens = [
-  { to: "/painel", label: "Visão geral", icon: LayoutGrid, exact: true },
+  { to: "/painel", label: "Visão Geral", icon: LayoutGrid, exact: true },
   { to: "/painel/empresa", label: "Empresa", icon: Building2 },
   { to: "/painel/agenda", label: "Agenda", icon: CalendarDays },
   { to: "/painel/servicos", label: "Serviços", icon: Scissors },
   { to: "/painel/profissionais", label: "Profissionais", icon: UserCog },
   { to: "/painel/clientes", label: "Clientes", icon: Users },
-  { to: "/painel/pagina-publica", label: "Minha página pública", icon: Globe2 },
   { to: "/painel/marketing", label: "Marketing", icon: Megaphone },
   { to: "/painel/produtos", label: "Produtos", icon: Package },
   { to: "/painel/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/painel/estoque", label: "Estoque", icon: Package },
   { to: "/painel/relatorios", label: "Relatórios", icon: BarChart3 },
-  { to: "/painel/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 
 function Navegacao({ onNavigate }: { onNavigate?: () => void }) {
@@ -94,6 +92,44 @@ function Navegacao({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+function AcoesInferiores({
+  onNavigate,
+  onLogout,
+}: {
+  onNavigate?: () => void;
+  onLogout: () => void;
+}) {
+  return (
+    <div className="grid gap-1 border-t pt-4">
+      <Link
+        to="/painel/pagina-publica"
+        target="_blank"
+        rel="noreferrer"
+        preload="intent"
+        onClick={onNavigate}
+        className="mb-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:opacity-90"
+      >
+        <Globe2 className="h-4 w-4" /> Minha Página Pública
+      </Link>
+      <Link
+        to="/painel/configuracoes"
+        preload="intent"
+        onClick={onNavigate}
+        className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-sidebar-accent/50"
+      >
+        <Settings className="h-4 w-4" /> Configurações
+      </Link>
+      <button
+        type="button"
+        onClick={onLogout}
+        className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-sidebar-accent/50"
+      >
+        <LogOut className="h-4 w-4" /> Sair
+      </button>
+    </div>
+  );
+}
+
 function Marca({ session }: { session: Session }) {
   const initials = session.user.tenantName
     .split(/\s+/)
@@ -104,9 +140,17 @@ function Marca({ session }: { session: Session }) {
 
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-        {initials}
-      </div>
+      {session.user.logoUrl ? (
+        <img
+          src={session.user.logoUrl}
+          alt={`Logo ${session.user.tenantName}`}
+          className="h-10 w-10 shrink-0 rounded-full object-cover"
+        />
+      ) : (
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+          {initials}
+        </div>
+      )}
       <div className="min-w-0">
         <p className="truncate text-sm font-medium">{session.user.tenantName}</p>
         <p className="truncate text-xs text-muted-foreground">{session.user.name}</p>
@@ -117,6 +161,8 @@ function Marca({ session }: { session: Session }) {
 
 function CompanySwitcher({ session }: { session: Session }) {
   const switchFn = useServerFn(switchCompany);
+  const router = useRouter();
+  const navigate = useNavigate();
   const [pending, setPending] = useState(false);
 
   if (session.user.companies.length < 2) return null;
@@ -126,7 +172,8 @@ function CompanySwitcher({ session }: { session: Session }) {
     setPending(true);
     try {
       await switchFn({ data: { tenantId } });
-      window.location.assign("/painel");
+      await router.invalidate();
+      await navigate({ to: "/painel", replace: true });
     } finally {
       setPending(false);
     }
@@ -168,10 +215,19 @@ function PainelLayout() {
   useEffect(() => {
     const preload = () => {
       void Promise.allSettled([
+        router.preloadRoute({ to: "/painel" }),
+        router.preloadRoute({ to: "/painel/empresa" }),
         router.preloadRoute({ to: "/painel/agenda" }),
+        router.preloadRoute({ to: "/painel/profissionais" }),
         router.preloadRoute({ to: "/painel/clientes" }),
         router.preloadRoute({ to: "/painel/servicos" }),
+        router.preloadRoute({ to: "/painel/marketing" }),
+        router.preloadRoute({ to: "/painel/produtos" }),
         router.preloadRoute({ to: "/painel/financeiro" }),
+        router.preloadRoute({ to: "/painel/estoque" }),
+        router.preloadRoute({ to: "/painel/relatorios" }),
+        router.preloadRoute({ to: "/painel/configuracoes" }),
+        router.preloadRoute({ to: "/painel/pagina-publica" }),
       ]);
     };
     const idle = window.requestIdleCallback?.(preload, { timeout: 1800 });
@@ -202,14 +258,7 @@ function PainelLayout() {
           </div>
           <div className="grid gap-3">
             <p className="truncate px-1 text-xs text-muted-foreground">{session.user.email}</p>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full rounded-full"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-3.5 w-3.5" /> Sair
-            </Button>
+            <AcoesInferiores onLogout={() => void handleLogout()} />
           </div>
         </aside>
 
@@ -228,14 +277,10 @@ function PainelLayout() {
                   <Navegacao onNavigate={() => setAberto(false)} />
                 </div>
                 <div className="mt-4 grid gap-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full rounded-full"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-3.5 w-3.5" /> Sair
-                  </Button>
+                  <AcoesInferiores
+                    onNavigate={() => setAberto(false)}
+                    onLogout={() => void handleLogout()}
+                  />
                 </div>
               </SheetContent>
             </Sheet>

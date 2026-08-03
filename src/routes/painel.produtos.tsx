@@ -171,6 +171,8 @@ function ProductDialog({ product, onClose }: { product: Product | null; onClose:
             minimumStock: Number(form.get("minimumStock")),
             unit: String(form.get("unit")),
             active: form.get("active") === "on",
+            imageUrl: String(form.get("imageUrl")),
+            publicVisible: form.get("publicVisible") === "on",
           },
         }),
       product ? "Produto atualizado." : "Produto cadastrado.",
@@ -238,9 +240,23 @@ function ProductDialog({ product, onClose }: { product: Product | null; onClose:
               defaultValue={product?.description ?? ""}
             />
           </div>
+          <Field
+            label="URL da imagem pública"
+            name="imageUrl"
+            type="url"
+            defaultValue={product?.image_url ?? ""}
+          />
           <label className="flex items-center gap-2 text-sm">
             <input name="active" type="checkbox" defaultChecked={product?.active ?? true} /> Produto
             ativo
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              name="publicVisible"
+              type="checkbox"
+              defaultChecked={product?.public_visible ?? false}
+            />{" "}
+            Exibir na página pública
           </label>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
