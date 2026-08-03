@@ -41,18 +41,24 @@ function SettingsPage() {
         save({
           data: {
             name: company.name,
-            productType: String(form.get("productType")) as "beauty" | "barber",
+            productType: company.product_type === "barber" ? "barber" : "beauty",
             document: company.document ?? "",
             email: company.email ?? "",
             phone: company.phone ?? "",
             whatsapp: company.whatsapp ?? "",
             whatsappInitialMessage: company.whatsapp_initial_message ?? "",
+            whatsappNotificationPhone: company.whatsapp_notification_phone ?? "",
+            whatsappIntegrationMode: "development",
+            metaPhoneNumberId: company.meta_phone_number_id ?? "",
+            metaWabaId: company.meta_waba_id ?? "",
             instagram: company.instagram ?? "",
+            facebook: company.facebook ?? "",
             description: company.description ?? "",
             addressLine: company.address_line ?? "",
             city: company.city ?? "",
             state: company.state ?? "",
             postalCode: company.postal_code ?? "",
+            mapUrl: company.map_url ?? "",
             businessHours,
           },
         }),
@@ -71,18 +77,13 @@ function SettingsPage() {
         <Card className="grid gap-4 p-6">
           <h2 className="text-xl">Produto</h2>
           <div className="grid gap-2">
-            <Label htmlFor="productType">Experiência da empresa</Label>
-            <select
-              id="productType"
-              name="productType"
-              defaultValue={company.product_type}
-              className="h-10 rounded-md border bg-background px-3 text-sm"
-            >
-              <option value="beauty">LuBeauty Pro</option>
-              <option value="barber">LuBarber Pro</option>
-            </select>
+            <Label>Produto licenciado</Label>
+            <div className="rounded-xl border bg-muted/40 px-4 py-3 text-sm font-medium">
+              {company.product_type === "barber" ? "LuBarber Pro" : "LuBeauty Pro"}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Esta escolha altera a identidade visual e os textos do painel sem afetar os dados.
+              O produto é definido pela licença independente desta empresa e não pode ser trocado
+              apenas pela interface.
             </p>
           </div>
         </Card>

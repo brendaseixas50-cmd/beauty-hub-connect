@@ -113,6 +113,10 @@ function ClientsPage() {
                     {client.lastServiceName ? ` · ${client.lastServiceName}` : ""}
                   </p>
                 ) : null}
+                <p>Atendimentos concluídos: {client.appointment_count}</p>
+                {client.lastProfessionalName ? (
+                  <p>Último profissional: {client.lastProfessionalName}</p>
+                ) : null}
                 <p>Contato: {client.contact_allowed ? "autorizado" : "não autorizado"}</p>
                 {client.address ? <p>Endereço: {client.address}</p> : null}
                 {client.notes ? <p className="rounded-lg bg-muted p-3">{client.notes}</p> : null}

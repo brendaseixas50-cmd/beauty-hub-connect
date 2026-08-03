@@ -18,23 +18,31 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { Professional } from "@/modules/mvp/domain";
-import { deleteProfessional, listProfessionals, saveProfessional } from "@/modules/mvp/server";
+import type { ProfessionalWithServices } from "@/modules/mvp/domain";
+import {
+  deleteProfessional,
+  listProfessionals,
+  listServices,
+  saveProfessional,
+} from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
 
 export const Route = createFileRoute("/painel/profissionais")({
-  loader: () => listProfessionals(),
+  loader: async () => {
+    const [professionals, services] = await Promise.all([listProfessionals(), listServices()]);
+    return { professionals, services };
+  },
   head: () => ({ meta: [{ title: "Profissionais — Beauty Hub Connect" }] }),
   component: ProfessionalsPage,
 });
 
 function ProfessionalsPage() {
-  const professionals = Route.useLoaderData();
+  const { professionals, services } = Route.useLoaderData();
   const remove = useServerFn(deleteProfessional);
   const action = useMvpAction();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
-  const [editing, setEditing] = useState<Professional | null>();
+  const [editing, setEditing] = useState<ProfessionalWithServices | null>();
   const term = search.trim().toLowerCase();
   const filtered = professionals.filter((professional) => {
     const matches =
@@ -129,7 +137,11 @@ function ProfessionalsPage() {
         </div>
       )}
       {editing !== undefined ? (
-        <ProfessionalDialog professional={editing} onClose={() => setEditing(undefined)} />
+        <ProfessionalDialog
+          professional={editing}
+          services={services}
+          onClose={() => setEditing(undefined)}
+        />
       ) : null}
     </div>
   );
@@ -137,9 +149,11 @@ function ProfessionalsPage() {
 
 function ProfessionalDialog({
   professional,
+  services,
   onClose,
 }: {
-  professional: Professional | null;
+  professional: ProfessionalWithServices | null;
+  services: Awaited<ReturnType<typeof listServices>>;
   onClose: () => void;
 }) {
   const save = useServerFn(saveProfessional);
@@ -160,6 +174,9 @@ function ProfessionalDialog({
             color: String(form.get("color")),
             active: form.get("active") === "on",
             notes: String(form.get("notes")),
+            bio: String(form.get("bio")),
+            photoUrl: String(form.get("photoUrl")),
+            serviceIds: form.getAll("serviceIds").map(String),
           },
         }),
       professional ? "Profissional atualizado." : "Profissional cadastrado.",
@@ -182,6 +199,12 @@ function ProfessionalDialog({
             label="Especialidade"
             name="specialty"
             defaultValue={professional?.specialty ?? ""}
+          />
+          <Field
+            label="URL da foto"
+            name="photoUrl"
+            type="url"
+            defaultValue={professional?.photo_url ?? ""}
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Telefone" name="phone" defaultValue={professional?.phone ?? ""} />
@@ -206,6 +229,29 @@ function ProfessionalDialog({
               type="color"
               defaultValue={professional?.color ?? "#8b5e67"}
             />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="bio">Apresentação pública</Label>
+            <Textarea id="bio" name="bio" maxLength={500} defaultValue={professional?.bio ?? ""} />
+          </div>
+          <div className="grid gap-2">
+            <Label>Serviços realizados</Label>
+            <div className="grid max-h-44 gap-2 overflow-y-auto rounded-xl border p-3 sm:grid-cols-2">
+              {services.map((service) => (
+                <label key={service.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    name="serviceIds"
+                    value={service.id}
+                    type="checkbox"
+                    defaultChecked={professional?.serviceIds.includes(service.id) ?? false}
+                  />
+                  {service.name}
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Sem seleção, o profissional ficará disponível para todos os serviços.
+            </p>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="notes">Observações</Label>

@@ -1,5 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarCheck, PackageSearch, Scissors, TrendingUp, UserRound, Users } from "lucide-react";
+import {
+  Bell,
+  CalendarCheck,
+  MessageCircle,
+  PackageSearch,
+  Scissors,
+  TrendingUp,
+  UserRound,
+  Users,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -89,6 +98,37 @@ function Dashboard() {
           </Card>
         )}
       </section>
+
+      {data.notifications.length ? (
+        <section className="mt-10">
+          <div className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-primary" />
+            <h2 className="text-2xl">Novos agendamentos e notificações</h2>
+          </div>
+          <Card className="mt-4 divide-y p-0">
+            {data.notifications.map((notification) => (
+              <div key={notification.id} className="flex items-start gap-3 px-5 py-4">
+                <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">
+                    {notification.event_type === "booking_created"
+                      ? "Novo agendamento recebido"
+                      : "Notificação pendente"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {notification.channel === "whatsapp" && notification.status === "development"
+                      ? "A mensagem para o WhatsApp foi simulada e registrada. Nenhum envio externo ocorreu."
+                      : "A notificação está aguardando processamento."}
+                  </p>
+                </div>
+                <Badge variant={notification.status === "failed" ? "destructive" : "secondary"}>
+                  {notification.status === "development" ? "Simulação" : "Pendente"}
+                </Badge>
+              </div>
+            ))}
+          </Card>
+        </section>
+      ) : null}
     </div>
   );
 }

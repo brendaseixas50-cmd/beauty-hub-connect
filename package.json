@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run lint && npm run build",
-    "test": "node --experimental-strip-types --test src/modules/auth/domain.test.ts",
+    "test": "node --experimental-strip-types --test src/modules/auth/domain.test.ts src/modules/notifications/whatsapp-provider.test.ts src/modules/public-booking/domain.test.ts",
     "preview": "nitro preview --prebuilt",
     "lint": "eslint .",
     "format": "prettier --write ."

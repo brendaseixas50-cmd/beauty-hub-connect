@@ -25,7 +25,8 @@ function CompanyPage() {
   const action = useMvpAction();
   const [logoUrl, setLogoUrl] = useState(company.logo_url ?? "");
   const [bannerUrl, setBannerUrl] = useState(company.banner_url ?? "");
-  const [uploading, setUploading] = useState<"logo" | "banner">();
+  const [photoUrl, setPhotoUrl] = useState(company.photo_url ?? "");
+  const [uploading, setUploading] = useState<"logo" | "banner" | "photo">();
   const [copied, setCopied] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -42,19 +43,33 @@ function CompanyPage() {
             phone: String(form.get("phone")),
             whatsapp: String(form.get("whatsapp")),
             whatsappInitialMessage: String(form.get("whatsappInitialMessage")),
+            whatsappNotificationPhone: String(form.get("whatsappNotificationPhone")),
+            whatsappIntegrationMode: "development",
+            metaPhoneNumberId: String(form.get("metaPhoneNumberId")),
+            metaWabaId: String(form.get("metaWabaId")),
             instagram: String(form.get("instagram")),
+            facebook: String(form.get("facebook")),
             description: String(form.get("description")),
             addressLine: String(form.get("addressLine")),
             city: String(form.get("city")),
             state: String(form.get("state")),
             postalCode: String(form.get("postalCode")),
+            mapUrl: String(form.get("mapUrl")),
             businessHours: (company.business_hours ?? {}) as Record<string, string>,
             publicPage: {
               publicName: String(form.get("publicName")),
               logoUrl,
               bannerUrl,
+              photoUrl,
               primaryColor: String(form.get("primaryColor")),
               secondaryColor: String(form.get("secondaryColor")),
+              accentColor: String(form.get("accentColor")),
+              buttonColor: String(form.get("buttonColor")),
+              cardColor: String(form.get("cardColor")),
+              menuColor: String(form.get("menuColor")),
+              backgroundColor: String(form.get("backgroundColor")),
+              titleColor: String(form.get("titleColor")),
+              textColor: String(form.get("textColor")),
               welcomeMessage: String(form.get("welcomeMessage")),
               cancellationPolicy: String(form.get("cancellationPolicy")),
               publicInformation: String(form.get("publicInformation")),
@@ -68,7 +83,7 @@ function CompanyPage() {
     );
   }
 
-  async function onMedia(event: ChangeEvent<HTMLInputElement>, kind: "logo" | "banner") {
+  async function onMedia(event: ChangeEvent<HTMLInputElement>, kind: "logo" | "banner" | "photo") {
     const file = event.currentTarget.files?.[0];
     if (!file) return;
     if (
@@ -88,7 +103,8 @@ function CompanyPage() {
         data: { kind, mimeType: file.type as "image/jpeg" | "image/png" | "image/webp", base64 },
       });
       if (kind === "logo") setLogoUrl(result.url);
-      else setBannerUrl(result.url);
+      else if (kind === "banner") setBannerUrl(result.url);
+      else setPhotoUrl(result.url);
     } finally {
       setUploading(undefined);
     }
@@ -123,6 +139,7 @@ function CompanyPage() {
             <Field label="Telefone" name="phone" defaultValue={company.phone ?? ""} />
             <Field label="WhatsApp" name="whatsapp" defaultValue={company.whatsapp ?? ""} />
             <Field label="Instagram" name="instagram" defaultValue={company.instagram ?? ""} />
+            <Field label="Facebook" name="facebook" defaultValue={company.facebook ?? ""} />
             <Field label="Identificador público" name="slug" defaultValue={company.slug} disabled />
           </div>
           <div className="grid gap-2">
@@ -193,21 +210,49 @@ function CompanyPage() {
               pending={uploading === "banner"}
               onChange={onMedia}
             />
+            <MediaField
+              label="Foto principal"
+              kind="photo"
+              url={photoUrl}
+              pending={uploading === "photo"}
+              onChange={onMedia}
+            />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ColorField
               label="Cor principal"
               name="primaryColor"
-              type="color"
               defaultValue={company.primary_color}
             />
-            <Field
+            <ColorField
               label="Cor secundária"
               name="secondaryColor"
-              type="color"
               defaultValue={company.secondary_color}
             />
+            <ColorField
+              label="Cor de destaque"
+              name="accentColor"
+              defaultValue={company.accent_color}
+            />
+            <ColorField
+              label="Cor dos botões"
+              name="buttonColor"
+              defaultValue={company.button_color}
+            />
+            <ColorField label="Cor dos cards" name="cardColor" defaultValue={company.card_color} />
+            <ColorField label="Cor do menu" name="menuColor" defaultValue={company.menu_color} />
+            <ColorField
+              label="Cor do fundo"
+              name="backgroundColor"
+              defaultValue={company.background_color}
+            />
+            <ColorField
+              label="Cor dos títulos"
+              name="titleColor"
+              defaultValue={company.title_color}
+            />
+            <ColorField label="Cor dos textos" name="textColor" defaultValue={company.text_color} />
           </div>
 
           <div className="grid gap-2">
@@ -282,6 +327,47 @@ function CompanyPage() {
             <Field label="UF" name="state" maxLength={2} defaultValue={company.state ?? ""} />
             <Field label="CEP" name="postalCode" defaultValue={company.postal_code ?? ""} />
           </div>
+          <Field
+            label="Link do mapa"
+            name="mapUrl"
+            type="url"
+            defaultValue={company.map_url ?? ""}
+            placeholder="https://maps.google.com/..."
+          />
+        </Card>
+
+        <Card className="grid gap-5 p-6">
+          <div>
+            <h2 className="text-xl">Notificações de novos agendamentos</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              O modo de desenvolvimento registra a mensagem prevista sem chamar o WhatsApp.
+            </p>
+          </div>
+          <Field
+            label="Número que receberá as notificações"
+            name="whatsappNotificationPhone"
+            inputMode="tel"
+            defaultValue={company.whatsapp_notification_phone ?? ""}
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Meta Phone Number ID"
+              name="metaPhoneNumberId"
+              defaultValue={company.meta_phone_number_id ?? ""}
+              placeholder="Será informado futuramente"
+            />
+            <Field
+              label="Meta Business Account ID"
+              name="metaWabaId"
+              defaultValue={company.meta_waba_id ?? ""}
+              placeholder="Será informado futuramente"
+            />
+          </div>
+          <p className="rounded-xl bg-secondary p-4 text-sm text-muted-foreground">
+            Tokens não são salvos aqui. A integração futura utilizará segredos protegidos no
+            servidor: <strong>{company.meta_access_token_secret_name}</strong> e{" "}
+            <strong>{company.meta_webhook_verify_secret_name}</strong>.
+          </p>
         </Card>
 
         <Button
@@ -305,10 +391,10 @@ function MediaField({
   onChange,
 }: {
   label: string;
-  kind: "logo" | "banner";
+  kind: "logo" | "banner" | "photo";
   url: string;
   pending: boolean;
-  onChange: (event: ChangeEvent<HTMLInputElement>, kind: "logo" | "banner") => void;
+  onChange: (event: ChangeEvent<HTMLInputElement>, kind: "logo" | "banner" | "photo") => void;
 }) {
   return (
     <div className="grid gap-2">
@@ -339,6 +425,65 @@ function MediaField({
         onChange={(event) => void onChange(event, kind)}
       />
       <p className="text-xs text-muted-foreground">JPG, PNG ou WebP, até 3 MB.</p>
+    </div>
+  );
+}
+
+const palette = [
+  "#8b5e67",
+  "#d8a7b1",
+  "#b7791f",
+  "#1f6f78",
+  "#2563eb",
+  "#7c3aed",
+  "#111827",
+  "#ffffff",
+];
+
+function ColorField({
+  label,
+  name,
+  defaultValue,
+}: {
+  label: string;
+  name: string;
+  defaultValue: string;
+}) {
+  const [value, setValue] = useState(defaultValue);
+  return (
+    <div className="grid gap-2 rounded-xl border p-3">
+      <Label htmlFor={name}>{label}</Label>
+      <div className="flex items-center gap-2">
+        <Input
+          id={name}
+          name={name}
+          type="color"
+          value={value}
+          onChange={(event) => setValue(event.currentTarget.value)}
+          className="h-10 w-14 p-1"
+        />
+        <Input
+          aria-label={`${label} em hexadecimal`}
+          value={value}
+          onChange={(event) => {
+            const next = event.currentTarget.value;
+            if (/^#[0-9a-fA-F]{0,6}$/.test(next)) setValue(next);
+          }}
+          maxLength={7}
+        />
+      </div>
+      <div className="flex flex-wrap gap-1.5" aria-label={`Paleta para ${label}`}>
+        {palette.map((color) => (
+          <button
+            key={color}
+            type="button"
+            className="h-7 w-7 rounded-full border shadow-sm"
+            style={{ backgroundColor: color }}
+            aria-label={`Usar ${color}`}
+            onClick={() => setValue(color)}
+          />
+        ))}
+      </div>
     </div>
   );
 }

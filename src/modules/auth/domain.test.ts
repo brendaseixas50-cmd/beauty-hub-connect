@@ -12,8 +12,10 @@ const beauty: CompanyAccess = {
   tenantId: "beauty-tenant",
   tenantName: "Salão da Lu",
   tenantSlug: "salao-da-lu",
+  logoUrl: null,
   productType: "beauty",
   onboardingCompleted: true,
+  licenseStatus: "active",
   role: "owner",
   permissions: getPermissionsForRole("owner"),
 };
@@ -22,8 +24,10 @@ const barber: CompanyAccess = {
   tenantId: "barber-tenant",
   tenantName: "Barbearia da Lu",
   tenantSlug: "barbearia-da-lu",
+  logoUrl: null,
   productType: "barber",
   onboardingCompleted: true,
+  licenseStatus: "active",
   role: "receptionist",
   permissions: getPermissionsForRole("receptionist"),
 };

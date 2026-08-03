@@ -17,7 +17,7 @@ export const getPublicCompanyPage = createServerFn({ method: "GET" })
   .validator(slugSchema)
   .handler(async ({ data }): Promise<PublicPage | null> => {
     const supabase = createSupabaseServerClient();
-    const { data: page, error } = await supabase.rpc("get_public_company_page", {
+    const { data: page, error } = await supabase.rpc("get_public_company_page_v2", {
       p_slug: data.slug,
     });
     if (error) throw new Error("Não foi possível carregar esta página agora.");
@@ -27,7 +27,7 @@ export const getPublicCompanyPage = createServerFn({ method: "GET" })
 
 const availabilityInput = slugSchema.extend({
   date: z.string().date(),
-  serviceId: z.string().uuid(),
+  serviceIds: z.array(z.string().uuid()).min(1).max(8),
   professionalId: z.string().uuid().nullable(),
 });
 
@@ -35,18 +35,12 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
   .validator(availabilityInput)
   .handler(async ({ data }): Promise<Availability> => {
     const supabase = createSupabaseServerClient();
-    const args = data.professionalId
-      ? {
-          p_slug: data.slug,
-          p_date: data.date,
-          p_service_id: data.serviceId,
-          p_professional_id: data.professionalId,
-        }
-      : { p_slug: data.slug, p_date: data.date, p_service_id: data.serviceId };
-    const { data: availability, error } = await supabase.rpc(
-      "get_public_booking_availability",
-      args,
-    );
+    const { data: availability, error } = await supabase.rpc("get_public_booking_availability_v2", {
+      p_slug: data.slug,
+      p_date: data.date,
+      p_service_ids: data.serviceIds,
+      p_professional_id: data.professionalId,
+    });
     if (error) throw new Error("Não foi possível consultar os horários.");
     return availabilitySchema.parse(availability ?? { date: data.date, slots: [] });
   });
@@ -57,6 +51,7 @@ const bookingInput = availabilityInput.omit({ date: true, professionalId: true }
   customerName: z.string().trim().min(2).max(120),
   customerPhone: z.string().trim().min(10).max(30),
   customerEmail: z.string().trim().email().max(254).or(z.literal("")),
+  customerBirthDate: z.string().date().or(z.literal("")),
   notes: z.string().trim().max(500),
   requestId: z.string().uuid(),
   fingerprint: z.string().min(8).max(100),
@@ -67,14 +62,15 @@ export const createPublicBooking = createServerFn({ method: "POST" })
   .validator(bookingInput)
   .handler(async ({ data }): Promise<BookingResult> => {
     const supabase = createSupabaseServerClient();
-    const { data: result, error } = await supabase.rpc("create_public_booking", {
+    const { data: result, error } = await supabase.rpc("create_public_booking_v2", {
       p_slug: data.slug,
-      p_service_id: data.serviceId,
+      p_service_ids: data.serviceIds,
       p_professional_id: data.professionalId,
       p_starts_at: data.startsAt,
       p_customer_name: data.customerName,
       p_customer_phone: data.customerPhone,
       p_customer_email: data.customerEmail,
+      p_customer_birth_date: data.customerBirthDate || null,
       p_notes: data.notes,
       p_request_id: data.requestId,
       p_fingerprint: data.fingerprint,
