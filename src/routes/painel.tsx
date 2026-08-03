@@ -38,6 +38,9 @@ export const Route = createFileRoute("/painel")({
         search: { redirect: location.href },
       });
     }
+    if (session.user.productType === "beauty" && !session.user.onboardingCompleted) {
+      throw redirect({ to: "/onboarding", search: { retorno: "/painel" } });
+    }
     return { session };
   },
   component: PainelLayout,
@@ -68,6 +71,7 @@ function Navegacao({ onNavigate }: { onNavigate?: () => void }) {
           <Link
             key={item.to}
             to={item.to}
+            preload="intent"
             onClick={onNavigate}
             className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
               ativo

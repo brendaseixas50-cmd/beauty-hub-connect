@@ -23,6 +23,7 @@ export interface CompanyAccess {
   tenantName: string;
   tenantSlug: string;
   productType: "beauty" | "barber";
+  onboardingCompleted: boolean;
   role: Role;
   permissions: readonly Permission[];
 }

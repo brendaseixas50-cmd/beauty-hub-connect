@@ -57,7 +57,7 @@ function Cadastro() {
       if (result.requiresEmailConfirmation) {
         setEmailEnviado(email);
       } else {
-        await navigate({ to: "/painel" });
+        await navigate({ to: produto === "beauty" ? "/onboarding" : "/painel" });
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível criar sua conta.");
@@ -72,7 +72,7 @@ function Cadastro() {
     setError(undefined);
     setReenvioStatus(undefined);
     try {
-      await resendFn({ data: { email: emailEnviado } });
+      await resendFn({ data: { email: emailEnviado, productType: produto } });
       setReenvioStatus("Novo link enviado. Verifique também a caixa de spam.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível reenviar o e-mail.");

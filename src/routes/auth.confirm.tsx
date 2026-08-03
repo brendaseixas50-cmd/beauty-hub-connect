@@ -8,7 +8,7 @@ type ConfirmSearch = {
   code: string | undefined;
   tokenHash: string | undefined;
   type: "signup" | "invite" | "magiclink" | "recovery" | "email_change" | "email" | undefined;
-  next: "/painel" | "/redefinir-senha";
+  next: "/painel" | "/onboarding" | "/redefinir-senha";
   errorDescription: string | undefined;
 };
 
@@ -20,7 +20,12 @@ export const Route = createFileRoute("/auth/confirm")({
       typeof search["type"] === "string" && otpTypes.has(search["type"])
         ? (search["type"] as ConfirmSearch["type"])
         : undefined,
-    next: search["next"] === "/redefinir-senha" ? "/redefinir-senha" : "/painel",
+    next:
+      search["next"] === "/redefinir-senha"
+        ? "/redefinir-senha"
+        : search["next"] === "/onboarding"
+          ? "/onboarding"
+          : "/painel",
     errorDescription:
       typeof search["error_description"] === "string"
         ? search["error_description"].slice(0, 240)
@@ -55,6 +60,7 @@ export const Route = createFileRoute("/auth/confirm")({
     }
 
     if (search.next === "/redefinir-senha") throw redirect({ to: "/redefinir-senha" });
+    if (search.next === "/onboarding") throw redirect({ to: "/onboarding" });
     throw redirect({ to: "/painel" });
   },
   head: () => ({ meta: [{ title: "Confirmando acesso — Lu IA Studio" }] }),

@@ -8,6 +8,7 @@ const beauty: CompanyAccess = {
   tenantName: "Salão da Lu",
   tenantSlug: "salao-da-lu",
   productType: "beauty",
+  onboardingCompleted: true,
   role: "owner",
   permissions: getPermissionsForRole("owner"),
 };
@@ -17,6 +18,7 @@ const barber: CompanyAccess = {
   tenantName: "Barbearia da Lu",
   tenantSlug: "barbearia-da-lu",
   productType: "barber",
+  onboardingCompleted: true,
   role: "receptionist",
   permissions: getPermissionsForRole("receptionist"),
 };

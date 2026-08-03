@@ -100,6 +100,19 @@ function SettingsPage() {
         </Card>
 
         <Card className="grid gap-3 p-6">
+          <h2 className="text-xl">Áreas de atuação e serviços iniciais</h2>
+          <p className="text-sm text-muted-foreground">
+            Revise suas áreas, escolha a principal e adicione novas sugestões sem duplicar os
+            serviços existentes.
+          </p>
+          <Button asChild variant="outline" className="w-fit">
+            <Link to="/onboarding" search={{ retorno: "/painel/configuracoes" }}>
+              Alterar áreas e sugestões
+            </Link>
+          </Button>
+        </Card>
+
+        <Card className="grid gap-3 p-6">
           <h2 className="text-xl">Segurança da conta</h2>
           <p className="text-sm text-muted-foreground">
             Para trocar a senha, solicite um link seguro de recuperação no e-mail da conta.
