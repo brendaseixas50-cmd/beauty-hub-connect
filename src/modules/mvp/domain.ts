@@ -11,6 +11,16 @@ export type FinancialEntry = Tables<"financial_entries">;
 export type InventoryMovement = Tables<"inventory_movements"> & {
   products: Pick<Tables<"products">, "name"> | null;
 };
+export type MarketingTemplate = Tables<"marketing_templates">;
+export type MarketingCampaign = Tables<"marketing_campaigns">;
+export type MarketingAction = Tables<"marketing_actions"> & {
+  clients: Pick<Tables<"clients">, "name" | "phone"> | null;
+};
+export type MarketingClient = Client & {
+  lastAppointmentAt: string | null;
+  lastServiceName: string | null;
+  lastProfessionalName: string | null;
+};
 export type Product = Tables<"products">;
 export type Professional = Tables<"professionals">;
 export type Service = Tables<"services">;

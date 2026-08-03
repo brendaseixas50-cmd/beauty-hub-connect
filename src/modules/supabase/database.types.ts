@@ -96,6 +96,8 @@ export type Database = {
           active: boolean;
           address: string | null;
           birth_date: string | null;
+          contact_allowed: boolean;
+          contact_preference: string;
           created_at: string;
           email: string | null;
           id: string;
@@ -110,6 +112,8 @@ export type Database = {
           active?: boolean;
           address?: string | null;
           birth_date?: string | null;
+          contact_allowed?: boolean;
+          contact_preference?: string;
           created_at?: string;
           email?: string | null;
           id?: string;
@@ -124,6 +128,8 @@ export type Database = {
           active?: boolean;
           address?: string | null;
           birth_date?: string | null;
+          contact_allowed?: boolean;
+          contact_preference?: string;
           created_at?: string;
           email?: string | null;
           id?: string;
@@ -251,6 +257,165 @@ export type Database = {
           },
           {
             foreignKeyName: "inventory_movements_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      marketing_templates: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          name: string;
+          campaign_type: string;
+          body: string;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id?: string;
+          name: string;
+          campaign_type: string;
+          body: string;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          name?: string;
+          campaign_type?: string;
+          body?: string;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "marketing_templates_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      marketing_campaigns: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          template_id: string | null;
+          name: string;
+          campaign_type: string;
+          message: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id?: string;
+          template_id?: string | null;
+          name: string;
+          campaign_type: string;
+          message: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          template_id?: string | null;
+          name?: string;
+          campaign_type?: string;
+          message?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaigns_template_fk";
+            columns: ["template_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "marketing_templates";
+            referencedColumns: ["id", "tenant_id"];
+          },
+          {
+            foreignKeyName: "marketing_campaigns_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      marketing_actions: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          campaign_id: string | null;
+          client_id: string;
+          message_snapshot: string;
+          status: string;
+          initiated_at: string | null;
+          sent_at: string | null;
+          responded_at: string | null;
+          converted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id?: string;
+          campaign_id?: string | null;
+          client_id: string;
+          message_snapshot: string;
+          status?: string;
+          initiated_at?: string | null;
+          sent_at?: string | null;
+          responded_at?: string | null;
+          converted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          campaign_id?: string | null;
+          client_id?: string;
+          message_snapshot?: string;
+          status?: string;
+          initiated_at?: string | null;
+          sent_at?: string | null;
+          responded_at?: string | null;
+          converted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "marketing_actions_campaign_fk";
+            columns: ["campaign_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "marketing_campaigns";
+            referencedColumns: ["id", "tenant_id"];
+          },
+          {
+            foreignKeyName: "marketing_actions_client_fk";
+            columns: ["client_id", "tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id", "tenant_id"];
+          },
+          {
+            foreignKeyName: "marketing_actions_tenant_id_fkey";
             columns: ["tenant_id"];
             isOneToOne: false;
             referencedRelation: "tenants";
@@ -684,6 +849,7 @@ export type Database = {
           updated_at: string;
           welcome_message: string | null;
           whatsapp: string | null;
+          whatsapp_initial_message: string | null;
         };
         Insert: {
           address_line?: string | null;
@@ -717,6 +883,7 @@ export type Database = {
           updated_at?: string;
           welcome_message?: string | null;
           whatsapp?: string | null;
+          whatsapp_initial_message?: string | null;
         };
         Update: {
           address_line?: string | null;
@@ -750,6 +917,7 @@ export type Database = {
           updated_at?: string;
           welcome_message?: string | null;
           whatsapp?: string | null;
+          whatsapp_initial_message?: string | null;
         };
         Relationships: [];
       };

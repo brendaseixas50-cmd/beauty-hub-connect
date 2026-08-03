@@ -41,6 +41,7 @@ function CompanyPage() {
             email: String(form.get("email")),
             phone: String(form.get("phone")),
             whatsapp: String(form.get("whatsapp")),
+            whatsappInitialMessage: String(form.get("whatsappInitialMessage")),
             instagram: String(form.get("instagram")),
             description: String(form.get("description")),
             addressLine: String(form.get("addressLine")),
@@ -123,6 +124,22 @@ function CompanyPage() {
             <Field label="WhatsApp" name="whatsapp" defaultValue={company.whatsapp ?? ""} />
             <Field label="Instagram" name="instagram" defaultValue={company.instagram ?? ""} />
             <Field label="Identificador público" name="slug" defaultValue={company.slug} disabled />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="whatsappInitialMessage">Mensagem inicial do WhatsApp</Label>
+            <Textarea
+              id="whatsappInitialMessage"
+              name="whatsappInitialMessage"
+              rows={3}
+              maxLength={500}
+              defaultValue={
+                company.whatsapp_initial_message ??
+                "Olá! Encontrei seu espaço pela página de agendamento e gostaria de mais informações."
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              O cliente revisará a mensagem no WhatsApp antes de enviar.
+            </p>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="description">Descrição da empresa</Label>

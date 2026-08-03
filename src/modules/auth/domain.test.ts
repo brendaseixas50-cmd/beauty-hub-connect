@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { getPermissionsForRole, selectActiveCompany, type CompanyAccess } from "./domain.ts";
+import {
+  getPermissionsForRole,
+  selectActiveCompany,
+  selectCompanyForProduct,
+  type CompanyAccess,
+} from "./domain.ts";
 
 const beauty: CompanyAccess = {
   tenantId: "beauty-tenant",
@@ -35,5 +40,11 @@ describe("multi-company authentication domain", () => {
   it("keeps permissions independent for each company membership", () => {
     assert.ok(beauty.permissions.includes("settings:manage"));
     assert.ok(!barber.permissions.includes("settings:manage"));
+  });
+
+  it("selects the requested LuBeauty or LuBarber company", () => {
+    assert.equal(selectCompanyForProduct([beauty, barber], "beauty"), beauty);
+    assert.equal(selectCompanyForProduct([beauty, barber], "barber"), barber);
+    assert.equal(selectCompanyForProduct([beauty, barber], undefined), undefined);
   });
 });

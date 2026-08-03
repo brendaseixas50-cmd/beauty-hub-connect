@@ -20,8 +20,8 @@ export const getRouter = () => {
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadDelay: 80,
-    defaultStaleTime: 20_000,
-    defaultPreloadStaleTime: 30_000,
+    defaultStaleTime: 5 * 60_000,
+    defaultPreloadStaleTime: 5 * 60_000,
     defaultGcTime: 5 * 60_000,
   });
 

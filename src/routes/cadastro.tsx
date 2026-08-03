@@ -136,7 +136,7 @@ function Cadastro() {
                   {pending ? "Reenviando…" : "Reenviar e-mail de confirmação"}
                 </Button>
                 <Button asChild>
-                  <Link to="/login" search={{ redirect: "/painel" }}>
+                  <Link to="/login" search={{ redirect: "/painel", produto }}>
                     Ir para o login
                   </Link>
                 </Button>
@@ -179,7 +179,11 @@ function Cadastro() {
                 </Button>
                 <p className="text-center text-sm text-muted-foreground">
                   Já possui uma conta?{" "}
-                  <Link to="/login" search={{ redirect: "/painel" }} className="text-primary">
+                  <Link
+                    to="/login"
+                    search={{ redirect: "/painel", produto }}
+                    className="inline-flex min-h-11 items-center px-2 text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
                     Entrar
                   </Link>
                 </p>

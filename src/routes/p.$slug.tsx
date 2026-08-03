@@ -1,6 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarDays, CheckCircle2, Clock, Instagram, MapPin, Scissors } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  Instagram,
+  MapPin,
+  MessageCircle,
+  Scissors,
+} from "lucide-react";
 import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
 
 import { MarcaProduto } from "@/components/marca-produto";
@@ -89,6 +97,17 @@ function PublicCompanyPage() {
               <p className="leading-relaxed text-muted-foreground">{company.description}</p>
             ) : null}
             <CompanyDetails company={company} />
+            {company.whatsapp ? (
+              <Button asChild className="mt-2 w-full rounded-full sm:w-fit">
+                <a
+                  href={whatsappUrl(company.whatsapp, company.whatsappInitialMessage)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MessageCircle className="h-4 w-4" /> Falar pelo WhatsApp
+                </a>
+              </Button>
+            ) : null}
           </Card>
 
           <section>
@@ -445,6 +464,15 @@ function formatSlot(value: string) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeStyle: "short" }).format(
     new Date(value),
   );
+}
+
+function whatsappUrl(phone: string, message: string | null) {
+  const digits = phone.replace(/\D/g, "");
+  const normalized = digits.startsWith("55") ? digits : `55${digits}`;
+  const text =
+    message ||
+    "Olá! Encontrei seu espaço pela página de agendamento e gostaria de mais informações.";
+  return `https://wa.me/${normalized}?text=${encodeURIComponent(text)}`;
 }
 
 function Unavailable() {
