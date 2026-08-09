@@ -1,4 +1,10 @@
-import { type AuthError, type EmailOtpType, type SupabaseClient } from "@supabase/supabase-js";
+import {
+  type AuthError,
+  type EmailOtpType,
+  type Session as SupabaseAuthSession,
+  type SupabaseClient,
+  type User,
+} from "@supabase/supabase-js";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestUrl } from "@tanstack/react-start/server";
 import { z } from "zod";
@@ -139,20 +145,24 @@ function authErrorMessage(error: AuthError, fallback: string): string {
 
 export async function resolveSession(
   supabase: SupabaseClient<Database> = createSupabaseServerClient(),
+  knownAuth?: { user: User; session: SupabaseAuthSession },
 ): Promise<Session | null> {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const auth = knownAuth
+    ? { user: knownAuth.user, session: knownAuth.session, error: null }
+    : await (async () => {
+        const [{ data: userData, error }, { data: sessionData }] = await Promise.all([
+          supabase.auth.getUser(),
+          supabase.auth.getSession(),
+        ]);
+        return { user: userData.user, session: sessionData.session, error };
+      })();
+  if (auth.error || !auth.user?.email || !auth.session) return null;
 
-  if (userError || !user?.email) return null;
-
-  const [{ data: rawBootstrap, error: bootstrapError }, { data: authSession }] = await Promise.all([
-    supabase.rpc("get_my_session_bootstrap"),
-    supabase.auth.getSession(),
-  ]);
+  const { data: rawBootstrap, error: bootstrapError } = await supabase.rpc(
+    "get_my_session_bootstrap",
+  );
   const parsedBootstrap = sessionBootstrapSchema.safeParse(rawBootstrap);
-  if (bootstrapError || !parsedBootstrap.success || !authSession.session) return null;
+  if (bootstrapError || !parsedBootstrap.success) return null;
   const bootstrap = parsedBootstrap.data;
   const platformAccess = bootstrap.platformAccess;
   const now = Date.now();
@@ -194,15 +204,46 @@ export async function resolveSession(
 
   return {
     user: {
-      id: user.id,
-      email: user.email,
+      id: auth.user.id,
+      email: auth.user.email,
       name: bootstrap.profileName,
       companies,
       isPlatformAdministrator: platformAccess.isAdministrator,
       ...selected,
     },
-    expiresAt: new Date(authSession.session.expires_at! * 1000).toISOString(),
+    expiresAt: new Date(auth.session.expires_at! * 1000).toISOString(),
   };
+}
+
+export async function resolveOperationalContext(
+  supabase: SupabaseClient<Database>,
+): Promise<{ userId: string; tenantId: string; role: Role } | null> {
+  const [{ data: rawBootstrap, error }, { data: authSession }] = await Promise.all([
+    supabase.rpc("get_my_session_bootstrap"),
+    supabase.auth.getSession(),
+  ]);
+  const parsed = sessionBootstrapSchema.safeParse(rawBootstrap);
+  if (error || !parsed.success || !authSession.session) return null;
+  const company = selectActiveCompany(
+    parsed.data.companies.map((item) => ({
+      ...item,
+      permissions: getPermissionsForRole(item.role),
+      betaAccessActive: false,
+      betaAccessType: null,
+    })),
+    parsed.data.activeTenantId,
+  );
+  if (!company) return null;
+  const now = Date.now();
+  const grant = parsed.data.platformAccess.grants.find(
+    (item) =>
+      item.productType === company.productType &&
+      item.status === "active" &&
+      new Date(item.startsAt).getTime() <= now &&
+      (!item.expiresAt || new Date(item.expiresAt).getTime() > now),
+  );
+  if (!grant) return null;
+  return { userId: authSession.session.user.id, tenantId: company.tenantId, role: company.role };
 }
 
 export const getSession = createServerFn({ method: "GET" }).handler(() => resolveSession());
@@ -211,14 +252,17 @@ export const login = createServerFn({ method: "POST" })
   .validator(loginSchema)
   .handler(async ({ data }): Promise<Session> => {
     const supabase = createSupabaseServerClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
       email: data.email.toLowerCase(),
       password: data.password,
     });
 
     if (error) throw new Error(authErrorMessage(error, "Não foi possível entrar."));
 
-    let session = await resolveSession(supabase);
+    let session =
+      authData.user && authData.session
+        ? await resolveSession(supabase, { user: authData.user, session: authData.session })
+        : null;
     if (!session) {
       await supabase.auth.signOut({ scope: "local" });
       throw new Error("Sua conta não possui acesso ativo a uma empresa.");
@@ -310,7 +354,10 @@ export const signup = createServerFn({ method: "POST" })
       });
       if (companyError) throw new Error("Não foi possível adicionar esta empresa à sua conta.");
 
-      const session = await resolveSession(supabase);
+      const session = await resolveSession(supabase, {
+        user: existingAccount.user,
+        session: existingAccount.session,
+      });
       if (!session) throw new Error("A empresa foi criada, mas não foi possível abrir o painel.");
       return { success: true, requiresEmailConfirmation: false, session } as const;
     }
