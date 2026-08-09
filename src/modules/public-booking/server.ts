@@ -6,9 +6,11 @@ import {
   availabilitySchema,
   bookingResultSchema,
   publicPageSchema,
+  storeOrderResultSchema,
   type Availability,
   type BookingResult,
   type PublicPage,
+  type StoreOrderResult,
 } from "./domain";
 
 const slugSchema = z.object({ slug: z.string().trim().toLowerCase().min(3).max(80) });
@@ -111,4 +113,35 @@ export const createPublicBooking = createServerFn({ method: "POST" })
     });
     if (error) throw new Error("Não foi possível enviar o agendamento.");
     return bookingResultSchema.parse(result);
+  });
+
+const storeOrderInput = slugSchema.extend({
+  customerName: z.string().trim().min(2).max(120),
+  customerPhone: z.string().trim().min(10).max(30),
+  items: z
+    .array(z.object({ productId: z.string().uuid(), quantity: z.number().int().min(1).max(50) }))
+    .min(1)
+    .max(30),
+  paymentMethod: z.enum(["pix", "card", "local", "mercado_pago"]),
+  requestId: z.string().uuid(),
+  fingerprint: z.string().min(8).max(100),
+  website: z.string().max(0),
+});
+
+export const createPublicStoreOrder = createServerFn({ method: "POST" })
+  .validator(storeOrderInput)
+  .handler(async ({ data }): Promise<StoreOrderResult> => {
+    const supabase = createSupabaseServerClient();
+    const { data: result, error } = await supabase.rpc("create_public_store_order", {
+      p_slug: data.slug,
+      p_customer_name: data.customerName,
+      p_customer_phone: data.customerPhone,
+      p_items: data.items,
+      p_payment_method: data.paymentMethod,
+      p_request_id: data.requestId,
+      p_fingerprint: data.fingerprint,
+      p_honeypot: data.website,
+    });
+    if (error) throw new Error("Não foi possível concluir o pedido. Tente novamente.");
+    return storeOrderResultSchema.parse(result);
   });

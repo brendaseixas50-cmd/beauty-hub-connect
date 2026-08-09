@@ -1,5 +1,5 @@
-import beautyLogo from "@/assets/brand/lubeauty-logo-horizontal.png";
-import barberLogo from "@/assets/brand/lubarber-logo-horizontal.png";
+import beautyLogo from "@/assets/brand/lubeauty-app-icon.png";
+import barberLogo from "@/assets/brand/lubarber-logo-round.png";
 import { marcasProduto } from "@/products/catalog";
 
 export function MarcaProduto({
@@ -18,9 +18,9 @@ export function MarcaProduto({
       aria-label={`${marca.nome}: ${marca.assinatura}`}
     >
       {isBarber ? (
-        <img className="barber-logo" src={barberLogo} alt="" aria-hidden="true" />
+        <img className="barber-logo brand-logo-symbol" src={barberLogo} alt="" aria-hidden="true" />
       ) : (
-        <img className="beauty-logo" src={beautyLogo} alt="" aria-hidden="true" />
+        <img className="beauty-logo brand-logo-symbol" src={beautyLogo} alt="" aria-hidden="true" />
       )}
     </div>
   );

@@ -70,8 +70,10 @@ const professionalSchema = z.object({
 const productSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
+  category: z.string().nullable().default(null),
   description: z.string().nullable(),
   priceCents: z.number(),
+  stockQuantity: z.number().int().nonnegative().default(0),
   imageUrl: z.string().nullable(),
 });
 
@@ -130,9 +132,20 @@ export const bookingResultSchema = z.object({
   remainingCents: z.number().optional(),
 });
 
+export const storeOrderResultSchema = z.object({
+  ok: z.boolean(),
+  error: z.string().optional(),
+  orderId: z.string().uuid().optional(),
+  code: z.string().optional(),
+  totalCents: z.number().int().nonnegative().optional(),
+  paymentMethod: z.string().optional(),
+  paymentStatus: z.string().optional(),
+});
+
 export type PublicPage = z.infer<typeof publicPageSchema>;
 export type Availability = z.infer<typeof availabilitySchema>;
 export type BookingResult = z.infer<typeof bookingResultSchema>;
+export type StoreOrderResult = z.infer<typeof storeOrderResultSchema>;
 
 export const brl = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);

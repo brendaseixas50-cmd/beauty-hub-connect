@@ -10,8 +10,12 @@ import {
   Instagram,
   MapPin,
   MessageCircle,
+  Minus,
+  Plus,
   ShoppingBag,
+  ShoppingCart,
   Star,
+  Trash2,
   UserRound,
 } from "lucide-react";
 import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
@@ -23,6 +27,7 @@ import { Label } from "@/components/ui/label";
 import { brl, type BookingResult } from "@/modules/public-booking/domain";
 import {
   createSimplePublicBooking,
+  createPublicStoreOrder,
   getPublicAvailability,
   getPublicCompanyPage,
 } from "@/modules/public-booking/server";
@@ -48,19 +53,22 @@ function PublicBookingApp() {
   const [area, setArea] = useState<"booking" | "store">("booking");
   if (!page) return <Unavailable />;
   const { company } = page;
+  const theme = publicTheme(company);
   const style = {
     "--background": "#ffffff",
-    "--foreground": company.textColor,
+    "--foreground": "#1f1f1f",
     "--card": "#ffffff",
-    "--card-foreground": company.textColor,
-    "--primary": company.primaryColor,
-    "--primary-foreground": contrast(company.primaryColor),
-    "--secondary": company.secondaryColor,
-    "--secondary-foreground": contrast(company.secondaryColor),
-    "--accent": company.secondaryColor,
-    "--accent-foreground": contrast(company.secondaryColor),
-    "--muted": company.secondaryColor,
-    "--muted-foreground": company.textColor,
+    "--card-foreground": "#1f1f1f",
+    "--primary": theme.primary,
+    "--primary-foreground": contrast(theme.primary),
+    "--secondary": theme.secondary,
+    "--secondary-foreground": contrast(theme.secondary),
+    "--accent": theme.secondary,
+    "--accent-foreground": contrast(theme.secondary),
+    "--muted": theme.secondary,
+    "--muted-foreground": "#5f5f5f",
+    "--border": theme.border,
+    "--input": theme.border,
   } as CSSProperties;
 
   return (
@@ -83,24 +91,31 @@ function PublicBookingApp() {
       </header>
 
       <div className="mx-auto max-w-2xl px-4 py-5 sm:py-8">
-        <div className="grid grid-cols-2 gap-3">
-          <Button
+        <div className="grid grid-cols-2 gap-3" aria-label="Escolha entre agendamento e loja">
+          <button
             type="button"
-            size="lg"
-            variant={area === "booking" ? "default" : "outline"}
+            aria-pressed={area === "booking"}
+            className={`grid min-h-28 place-items-center rounded-2xl border-2 p-4 text-center shadow-sm transition ${area === "booking" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}
             onClick={() => setArea("booking")}
           >
-            <CalendarDays /> Agendar
-          </Button>
-          <Button
+            <span className="grid gap-2">
+              <CalendarDays className="mx-auto h-7 w-7" />
+              <strong>Agendamento</strong>
+              <small className="font-normal">Escolher serviços e horário</small>
+            </span>
+          </button>
+          <button
             type="button"
-            size="lg"
-            variant={area === "store" ? "default" : "outline"}
-            disabled={!company.publicStoreEnabled}
+            aria-pressed={area === "store"}
+            className={`grid min-h-28 place-items-center rounded-2xl border-2 p-4 text-center shadow-sm transition disabled:cursor-not-allowed disabled:opacity-55 ${area === "store" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}
             onClick={() => setArea("store")}
           >
-            <ShoppingBag /> Loja
-          </Button>
+            <span className="grid gap-2">
+              <ShoppingBag className="mx-auto h-7 w-7" />
+              <strong>Loja</strong>
+              <small className="font-normal">Ver produtos à venda</small>
+            </span>
+          </button>
         </div>
         {area === "booking" ? <BookingWizard page={page} /> : <StoreCatalog page={page} />}
         <CompanyInformation page={page} />
@@ -654,21 +669,137 @@ function BookingSuccess({
 }
 
 function StoreCatalog({ page }: { page: PageData }) {
+  const orderFn = useServerFn(createPublicStoreOrder);
+  const [cart, setCart] = useState<Record<string, number>>({});
+  const [checkout, setCheckout] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"pix" | "card" | "local" | "mercado_pago">(
+    "local",
+  );
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string>();
+  const [success, setSuccess] = useState<{ code: string; total: number }>();
   const categories = useMemo(
-    () => [...new Set(page.products.map((product) => product.name.split(" ")[0]))],
+    () => [...new Set(page.products.map((product) => product.category).filter(Boolean))],
     [page.products],
   );
+  const items = page.products
+    .filter((product) => cart[product.id])
+    .map((product) => ({ product, quantity: cart[product.id] ?? 0 }));
+  const total = items.reduce((sum, item) => sum + item.product.priceCents * item.quantity, 0);
+  const count = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  if (!page.company.publicStoreEnabled) {
+    return (
+      <Card className="mt-5 items-center gap-4 p-6 text-center">
+        <ShoppingBag className="h-12 w-12 text-primary" />
+        <h2 className="text-2xl font-semibold">Loja</h2>
+        <p className="text-sm text-muted-foreground">
+          O catálogo desta empresa ainda não está aberto para vendas.
+        </p>
+      </Card>
+    );
+  }
+
+  function change(productId: string, delta: number, stock: number) {
+    setCart((current) => {
+      const quantity = Math.max(0, Math.min((current[productId] ?? 0) + delta, stock));
+      if (!quantity) {
+        const next = { ...current };
+        delete next[productId];
+        return next;
+      }
+      return { ...current, [productId]: quantity };
+    });
+  }
+
+  async function submitOrder(event: FormEvent) {
+    event.preventDefault();
+    setPending(true);
+    setError(undefined);
+    try {
+      const key = "lu-public-store-fingerprint";
+      let fingerprint = localStorage.getItem(key);
+      if (!fingerprint) {
+        fingerprint = crypto.randomUUID();
+        localStorage.setItem(key, fingerprint);
+      }
+      const result = await orderFn({
+        data: {
+          slug: page.company.slug,
+          customerName: name,
+          customerPhone: phone,
+          items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+          paymentMethod,
+          requestId: crypto.randomUUID(),
+          fingerprint,
+          website: "",
+        },
+      });
+      if (!result.ok) throw new Error(result.error || "Não foi possível concluir o pedido.");
+      setSuccess({ code: result.code ?? "", total: result.totalCents ?? total });
+      setCart({});
+      if (paymentMethod === "local" && page.company.whatsapp) {
+        const message = [
+          `Olá! Fiz o pedido ${result.code ?? ""} pela loja.`,
+          `Nome: ${name}`,
+          `Total: ${brl(result.totalCents ?? total)}`,
+          "Forma de pagamento: Pagamento no local.",
+        ].join("\n");
+        window.open(
+          `https://wa.me/${digits(page.company.whatsapp)}?text=${encodeURIComponent(message)}`,
+          "_blank",
+          "noopener,noreferrer",
+        );
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível concluir o pedido.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  if (success)
+    return (
+      <Card className="mt-5 items-center gap-4 p-6 text-center">
+        <CheckCircle2 className="h-14 w-14 text-success" />
+        <h2 className="text-2xl font-semibold">Pedido realizado</h2>
+        <p>
+          Código <strong>{success.code}</strong>
+        </p>
+        <p>
+          Total: <strong>{brl(success.total)}</strong>
+        </p>
+        <p className="text-sm text-muted-foreground">
+          O pagamento está pendente até a confirmação da empresa.
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setSuccess(undefined);
+            setCheckout(false);
+          }}
+        >
+          Continuar na loja
+        </Button>
+      </Card>
+    );
+
   return (
     <section className="mt-5 grid gap-4">
       <div>
         <h2 className="text-2xl font-semibold">Loja</h2>
-        <p className="text-sm text-muted-foreground">Catálogo separado do agendamento.</p>
+        <p className="text-sm text-muted-foreground">
+          Escolha os produtos e finalize pelo carrinho.
+        </p>
       </div>
       {categories.length ? (
         <div className="flex gap-2 overflow-x-auto">
           {categories.map((category) => (
             <span
-              key={category}
+              key={category!}
               className="whitespace-nowrap rounded-full bg-secondary px-3 py-2 text-sm"
             >
               {category}
@@ -691,7 +822,35 @@ function StoreCatalog({ page }: { page: PageData }) {
                 <strong>{product.name}</strong>
                 <p className="text-sm">{product.description}</p>
                 <strong className="text-primary">{brl(product.priceCents)}</strong>
-                <Button disabled>Adicionar ao carrinho</Button>
+                <small className="text-muted-foreground">{product.stockQuantity} em estoque</small>
+                {(cart[product.id] ?? 0) > 0 ? (
+                  <div className="flex items-center justify-between rounded-xl border p-2">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      onClick={() => change(product.id, -1, product.stockQuantity)}
+                    >
+                      <Minus />
+                    </Button>
+                    <strong>{cart[product.id]}</strong>
+                    <Button
+                      type="button"
+                      size="icon"
+                      onClick={() => change(product.id, 1, product.stockQuantity)}
+                      disabled={(cart[product.id] ?? 0) >= product.stockQuantity}
+                    >
+                      <Plus />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={() => change(product.id, 1, product.stockQuantity)}
+                  >
+                    <ShoppingCart /> Adicionar ao carrinho
+                  </Button>
+                )}
               </div>
             </Card>
           ))
@@ -701,10 +860,83 @@ function StoreCatalog({ page }: { page: PageData }) {
           </p>
         )}
       </div>
-      <p className="text-xs text-muted-foreground">
-        Carrinho, baixa de estoque e checkout estão preparados na estrutura e serão habilitados
-        quando houver produtos e pagamento configurados.
-      </p>
+      {count ? (
+        <Card className="sticky bottom-3 gap-4 p-4 shadow-xl">
+          <div className="flex items-center justify-between">
+            <span>
+              <strong>{count}</strong> {count === 1 ? "item" : "itens"}
+            </span>
+            <strong>{brl(total)}</strong>
+          </div>
+          {!checkout ? (
+            <Button type="button" size="lg" onClick={() => setCheckout(true)}>
+              <ShoppingCart /> Abrir carrinho
+            </Button>
+          ) : (
+            <form className="grid gap-4" onSubmit={submitOrder}>
+              <div className="grid gap-2">
+                {items.map(({ product, quantity }) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border p-3"
+                  >
+                    <span>
+                      <strong className="block">{product.name}</strong>
+                      <small>
+                        {quantity} × {brl(product.priceCents)}
+                      </small>
+                    </span>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Remover ${product.name}`}
+                      onClick={() => change(product.id, -quantity, product.stockQuantity)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Field label="Nome" value={name} onChange={setName} autoComplete="name" />
+              <Field
+                label="WhatsApp"
+                value={phone}
+                onChange={setPhone}
+                inputMode="tel"
+                autoComplete="tel"
+              />
+              <div className="grid gap-2">
+                {paymentChoices(page.company).map((choice) => (
+                  <Choice
+                    key={choice.id}
+                    selected={paymentMethod === choice.id}
+                    onClick={() => setPaymentMethod(choice.id)}
+                  >
+                    <span>{choice.label}</span>
+                  </Choice>
+                ))}
+              </div>
+              <input name="website" className="sr-only" tabIndex={-1} autoComplete="off" />
+              <Button
+                type="submit"
+                size="lg"
+                disabled={pending || name.trim().length < 2 || digits(phone).length < 10}
+              >
+                {pending ? "Finalizando…" : "Finalizar pedido"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setCheckout(false)}>
+                Continuar comprando
+              </Button>
+            </form>
+          )}
+          {error ? (
+            <p role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+        </Card>
+      ) : null}
     </section>
   );
 }
@@ -852,6 +1084,36 @@ function contrast(hex: string) {
   const g = parseInt(value.slice(2, 4), 16);
   const b = parseInt(value.slice(4, 6), 16);
   return (r * 299 + g * 587 + b * 114) / 1000 > 145 ? "#161616" : "#ffffff";
+}
+
+function publicTheme(company: PageData["company"]) {
+  const barber = company.productType === "barber";
+  const legacyWrongColor =
+    barber &&
+    [company.primaryColor, company.secondaryColor].some((color) =>
+      ["#7c3aed", "#8b5e67", "#a66ef2", "#ec78a8", "#c9b8ff", "#f5e7ea", "#f9e7ef"].includes(
+        color.toLowerCase(),
+      ),
+    );
+  const primary = legacyWrongColor ? "#161616" : company.primaryColor;
+  const secondaryBase = legacyWrongColor ? "#c9a227" : company.secondaryColor;
+  return {
+    primary,
+    secondary: mixWithWhite(secondaryBase, barber ? 0.88 : 0.9),
+    border: mixWithWhite(barber ? "#c9a227" : primary, 0.72),
+  };
+}
+
+function mixWithWhite(hex: string, whiteRatio: number) {
+  const value = hex.replace("#", "");
+  if (!/^[0-9a-f]{6}$/i.test(value)) return "#f5f5f5";
+  const channel = (offset: number) =>
+    Math.round(
+      Number.parseInt(value.slice(offset, offset + 2), 16) * (1 - whiteRatio) + 255 * whiteRatio,
+    )
+      .toString(16)
+      .padStart(2, "0");
+  return `#${channel(0)}${channel(2)}${channel(4)}`;
 }
 function bookingWhatsappUrl(
   phone: string,

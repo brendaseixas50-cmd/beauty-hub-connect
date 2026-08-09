@@ -270,6 +270,16 @@
   object-fit: contain;
   object-position: left center;
 }
+.brand-logo-symbol {
+  width: 5.25rem;
+  height: 5.25rem;
+  border-radius: 1.25rem;
+  object-fit: contain;
+  image-rendering: auto;
+}
+.barber-logo.brand-logo-symbol {
+  border-radius: 999px;
+}
 .brand-lockup-compact .beauty-logo {
   width: 8.5rem;
   height: 3.5rem;
@@ -278,22 +288,34 @@
   width: 8.5rem;
   height: 3.5rem;
 }
+.brand-lockup-compact .brand-logo-symbol {
+  width: 3.5rem;
+  height: 3.5rem;
+}
 .product-card-visual {
   display: grid;
   height: 13rem;
   place-items: center;
   overflow: hidden;
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-card);
+  background: color-mix(in srgb, var(--color-secondary) 45%, var(--color-card));
 }
 .product-card-visual img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-}
-.tema-beleza .product-card-visual img {
+  width: 9.5rem;
+  height: 9.5rem;
+  border-radius: 2rem;
   object-fit: contain;
+  object-position: center;
+  filter: drop-shadow(0 12px 20px rgb(22 22 22 / 18%));
+}
+.tema-barbearia .product-card-visual {
+  background: #161616;
+}
+.tema-barbearia .product-card-visual img {
+  border-radius: 999px;
+}
+.tema-beleza .product-card-visual {
+  background: #fff5fa;
 }
 .brand-credit {
   font-size: 0.68rem;
@@ -460,7 +482,9 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 15%;
+  object-position: 50% 24%;
+  image-rendering: auto;
+  transform: scale(1.02);
 }
 .luvi-avatar-small {
   width: 2.5rem;
