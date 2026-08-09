@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Client, MarketingClient } from "@/modules/mvp/domain";
 import { deleteClient, listClients, saveClient } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
+import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/clientes")({
   loader: () => listClients(),
@@ -49,6 +50,12 @@ function ClientsPage() {
 
   return (
     <div>
+      <LuviContextBridge
+        facts={{
+          clients: clients.length,
+          clientsMissingContact: clients.filter((client) => !client.phone && !client.email).length,
+        }}
+      />
       <PageHeader
         eyebrow="Relacionamento"
         title="Clientes"

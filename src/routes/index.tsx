@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CalendarDays, Check, Scissors, Sparkles, Users, Wallet } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, Users, Wallet } from "lucide-react";
 
-import bannerBeauty from "@/assets/banner.jpg";
-import bannerBarber from "@/assets/barbearia-banner.jpg";
+import bannerBeauty from "@/assets/brand/lubeauty-logo-horizontal.png";
+import bannerBarber from "@/assets/brand/lubarber-banner.png";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { marcasProduto, type TipoNegocio } from "@/products/catalog";
@@ -94,7 +94,8 @@ function Home() {
       </section>
 
       <footer className="px-5 py-8 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} Lu IA Studio
+        Desenvolvido por <strong className="font-semibold text-foreground">Lu IA Studio</strong> · ©{" "}
+        {new Date().getFullYear()}
       </footer>
     </main>
   );
@@ -103,25 +104,18 @@ function Home() {
 function ProductCard({ type }: { type: TipoNegocio }) {
   const brand = marcasProduto[type];
   const productType = type === "barbearia" ? "barber" : "beauty";
-  const Icon = type === "barbearia" ? Scissors : Sparkles;
   const theme = type === "barbearia" ? "tema-barbearia" : "tema-beleza";
 
   return (
     <article
-      className={`${theme} relative isolate min-h-[31rem] overflow-hidden rounded-3xl border border-border bg-background p-7 text-foreground shadow-xl sm:p-10`}
+      className={`${theme} overflow-hidden rounded-[20px] border border-border bg-background text-foreground shadow-xl`}
     >
-      <img
-        src={images[type]}
-        alt=""
-        className="absolute inset-0 -z-20 h-full w-full object-cover"
-      />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/95 to-background/25" />
-      <div className="flex h-full flex-col justify-end">
-        <span className="product-mark mb-auto grid h-12 w-12 place-items-center rounded-full">
-          <Icon className="h-5 w-5" />
-        </span>
+      <div className="product-card-visual">
+        <img src={images[type]} alt={`Identidade oficial ${brand.nome} Pro`} />
+      </div>
+      <div className="p-7 sm:p-10">
         <p className="text-eyebrow">{brand.estilo}</p>
-        <h2 className="product-wordmark mt-3 text-4xl sm:text-5xl">{brand.nome} Pro</h2>
+        <h2 className="product-wordmark mt-3 text-3xl sm:text-4xl">{brand.nome} Pro</h2>
         <p className="mt-3 max-w-md leading-relaxed text-muted-foreground">{brand.descricao}</p>
         <ul className="mt-6 grid gap-2 text-sm">
           {brand.recursos.map((feature) => (

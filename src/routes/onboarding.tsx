@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 
 import { MarcaProduto } from "@/components/marca-produto";
+import { BrandCredit, BrandSplash } from "@/components/brand-experience";
+import { LuviWelcome } from "@/modules/luvi-core/components";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -156,11 +158,13 @@ function OnboardingPage() {
     <main
       className={`${tipo === "barbearia" ? "tema-barbearia" : "tema-beleza"} min-h-screen bg-secondary/30 px-4 py-8`}
     >
+      <BrandSplash tipo={tipo} />
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between gap-4">
           <MarcaProduto tipo={tipo} />
           <span className="text-sm text-muted-foreground">Etapa {step} de 2</span>
         </div>
+        <LuviWelcome product={data.productType} />
         {step === 1 ? (
           <Card className="gap-6 p-6 sm:p-8">
             <div>
@@ -340,6 +344,7 @@ function OnboardingPage() {
             </div>
           </Card>
         )}
+        <BrandCredit className="mt-8" />
       </div>
     </main>
   );

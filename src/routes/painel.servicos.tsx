@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { brl, centsFromInput, type Service } from "@/modules/mvp/domain";
 import { deleteService, listServices, saveService } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
+import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/servicos")({
   loader: () => listServices(),
@@ -48,6 +49,12 @@ function ServicesPage() {
 
   return (
     <div>
+      <LuviContextBridge
+        facts={{
+          services: services.length,
+          inactiveServices: services.filter((service) => !service.active).length,
+        }}
+      />
       <PageHeader
         eyebrow="Catálogo"
         title="Serviços"

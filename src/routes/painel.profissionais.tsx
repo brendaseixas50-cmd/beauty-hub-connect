@@ -26,6 +26,7 @@ import {
   saveProfessional,
 } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
+import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/profissionais")({
   loader: async () => {
@@ -58,6 +59,9 @@ function ProfessionalsPage() {
 
   return (
     <div>
+      <LuviContextBridge
+        facts={{ professionals: professionals.length, services: services.length }}
+      />
       <PageHeader
         eyebrow="Equipe"
         title="Profissionais"

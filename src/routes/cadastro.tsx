@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { z } from "zod";
 
 import { MarcaProduto } from "@/components/marca-produto";
+import { BrandCredit, BrandSplash } from "@/components/brand-experience";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -85,6 +86,7 @@ function Cadastro() {
     <main
       className={`${tipo === "barbearia" ? "tema-barbearia" : "tema-beleza"} min-h-screen bg-secondary/40 px-4 py-10`}
     >
+      <BrandSplash tipo={tipo} />
       <div className="mx-auto w-full max-w-lg">
         <Link
           to="/"
@@ -189,6 +191,7 @@ function Cadastro() {
                 </p>
               </form>
             )}
+            <BrandCredit className="mt-6" />
           </CardContent>
         </Card>
       </div>

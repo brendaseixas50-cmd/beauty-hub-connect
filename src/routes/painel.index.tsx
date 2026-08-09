@@ -16,6 +16,8 @@ import { Card } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/mvp-page";
 import { brl, formatDateTime } from "@/modules/mvp/domain";
 import { getDashboard } from "@/modules/mvp/server";
+import { LuviInlineSuggestion } from "@/modules/luvi-core/components";
+import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/")({
   loader: () => getDashboard(),
@@ -31,6 +33,16 @@ function Dashboard() {
 
   return (
     <div>
+      <LuviContextBridge
+        facts={{
+          appointmentsToday: data.appointments.length,
+          clients: data.clients,
+          professionals: data.professionals,
+          services: data.services,
+          lowStock: data.lowStock,
+          pendingAppointments: data.notifications.length,
+        }}
+      />
       <PageHeader
         eyebrow={product}
         title={`Olá, ${firstName}`}
@@ -41,6 +53,8 @@ function Dashboard() {
           </Button>
         }
       />
+
+      <LuviInlineSuggestion />
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Metric
