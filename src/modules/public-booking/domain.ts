@@ -18,6 +18,7 @@ const companySchema = z.object({
   state: z.string().nullable(),
   postalCode: z.string().nullable(),
   mapUrl: z.string().nullable(),
+  showPublicLocation: z.boolean().default(false),
   businessHours: z.record(z.string(), z.string()),
   timezone: z.string(),
   primaryColor: z.string(),

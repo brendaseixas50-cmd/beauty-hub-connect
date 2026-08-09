@@ -1252,6 +1252,7 @@ export type Database = {
           product_type: string;
           public_information: string | null;
           public_store_enabled: boolean;
+          show_public_location: boolean;
           public_name: string | null;
           public_page_status: string;
           secondary_color: string;
@@ -1308,6 +1309,7 @@ export type Database = {
           product_type?: string;
           public_information?: string | null;
           public_store_enabled?: boolean;
+          show_public_location?: boolean;
           public_name?: string | null;
           public_page_status?: string;
           secondary_color?: string;
@@ -1364,6 +1366,7 @@ export type Database = {
           product_type?: string;
           public_information?: string | null;
           public_store_enabled?: boolean;
+          show_public_location?: boolean;
           public_name?: string | null;
           public_page_status?: string;
           secondary_color?: string;
