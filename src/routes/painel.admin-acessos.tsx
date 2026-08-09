@@ -24,7 +24,10 @@ import {
 
 export const Route = createFileRoute("/painel/admin-acessos")({
   beforeLoad: ({ context }) => {
-    if (!context.session.user.isPlatformAdministrator) throw redirect({ to: "/painel" });
+    const administrator =
+      context.session.user.isPlatformAdministrator ||
+      context.session.user.betaAccessType === "administrator";
+    if (!administrator) throw redirect({ to: "/painel" });
   },
   loader: () => listPlatformAccess({ data: { email: "" } }),
   head: () => ({ meta: [{ title: "Acessos do Beta — Lu IA Studio" }] }),

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, MailCheck } from "lucide-react";
+import { ArrowLeft, LoaderCircle, MailCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 
@@ -208,9 +208,14 @@ function Cadastro() {
                     </p>
                   ) : null}
                   <Button type="submit" size="lg" disabled={pending}>
-                    {pending
-                      ? "Criando conta…"
-                      : `Criar conta no ${produto === "barber" ? "LuBarber Pro" : "LuBeauty Pro"}`}
+                    {pending ? (
+                      <>
+                        <LoaderCircle className="h-4 w-4 animate-spin" /> Criando e preparando sua
+                        conta…
+                      </>
+                    ) : (
+                      `Criar conta no ${produto === "barber" ? "LuBarber Pro" : "LuBeauty Pro"}`
+                    )}
                   </Button>
                   <p className="text-center text-sm text-muted-foreground">
                     Já possui uma conta?{" "}
@@ -229,6 +234,11 @@ function Cadastro() {
           </CardContent>
         </Card>
       </div>
+      {pending ? (
+        <div className="auth-loading-status" role="status" aria-live="assertive">
+          <LoaderCircle className="h-5 w-5 animate-spin" /> Processando com segurança…
+        </div>
+      ) : null}
     </main>
   );
 }

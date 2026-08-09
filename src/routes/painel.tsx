@@ -25,6 +25,7 @@ import {
   Globe2,
   Megaphone,
   ShieldCheck,
+  LoaderCircle,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -108,6 +109,9 @@ function AcoesInferiores({
   onNavigate?: () => void;
   onLogout: () => void;
 }) {
+  const platformAdmin =
+    session.user.isPlatformAdministrator || session.user.betaAccessType === "administrator";
+
   return (
     <div className="grid gap-1 border-t pt-4">
       <a
@@ -127,14 +131,15 @@ function AcoesInferiores({
       >
         <Settings className="h-4 w-4" /> Configurações
       </Link>
-      {session.user.isPlatformAdministrator ? (
+      {platformAdmin ? (
         <Link
           to="/painel/admin-acessos"
           preload="intent"
           onClick={onNavigate}
           className="mt-2 flex min-h-12 items-center gap-3 rounded-xl border border-sidebar-primary/60 bg-sidebar-primary/10 px-3 py-3 text-sm font-semibold text-sidebar-foreground hover:bg-sidebar-primary/20"
         >
-          <ShieldCheck className="h-4 w-4 text-sidebar-primary" /> Painel Master · Autorizar contas
+          <ShieldCheck className="h-4 w-4 text-sidebar-primary" /> Painel Master
+          <span className="ml-auto text-[10px] font-medium uppercase tracking-wide">Acessos</span>
         </Link>
       ) : null}
       <button
@@ -244,14 +249,14 @@ function PainelLayout() {
             aria-hidden="true"
           />
           <BrandSplash tipo={tipo} />
-          <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-sidebar p-4 lg:flex">
+          <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r bg-sidebar p-4 lg:flex">
             <MarcaProduto tipo={tipo} />
             <div className="my-4 border-t" />
             <Marca session={session} />
             <div className="mt-4">
               <CompanySwitcher session={session} />
             </div>
-            <div className="mt-6 flex-1">
+            <div className="mt-6 flex-1 pb-4">
               <Navegacao />
             </div>
             <div className="grid gap-3">
@@ -271,7 +276,7 @@ function PainelLayout() {
                     <Menu className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-72 bg-sidebar p-4">
+                <SheetContent side="left" className="w-72 overflow-y-auto bg-sidebar p-4">
                   <SheetTitle className="sr-only">Menu do painel</SheetTitle>
                   <div className="mt-6">
                     <Navegacao onNavigate={() => setAberto(false)} />
@@ -292,6 +297,11 @@ function PainelLayout() {
               <Outlet />
             </main>
           </div>
+          {navigating ? (
+            <div className="route-loading-status" role="status" aria-live="polite">
+              <LoaderCircle className="h-4 w-4 animate-spin" /> Carregando…
+            </div>
+          ) : null}
           <LuviAssistant />
         </div>
       </LuviContextProvider>

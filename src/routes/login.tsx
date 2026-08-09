@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { LockKeyhole } from "lucide-react";
+import { LoaderCircle, LockKeyhole } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 
@@ -133,7 +133,13 @@ function LoginPage() {
               </p>
             ) : null}
             <Button type="submit" className="w-full" disabled={pending}>
-              {pending ? "Entrando…" : "Entrar no painel"}
+              {pending ? (
+                <>
+                  <LoaderCircle className="h-4 w-4 animate-spin" /> Entrando no painel…
+                </>
+              ) : (
+                "Entrar no painel"
+              )}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Ainda não possui conta?{" "}
@@ -149,6 +155,11 @@ function LoginPage() {
           </form>
         </CardContent>
       </Card>
+      {pending ? (
+        <div className="auth-loading-status" role="status" aria-live="assertive">
+          <LoaderCircle className="h-5 w-5 animate-spin" /> Validando e abrindo seu painel…
+        </div>
+      ) : null}
     </main>
   );
 }
