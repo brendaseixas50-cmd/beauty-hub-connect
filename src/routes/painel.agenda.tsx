@@ -28,6 +28,7 @@ import {
 } from "@/modules/mvp/domain";
 import { deleteAppointment, getAgenda, saveAppointment } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
+import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/agenda")({
   loader: () => getAgenda(),
@@ -73,6 +74,7 @@ function AgendaPage() {
 
   return (
     <div>
+      <LuviContextBridge facts={{ appointmentsToday: data.appointments.length }} />
       <PageHeader
         eyebrow="Agenda operacional"
         title="Agendamentos"

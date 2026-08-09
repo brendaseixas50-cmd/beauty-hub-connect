@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { z } from "zod";
 
 import { MarcaProduto } from "@/components/marca-produto";
+import { BrandCredit, BrandSplash } from "@/components/brand-experience";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,7 @@ function LoginPage() {
   const loginFn = useServerFn(login);
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
+  const tipo = search.produto === "barber" ? "barbearia" : "beleza";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,11 +73,14 @@ function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-secondary/40 px-4 py-12">
+    <main
+      className={`${tipo === "barbearia" ? "tema-barbearia" : "tema-beleza"} flex min-h-screen items-center justify-center bg-background px-4 py-12`}
+    >
+      <BrandSplash tipo={tipo} />
       <Card className="w-full max-w-md border-border/70 shadow-xl">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
-            <MarcaProduto />
+            <MarcaProduto tipo={tipo} />
           </div>
           <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground">
             <LockKeyhole className="h-5 w-5" />
@@ -131,6 +136,7 @@ function LoginPage() {
                 Criar conta
               </Link>
             </p>
+            <BrandCredit className="mt-2" />
           </form>
         </CardContent>
       </Card>

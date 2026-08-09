@@ -15,24 +15,24 @@ export const marcasProduto: Record<TipoNegocio, MarcaProduto> = {
   beleza: {
     tipo: "beleza",
     nome: "LuBeauty",
-    selo: "Beleza com gestão leve",
-    assinatura: "Sua arte, sua agenda, seu crescimento.",
+    selo: "Sistema de gestão premium",
+    assinatura: "O sistema que organiza e faz seu negócio crescer.",
     descricao:
       "Uma experiência elegante e acolhedora para profissionais de beleza, estética e bem-estar.",
-    estilo: "Rosé, areia e luz suave",
-    destaque: "Organização delicada. Gestão profissional.",
-    recursos: ["Agenda inteligente", "Página profissional", "Relacionamento com clientes"],
+    estilo: "Elegância, tecnologia e crescimento",
+    destaque: "Organização profissional para crescer.",
+    recursos: ["Agenda e clientes", "Financeiro e estoque", "Gestão completa do negócio"],
   },
   barbearia: {
     tipo: "barbearia",
     nome: "LuBarber",
-    selo: "Gestão afiada para barbearias",
-    assinatura: "Mais controle. Mais presença. Mais barbearia.",
+    selo: "Sistema de gestão premium",
+    assinatura: "Gestão inteligente para barbeiros de sucesso.",
     descricao:
       "Uma experiência forte e direta para barbeiros, equipes e barbearias que querem crescer.",
-    estilo: "Grafite, cobre e madeira",
-    destaque: "Operação precisa. Experiência marcante.",
-    recursos: ["Agenda por barbeiro", "Fila e encaixes", "Combos e desempenho"],
+    estilo: "Confiança, tecnologia e profissionalismo",
+    destaque: "Controle total da sua barbearia.",
+    recursos: ["Agenda e equipe", "Financeiro e estoque", "Gestão completa da barbearia"],
   },
 };
 

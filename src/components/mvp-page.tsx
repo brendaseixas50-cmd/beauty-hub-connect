@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Search, Trash2 } from "lucide-react";
+import { Inbox, Search, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -65,8 +65,11 @@ export function SearchField({
 
 export function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <Card className="mt-6 items-center p-8 text-center">
-      <p className="font-medium">{title}</p>
+    <Card className="mt-6 items-center p-8 text-center sm:p-10">
+      <span className="mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-primary">
+        <Inbox className="h-5 w-5" />
+      </span>
+      <p className="font-semibold">{title}</p>
       <p className="max-w-md text-sm text-muted-foreground">{description}</p>
     </Card>
   );

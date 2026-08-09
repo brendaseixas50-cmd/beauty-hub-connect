@@ -28,9 +28,12 @@ import {
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { MarcaProduto } from "@/components/marca-produto";
+import { BrandCredit, BrandSplash } from "@/components/brand-experience";
 import { getSession, logout, switchCompany } from "@/modules/auth/server";
 import { AuthProvider } from "@/modules/auth/context";
 import type { Session } from "@/modules/auth/domain";
+import { LuviAssistant, LuviOnboardingProgress } from "@/modules/luvi-core/components";
+import { LuviContextProvider } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel")({
   staleTime: 5 * 60_000,
@@ -245,52 +248,59 @@ function PainelLayout() {
 
   return (
     <AuthProvider session={session}>
-      <div className={`${tema} min-h-screen bg-background lg:flex`}>
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-sidebar p-4 lg:flex">
-          <MarcaProduto tipo={tipo} />
-          <div className="my-4 border-t" />
-          <Marca session={session} />
-          <div className="mt-4">
-            <CompanySwitcher session={session} />
-          </div>
-          <div className="mt-6 flex-1">
-            <Navegacao />
-          </div>
-          <div className="grid gap-3">
-            <p className="truncate px-1 text-xs text-muted-foreground">{session.user.email}</p>
-            <AcoesInferiores onLogout={() => void handleLogout()} />
-          </div>
-        </aside>
-
-        <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
+      <LuviContextProvider session={session}>
+        <div className={`${tema} min-h-screen bg-background lg:flex`}>
+          <BrandSplash tipo={tipo} />
+          <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-sidebar p-4 lg:flex">
+            <MarcaProduto tipo={tipo} />
+            <div className="my-4 border-t" />
             <Marca session={session} />
-            <Sheet open={aberto} onOpenChange={setAberto}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" aria-label="Abrir menu">
-                  <Menu className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-72 bg-sidebar p-4">
-                <SheetTitle className="sr-only">Menu do painel</SheetTitle>
-                <div className="mt-6">
-                  <Navegacao onNavigate={() => setAberto(false)} />
-                </div>
-                <div className="mt-4 grid gap-3">
-                  <AcoesInferiores
-                    onNavigate={() => setAberto(false)}
-                    onLogout={() => void handleLogout()}
-                  />
-                </div>
-              </SheetContent>
-            </Sheet>
-          </header>
+            <div className="mt-4">
+              <CompanySwitcher session={session} />
+            </div>
+            <div className="mt-6 flex-1">
+              <Navegacao />
+            </div>
+            <div className="grid gap-3">
+              <LuviOnboardingProgress />
+              <p className="truncate px-1 text-xs text-muted-foreground">{session.user.email}</p>
+              <AcoesInferiores onLogout={() => void handleLogout()} />
+              <BrandCredit />
+            </div>
+          </aside>
 
-          <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-10">
-            <Outlet />
-          </main>
+          <div className="min-w-0 flex-1">
+            <header className="sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
+              <Marca session={session} />
+              <Sheet open={aberto} onOpenChange={setAberto}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" aria-label="Abrir menu">
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-72 bg-sidebar p-4">
+                  <SheetTitle className="sr-only">Menu do painel</SheetTitle>
+                  <div className="mt-6">
+                    <Navegacao onNavigate={() => setAberto(false)} />
+                  </div>
+                  <div className="mt-4 grid gap-3">
+                    <AcoesInferiores
+                      onNavigate={() => setAberto(false)}
+                      onLogout={() => void handleLogout()}
+                    />
+                    <BrandCredit />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </header>
+
+            <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-10">
+              <Outlet />
+            </main>
+          </div>
+          <LuviAssistant />
         </div>
-      </div>
+      </LuviContextProvider>
     </AuthProvider>
   );
 }

@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { BrandCredit } from "@/components/brand-experience";
 
 import { confirmAuth } from "@/modules/auth/server";
 
@@ -70,7 +71,11 @@ export const Route = createFileRoute("/auth/confirm")({
 function Confirmando() {
   return (
     <main className="grid min-h-screen place-items-center bg-background px-4">
-      <p className="text-sm text-muted-foreground">Confirmando seu acesso…</p>
+      <div className="grid justify-items-center gap-4 text-center">
+        <span className="h-10 w-10 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
+        <p className="text-sm text-muted-foreground">Confirmando seu acesso…</p>
+        <BrandCredit />
+      </div>
     </main>
   );
 }

@@ -25,6 +25,7 @@ import {
   saveFinancialEntry,
 } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
+import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/financeiro")({
   loader: () => listFinancialEntries(),
@@ -68,6 +69,7 @@ function FinancePage() {
 
   return (
     <div>
+      <LuviContextBridge facts={{ financialEntries: entries.length }} />
       <PageHeader
         eyebrow="Controle financeiro"
         title="Financeiro"

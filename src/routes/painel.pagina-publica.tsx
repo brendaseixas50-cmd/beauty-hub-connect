@@ -21,6 +21,7 @@ import {
   uploadPublicMedia,
 } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
+import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/pagina-publica")({
   loader: async () => {
@@ -126,6 +127,16 @@ function PublicPageManager() {
 
   return (
     <div className="max-w-3xl">
+      <LuviContextBridge
+        facts={{
+          publicPageMissingFields: [
+            company.public_name,
+            company.description,
+            company.whatsapp,
+            company.slug,
+          ].filter((value) => !value).length,
+        }}
+      />
       <PageHeader
         eyebrow="Presença online"
         title="Minha página pública"
@@ -247,7 +258,7 @@ function PublicPageManager() {
             className="flex items-start justify-between gap-4 rounded-xl border p-4"
           >
             <div>
-              <div className="flex text-amber-500">
+              <div className="flex text-gold">
                 {Array.from({ length: review.rating }, (_, index) => (
                   <Star key={index} className="h-4 w-4 fill-current" />
                 ))}

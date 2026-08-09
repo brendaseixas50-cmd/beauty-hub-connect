@@ -13,7 +13,7 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
   --font-display: "Cormorant Garamond", Georgia, serif;
-  --font-sans: "Karla", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -55,167 +55,176 @@
 }
 
 :root {
-  --radius: 0.875rem;
-  --background: oklch(0.985 0.008 85);
-  --foreground: oklch(0.245 0.022 40);
-  --card: oklch(1 0.003 85);
-  --card-foreground: oklch(0.245 0.022 40);
-  --popover: oklch(1 0.003 85);
-  --popover-foreground: oklch(0.245 0.022 40);
-  --primary: oklch(0.36 0.045 35);
-  --primary-foreground: oklch(0.98 0.012 85);
-  --secondary: oklch(0.945 0.018 75);
-  --secondary-foreground: oklch(0.36 0.045 35);
-  --muted: oklch(0.955 0.012 80);
-  --muted-foreground: oklch(0.53 0.025 50);
-  --accent: oklch(0.895 0.045 55);
-  --accent-foreground: oklch(0.32 0.04 35);
-  --destructive: oklch(0.55 0.16 25);
-  --destructive-foreground: oklch(0.98 0.01 85);
-  --success: oklch(0.62 0.09 155);
-  --success-foreground: oklch(0.99 0.01 85);
-  --warning: oklch(0.78 0.12 75);
-  --warning-foreground: oklch(0.3 0.04 45);
-  --gold: oklch(0.72 0.075 75);
-  --border: oklch(0.905 0.015 75);
-  --input: oklch(0.905 0.015 75);
-  --ring: oklch(0.72 0.05 55);
-  --chart-1: oklch(0.62 0.09 40);
-  --chart-2: oklch(0.72 0.075 75);
-  --chart-3: oklch(0.55 0.05 25);
-  --chart-4: oklch(0.8 0.05 90);
-  --chart-5: oklch(0.45 0.04 35);
-  --sidebar: oklch(0.965 0.012 80);
-  --sidebar-foreground: oklch(0.3 0.025 40);
-  --sidebar-primary: oklch(0.36 0.045 35);
-  --sidebar-primary-foreground: oklch(0.98 0.012 85);
-  --sidebar-accent: oklch(0.925 0.025 65);
-  --sidebar-accent-foreground: oklch(0.32 0.04 35);
-  --sidebar-border: oklch(0.9 0.015 75);
-  --sidebar-ring: oklch(0.72 0.05 55);
+  --radius: 1.125rem;
+  --background: #fff9fc;
+  --foreground: #5e5e5e;
+  --card: #ffffff;
+  --card-foreground: #5e5e5e;
+  --popover: #ffffff;
+  --popover-foreground: #5e5e5e;
+  --primary: #ec78a8;
+  --primary-foreground: #ffffff;
+  --secondary: #f9e7ef;
+  --secondary-foreground: #8b3e64;
+  --muted: #fdf0f6;
+  --muted-foreground: #766c72;
+  --accent: #c9b8ff;
+  --accent-foreground: #55317f;
+  --destructive: #ec78a8;
+  --destructive-foreground: #ffffff;
+  --success: #a66ef2;
+  --success-foreground: #ffffff;
+  --warning: #d9b670;
+  --warning-foreground: #5e5e5e;
+  --gold: #d9b670;
+  --border: #f1d7e3;
+  --input: #ead3dd;
+  --ring: #a66ef2;
+  --chart-1: #ec78a8;
+  --chart-2: #a66ef2;
+  --chart-3: #d9b670;
+  --chart-4: #f5afc8;
+  --chart-5: #c9b8ff;
+  --sidebar: #fff6fa;
+  --sidebar-foreground: #5e5e5e;
+  --sidebar-primary: #ec78a8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f9dce9;
+  --sidebar-accent-foreground: #7f3558;
+  --sidebar-border: #efd4df;
+  --sidebar-ring: #a66ef2;
 }
 
 .dark {
-  --background: oklch(0.19 0.015 45);
-  --foreground: oklch(0.96 0.01 80);
-  --card: oklch(0.24 0.018 45);
-  --card-foreground: oklch(0.96 0.01 80);
-  --popover: oklch(0.24 0.018 45);
-  --popover-foreground: oklch(0.96 0.01 80);
-  --primary: oklch(0.88 0.04 70);
-  --primary-foreground: oklch(0.24 0.02 40);
-  --secondary: oklch(0.3 0.02 45);
-  --secondary-foreground: oklch(0.96 0.01 80);
-  --muted: oklch(0.3 0.02 45);
-  --muted-foreground: oklch(0.72 0.02 70);
-  --accent: oklch(0.35 0.03 50);
-  --accent-foreground: oklch(0.96 0.01 80);
-  --destructive: oklch(0.6 0.16 25);
-  --destructive-foreground: oklch(0.98 0.01 85);
-  --success: oklch(0.66 0.09 155);
-  --success-foreground: oklch(0.2 0.02 45);
-  --warning: oklch(0.8 0.12 75);
-  --warning-foreground: oklch(0.24 0.02 45);
-  --gold: oklch(0.78 0.08 75);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.7 0.05 60);
-  --chart-1: oklch(0.7 0.09 40);
-  --chart-2: oklch(0.78 0.08 75);
-  --chart-3: oklch(0.6 0.05 25);
-  --chart-4: oklch(0.85 0.05 90);
-  --chart-5: oklch(0.55 0.04 35);
-  --sidebar: oklch(0.22 0.018 45);
-  --sidebar-foreground: oklch(0.94 0.01 80);
-  --sidebar-primary: oklch(0.88 0.04 70);
-  --sidebar-primary-foreground: oklch(0.24 0.02 40);
-  --sidebar-accent: oklch(0.3 0.025 50);
-  --sidebar-accent-foreground: oklch(0.96 0.01 80);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.7 0.05 60);
+  --background: #161616;
+  --foreground: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #161616;
+  --popover: #ffffff;
+  --popover-foreground: #161616;
+  --primary: #161616;
+  --primary-foreground: #ffffff;
+  --secondary: #2f2f2f;
+  --secondary-foreground: #ffffff;
+  --muted: #2f2f2f;
+  --muted-foreground: #d8d8d8;
+  --accent: #1b4d63;
+  --accent-foreground: #ffffff;
+  --destructive: #c9a227;
+  --destructive-foreground: #161616;
+  --success: #1b4d63;
+  --success-foreground: #ffffff;
+  --warning: #c9a227;
+  --warning-foreground: #161616;
+  --gold: #c9a227;
+  --border: #d8d8d8;
+  --input: #d8d8d8;
+  --ring: #c9a227;
+  --chart-1: #c9a227;
+  --chart-2: #1b4d63;
+  --chart-3: #2f2f2f;
+  --chart-4: #d8d8d8;
+  --chart-5: #ffffff;
+  --sidebar: #0f0f0f;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #c9a227;
+  --sidebar-primary-foreground: #161616;
+  --sidebar-accent: #1b4d63;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2f2f2f;
+  --sidebar-ring: #c9a227;
 }
 
-/* ---------- Tema BELEZA: claro, leve, rosé e bege ---------- */
+/* LuBeauty Pro — Brand Book oficial */
 .tema-beleza {
-  --radius: 0.875rem;
-  --background: oklch(0.985 0.008 350);
-  --foreground: oklch(0.26 0.02 340);
-  --card: oklch(1 0.004 350);
-  --card-foreground: oklch(0.26 0.02 340);
-  --popover: oklch(1 0.004 350);
-  --popover-foreground: oklch(0.26 0.02 340);
-  --primary: oklch(0.52 0.09 350);
-  --primary-foreground: oklch(0.99 0.008 350);
-  --secondary: oklch(0.955 0.02 340);
-  --secondary-foreground: oklch(0.38 0.05 345);
-  --muted: oklch(0.96 0.012 340);
-  --muted-foreground: oklch(0.54 0.03 340);
-  --accent: oklch(0.91 0.04 330);
-  --accent-foreground: oklch(0.34 0.04 340);
-  --gold: oklch(0.78 0.07 60);
-  --border: oklch(0.91 0.018 340);
-  --input: oklch(0.91 0.018 340);
-  --ring: oklch(0.72 0.06 340);
-  --sidebar: oklch(0.97 0.016 340);
-  --sidebar-foreground: oklch(0.3 0.025 340);
-  --sidebar-primary: oklch(0.52 0.09 350);
-  --sidebar-primary-foreground: oklch(0.99 0.008 350);
-  --sidebar-accent: oklch(0.925 0.03 335);
-  --sidebar-accent-foreground: oklch(0.33 0.04 340);
-  --sidebar-border: oklch(0.9 0.018 340);
-  --sidebar-ring: oklch(0.72 0.06 340);
+  --radius: 1.125rem;
+  --background: #fff9fc;
+  --foreground: #5e5e5e;
+  --card: #ffffff;
+  --card-foreground: #5e5e5e;
+  --popover: #ffffff;
+  --popover-foreground: #5e5e5e;
+  --primary: #ec78a8;
+  --primary-foreground: #ffffff;
+  --secondary: #f9e7ef;
+  --secondary-foreground: #8b3e64;
+  --muted: #fdf0f6;
+  --muted-foreground: #766c72;
+  --accent: #c9b8ff;
+  --accent-foreground: #55317f;
+  --destructive: #ec78a8;
+  --destructive-foreground: #ffffff;
+  --success: #a66ef2;
+  --success-foreground: #ffffff;
+  --warning: #d9b670;
+  --warning-foreground: #5e5e5e;
+  --gold: #d9b670;
+  --border: #f1d7e3;
+  --input: #ead3dd;
+  --ring: #a66ef2;
+  --chart-1: #ec78a8;
+  --chart-2: #a66ef2;
+  --chart-3: #d9b670;
+  --chart-4: #f5afc8;
+  --chart-5: #c9b8ff;
+  --sidebar: #fff6fa;
+  --sidebar-foreground: #5e5e5e;
+  --sidebar-primary: #ec78a8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f9dce9;
+  --sidebar-accent-foreground: #7f3558;
+  --sidebar-border: #efd4df;
+  --sidebar-ring: #a66ef2;
 }
 
-/* ---------- Tema BARBEARIA: preto, grafite, madeira e cobre ---------- */
+/* LuBarber Pro — Brand Book oficial */
 .tema-barbearia {
-  --radius: 0.375rem;
-  --background: oklch(0.16 0.005 60);
-  --foreground: oklch(0.95 0.005 80);
-  --card: oklch(0.21 0.008 60);
-  --card-foreground: oklch(0.95 0.005 80);
-  --popover: oklch(0.21 0.008 60);
-  --popover-foreground: oklch(0.95 0.005 80);
-  --primary: oklch(0.72 0.11 70);
-  --primary-foreground: oklch(0.17 0.01 60);
-  --secondary: oklch(0.27 0.01 60);
-  --secondary-foreground: oklch(0.94 0.005 80);
-  --muted: oklch(0.26 0.008 60);
-  --muted-foreground: oklch(0.72 0.012 80);
-  --accent: oklch(0.32 0.025 55);
-  --accent-foreground: oklch(0.95 0.005 80);
-  --destructive: oklch(0.58 0.17 25);
-  --destructive-foreground: oklch(0.98 0.01 80);
-  --success: oklch(0.68 0.1 150);
-  --success-foreground: oklch(0.17 0.01 60);
-  --warning: oklch(0.78 0.13 70);
-  --warning-foreground: oklch(0.18 0.01 60);
-  --gold: oklch(0.76 0.12 75);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.72 0.11 70);
-  --chart-1: oklch(0.72 0.11 70);
-  --chart-2: oklch(0.6 0.06 45);
-  --chart-3: oklch(0.82 0.06 85);
-  --chart-4: oklch(0.45 0.03 60);
-  --chart-5: oklch(0.9 0.02 80);
-  --sidebar: oklch(0.13 0.005 60);
-  --sidebar-foreground: oklch(0.93 0.005 80);
-  --sidebar-primary: oklch(0.72 0.11 70);
-  --sidebar-primary-foreground: oklch(0.17 0.01 60);
-  --sidebar-accent: oklch(0.27 0.02 60);
-  --sidebar-accent-foreground: oklch(0.97 0.005 80);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.72 0.11 70);
+  --radius: 1rem;
+  --background: #161616;
+  --foreground: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #161616;
+  --popover: #ffffff;
+  --popover-foreground: #161616;
+  --primary: #161616;
+  --primary-foreground: #ffffff;
+  --secondary: #2f2f2f;
+  --secondary-foreground: #ffffff;
+  --muted: #242424;
+  --muted-foreground: #d8d8d8;
+  --accent: #1b4d63;
+  --accent-foreground: #ffffff;
+  --destructive: #c9a227;
+  --destructive-foreground: #161616;
+  --success: #1b4d63;
+  --success-foreground: #ffffff;
+  --warning: #c9a227;
+  --warning-foreground: #161616;
+  --gold: #c9a227;
+  --border: #d8d8d8;
+  --input: #c9c9c9;
+  --ring: #c9a227;
+  --chart-1: #c9a227;
+  --chart-2: #1b4d63;
+  --chart-3: #2f2f2f;
+  --chart-4: #d8d8d8;
+  --chart-5: #ffffff;
+  --sidebar: #0f0f0f;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #c9a227;
+  --sidebar-primary-foreground: #161616;
+  --sidebar-accent: #1b4d63;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2f2f2f;
+  --sidebar-ring: #c9a227;
 }
 
 .tema-barbearia h1,
 .tema-barbearia h2,
 .tema-barbearia h3,
 .tema-barbearia .font-display {
-  font-family: "Oswald", "Karla", ui-sans-serif, sans-serif;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  text-transform: none;
+  font-family: var(--font-display);
+  font-weight: 600;
 }
 
 .product-mark {
@@ -237,10 +246,288 @@
 }
 
 .tema-barbearia .product-wordmark {
-  font-family: "Oswald", "Karla", ui-sans-serif, sans-serif;
+  font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+}
+
+.brand-lockup {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  overflow: hidden;
+}
+.beauty-logo {
+  display: block;
+  width: 12rem;
+  height: 5.25rem;
+  object-fit: contain;
+  object-position: left center;
+}
+.barber-logo {
+  display: block;
+  width: 12rem;
+  height: 5.25rem;
+  object-fit: contain;
+  object-position: left center;
+}
+.brand-lockup-compact .beauty-logo {
+  width: 8.5rem;
+  height: 3.5rem;
+}
+.brand-lockup-compact .barber-logo {
+  width: 8.5rem;
+  height: 3.5rem;
+}
+.product-card-visual {
+  display: grid;
+  height: 13rem;
+  place-items: center;
+  overflow: hidden;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-card);
+}
+.product-card-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.tema-beleza .product-card-visual img {
+  object-fit: contain;
+}
+.brand-credit {
+  font-size: 0.68rem;
+  color: var(--color-muted-foreground);
+  text-align: center;
+}
+.brand-credit strong {
+  color: var(--color-gold);
+  font-weight: 600;
+}
+.brand-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background-color: var(--color-background);
+  animation: brand-splash-out 300ms ease 900ms both;
+}
+.brand-splash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 35%,
+    color-mix(in srgb, var(--color-accent) 28%, transparent),
+    transparent 48%
+  );
+}
+.brand-splash-content {
+  position: relative;
+  display: grid;
+  width: min(90vw, 34rem);
+  justify-items: center;
+  gap: 0.8rem;
+  padding: 2rem;
+  text-align: center;
+  animation: brand-splash-in 300ms ease both;
+}
+.brand-splash-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 600;
+}
+.brand-splash-slogan {
+  max-width: 26rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-muted-foreground);
+}
+.brand-splash-luvi {
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 70%, transparent);
+  border-radius: 999px;
+  object-fit: cover;
+  object-position: 50% 16%;
+}
+.tema-barbearia .brand-splash-content {
+  color: #ffffff;
+}
+.tema-barbearia .brand-splash-slogan {
+  color: #d8d8d8;
+}
+@keyframes brand-splash-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes brand-splash-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-splash,
+  .brand-splash-content {
+    animation-duration: 1ms;
+  }
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+.tema-beleza {
+  background-image: radial-gradient(
+    circle at top right,
+    color-mix(in srgb, #c9b8ff 18%, transparent),
+    transparent 32%
+  );
+}
+.tema-barbearia {
+  background-image: radial-gradient(
+    circle at top right,
+    color-mix(in srgb, #1b4d63 28%, transparent),
+    transparent 34%
+  );
+}
+.tema-beleza [data-slot="card"],
+.tema-barbearia [data-slot="card"] {
+  box-shadow: 0 8px 28px rgb(22 22 22 / 7%);
+}
+.tema-beleza button,
+.tema-beleza a,
+.tema-barbearia button,
+.tema-barbearia a {
+  transition-duration: 200ms;
+}
+.tema-barbearia main [data-slot="card"] {
+  color: #161616;
+}
+.tema-barbearia main [data-slot="card"] .text-muted-foreground {
+  color: #626262;
+}
+
+.luvi-theme-beauty,
+.luvi-theme-default {
+  --luvi-accent: #a66ef2;
+  --luvi-surface: #fff0f6;
+  --luvi-border: #f5afc8;
+  --luvi-gold: #d9b670;
+}
+.luvi-theme-barber {
+  --luvi-accent: #1b4d63;
+  --luvi-surface: #161616;
+  --luvi-border: #c9a227;
+  --luvi-gold: #c9a227;
+}
+.luvi-floating-button {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 40;
+  width: 4rem;
+  height: 4rem;
+  overflow: visible;
+  border: 2px solid var(--luvi-border);
+  border-radius: 999px;
+  background: var(--luvi-surface);
+  padding: 0;
+  box-shadow: 0 10px 28px rgb(22 22 22 / 18%);
+}
+.luvi-avatar {
+  position: relative;
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--luvi-border);
+  border-radius: 999px;
+  background: var(--luvi-surface);
+}
+.luvi-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 15%;
+}
+.luvi-avatar-small {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+.luvi-avatar-medium {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+.luvi-avatar-floating {
+  width: 3.5rem;
+  height: 3.5rem;
+  border: 0;
+}
+.luvi-status-star {
+  position: absolute;
+  right: -0.2rem;
+  top: -0.2rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--luvi-gold);
+  fill: currentcolor;
+}
+.luvi-panel {
+  border-color: var(--luvi-border);
+}
+.luvi-panel-header {
+  border-bottom: 1px solid var(--luvi-border);
+  background: color-mix(in srgb, var(--luvi-surface) 86%, var(--color-background));
+  padding: 1.25rem;
+}
+.luvi-inline-card {
+  border-color: var(--luvi-border);
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--luvi-surface) 75%, var(--color-card)),
+    var(--color-card)
+  );
+}
+
+@media (max-width: 640px) {
+  .luvi-inline-card {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .luvi-inline-card > a {
+    width: 100%;
+  }
+  .luvi-floating-button {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+  .luvi-avatar-floating {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .beauty-logo {
+    width: 10rem;
+    height: 4.4rem;
+  }
+  .barber-logo {
+    width: 10rem;
+    height: 4.4rem;
+  }
 }
 
 @layer base {

@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { brl, centsFromInput, type Product } from "@/modules/mvp/domain";
 import { deleteProduct, listProducts, saveProduct } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
+import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/produtos")({
   loader: () => listProducts(),
@@ -53,6 +54,14 @@ function ProductsPage() {
 
   return (
     <div>
+      <LuviContextBridge
+        facts={{
+          products: products.length,
+          lowStock: products.filter(
+            (product) => product.active && product.stock_quantity <= product.minimum_stock,
+          ).length,
+        }}
+      />
       <PageHeader
         eyebrow="Catálogo e insumos"
         title="Produtos"

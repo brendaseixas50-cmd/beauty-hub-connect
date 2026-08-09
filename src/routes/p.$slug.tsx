@@ -23,6 +23,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { BrandCredit } from "@/components/brand-experience";
 import { brl, type BookingResult } from "@/modules/public-booking/domain";
 import {
   createPublicBooking,
@@ -250,7 +251,7 @@ function PublicCompanyPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {reviews.map((review) => (
                   <Card key={review.id} className="gap-3 p-5">
-                    <div className="flex gap-1 text-amber-500">
+                    <div className="flex gap-1 text-gold">
                       {Array.from({ length: review.rating }, (_, index) => (
                         <Star key={index} className="h-4 w-4 fill-current" />
                       ))}
@@ -303,13 +304,13 @@ function PublicCompanyPage() {
           target="_blank"
           rel="noreferrer"
           aria-label="Falar pelo WhatsApp"
-          className="fixed bottom-5 right-5 z-30 grid h-14 w-14 place-items-center rounded-full bg-emerald-600 text-white shadow-xl"
+          className="fixed bottom-5 right-5 z-30 grid h-14 w-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-xl transition-transform duration-200 hover:scale-105"
         >
           <MessageCircle className="h-6 w-6" />
         </a>
       ) : null}
       <footer className="border-t py-8 text-center text-xs">
-        Agendamento seguro por{" "}
+        Desenvolvido por{" "}
         <Link to="/" className="font-semibold text-primary">
           Lu IA Studio
         </Link>
@@ -787,15 +788,18 @@ function contrast(hex: string) {
 }
 function Unavailable() {
   return (
-    <main className="grid min-h-screen place-items-center bg-background px-4">
-      <Card className="max-w-md gap-4 p-8 text-center">
-        <Scissors className="mx-auto h-10 w-10" />
-        <h1 className="text-2xl font-semibold">Página indisponível</h1>
-        <p>Este estabelecimento ainda não publicou sua página ou está sem licença ativa.</p>
-        <Button asChild variant="outline">
-          <Link to="/">Conhecer a Lu IA Studio</Link>
-        </Button>
-      </Card>
+    <main className="flex min-h-screen flex-col bg-background px-4">
+      <div className="grid flex-1 place-items-center py-8">
+        <Card className="max-w-md gap-4 p-8 text-center">
+          <Scissors className="mx-auto h-10 w-10" />
+          <h1 className="text-2xl font-semibold">Página indisponível</h1>
+          <p>Este estabelecimento ainda não publicou sua página ou está sem licença ativa.</p>
+          <Button asChild variant="outline">
+            <Link to="/">Conhecer a Lu IA Studio</Link>
+          </Button>
+        </Card>
+      </div>
+      <BrandCredit className="pb-6" />
     </main>
   );
 }
