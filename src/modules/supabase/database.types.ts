@@ -1384,6 +1384,19 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_public_store_order: {
+        Args: {
+          p_customer_name: string;
+          p_customer_phone: string;
+          p_fingerprint: string;
+          p_honeypot?: string;
+          p_items: Json;
+          p_payment_method: string;
+          p_request_id: string;
+          p_slug: string;
+        };
+        Returns: Json;
+      };
       get_public_booking_availability: {
         Args: {
           p_date: string;

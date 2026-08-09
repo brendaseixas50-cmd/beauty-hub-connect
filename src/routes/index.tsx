@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarDays, Check, LogIn, Users, Wallet } from "lucide-react";
 
-import bannerBeauty from "@/assets/brand/lubeauty-logo-horizontal.png";
-import bannerBarber from "@/assets/brand/lubarber-banner.png";
+import logoBeauty from "@/assets/brand/lubeauty-app-icon.png";
+import logoBarber from "@/assets/brand/lubarber-logo-round.png";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { marcasProduto, type TipoNegocio } from "@/products/catalog";
@@ -22,8 +22,8 @@ export const Route = createFileRoute("/")({
 });
 
 const images: Record<TipoNegocio, string> = {
-  beleza: bannerBeauty,
-  barbearia: bannerBarber,
+  beleza: logoBeauty,
+  barbearia: logoBarber,
 };
 
 const features = [
@@ -63,8 +63,7 @@ function Home() {
             Escolha a plataforma certa para o seu negócio
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Crie sua conta e gerencie empresa, profissionais, clientes, agenda, serviços, produtos,
-            estoque e financeiro em um único lugar.
+            Já possui ou vai criar uma conta? Entre diretamente na plataforma do seu segmento.
           </p>
 
           <div className="mt-10 grid gap-6 text-left lg:grid-cols-2">
@@ -105,12 +104,13 @@ function ProductCard({ type }: { type: TipoNegocio }) {
     <article
       className={`${theme} overflow-hidden rounded-[20px] border border-border bg-background text-foreground shadow-xl`}
     >
-      <div className="product-card-visual">
+      <div className="product-card-visual" aria-label={`Logo ${brand.nome} Pro`}>
         <img src={images[type]} alt={`Identidade oficial ${brand.nome} Pro`} />
       </div>
       <div className="p-7 sm:p-10">
         <p className="text-eyebrow">{brand.estilo}</p>
         <h2 className="product-wordmark mt-3 text-3xl sm:text-4xl">{brand.nome} Pro</h2>
+        <p className="mt-2 font-semibold text-primary">{brand.assinatura}</p>
         <p className="mt-3 max-w-md leading-relaxed text-muted-foreground">{brand.descricao}</p>
         <ul className="mt-6 grid gap-2 text-sm">
           {brand.recursos.map((feature) => (

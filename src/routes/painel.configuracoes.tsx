@@ -384,14 +384,21 @@ function PublicSettings({ company }: { company: Awaited<ReturnType<typeof getCom
                 ["pix", "Pix"],
                 ["card", "Cartão"],
                 ["local", "Pagamento no local"],
-                ["mercadoPago", "Mercado Pago"],
               ] as const
             ).map(([name, label]) => (
               <label key={name} className="flex items-center gap-3 rounded-xl border p-3">
                 <input name={name} type="checkbox" defaultChecked={payments[name]} /> {label}
               </label>
             ))}
+            <label className="flex items-center gap-3 rounded-xl border border-dashed p-3 text-muted-foreground">
+              <input name="mercadoPago" type="checkbox" checked={false} disabled readOnly /> Mercado
+              Pago · aguardando conexão segura
+            </label>
           </div>
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+            O Mercado Pago só será liberado depois que a aplicação e o webhook forem conectados. O
+            Access Token nunca deve ser colado neste formulário.
+          </p>
         </div>
         <label className="flex items-center gap-3">
           <input
