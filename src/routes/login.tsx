@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getSession, login, switchCompany } from "@/modules/auth/server";
+import { getSession, login, startGoogleSignIn, switchCompany } from "@/modules/auth/server";
 
 const safeRedirect = z
   .string()
@@ -46,6 +46,7 @@ function LoginPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
   const loginFn = useServerFn(login);
+  const googleFn = useServerFn(startGoogleSignIn);
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
   const tipo = search.produto === "barber" ? "barbearia" : "beleza";
@@ -93,66 +94,102 @@ function LoginPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-4" onSubmit={handleSubmit}>
+          <div className="grid gap-4">
             {search.message ? (
               <p className="rounded-lg bg-secondary px-3 py-2 text-sm" role="status">
                 {search.message}
               </p>
             ) : null}
-            <div className="grid gap-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input id="email" name="email" type="email" autoComplete="email" required />
-            </div>
-            <label className="flex min-h-11 items-center gap-3 text-sm">
-              <input
-                name="remember"
-                type="checkbox"
-                defaultChecked
-                className="h-4 w-4 accent-primary"
-              />
-              Manter conectado neste dispositivo
-            </label>
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <Label htmlFor="password">Senha</Label>
-                <Link to="/recuperar-senha" className="text-xs text-primary hover:underline">
-                  Esqueci minha senha
-                </Link>
-              </div>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-              />
-            </div>
-            {error ? (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
-            ) : null}
-            <Button type="submit" className="w-full" disabled={pending}>
-              {pending ? (
-                <>
-                  <LoaderCircle className="h-4 w-4 animate-spin" /> Entrando no painel…
-                </>
-              ) : (
-                "Entrar no painel"
-              )}
+            <Button
+              type="button"
+              size="lg"
+              variant="outline"
+              className="w-full"
+              disabled={pending}
+              onClick={async () => {
+                setPending(true);
+                setError(undefined);
+                try {
+                  const result = await googleFn({
+                    data: { productType: search.produto ?? "beauty" },
+                  });
+                  window.location.assign(result.url);
+                } catch (cause) {
+                  setError(
+                    cause instanceof Error
+                      ? cause.message
+                      : "Não foi possível iniciar o acesso com Google.",
+                  );
+                  setPending(false);
+                }
+              }}
+            >
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-white font-bold text-[#4285f4] shadow-sm">
+                G
+              </span>
+              Continuar com Google
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              Ainda não possui conta?{" "}
-              <Link
-                to="/cadastro"
-                search={{ produto: search.produto ?? "beauty" }}
-                className="inline-flex min-h-11 items-center px-2 text-primary hover:underline"
-              >
-                Criar conta
-              </Link>
-            </p>
-            <BrandCredit className="mt-2" />
-          </form>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              ou entre com e-mail
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <form className="grid gap-4" onSubmit={handleSubmit}>
+              <div className="grid gap-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input id="email" name="email" type="email" autoComplete="email" required />
+              </div>
+              <label className="flex min-h-11 items-center gap-3 text-sm">
+                <input
+                  name="remember"
+                  type="checkbox"
+                  defaultChecked
+                  className="h-4 w-4 accent-primary"
+                />
+                Manter conectado neste dispositivo
+              </label>
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="password">Senha</Label>
+                  <Link to="/recuperar-senha" className="text-xs text-primary hover:underline">
+                    Esqueci minha senha
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+              {error ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {error}
+                </p>
+              ) : null}
+              <Button type="submit" className="w-full" disabled={pending}>
+                {pending ? (
+                  <>
+                    <LoaderCircle className="h-4 w-4 animate-spin" /> Entrando no painel…
+                  </>
+                ) : (
+                  "Entrar no painel"
+                )}
+              </Button>
+              <p className="text-center text-sm text-muted-foreground">
+                Ainda não possui conta?{" "}
+                <Link
+                  to="/cadastro"
+                  search={{ produto: search.produto ?? "beauty" }}
+                  className="inline-flex min-h-11 items-center px-2 text-primary hover:underline"
+                >
+                  Criar conta
+                </Link>
+              </p>
+              <BrandCredit className="mt-2" />
+            </form>
+          </div>
         </CardContent>
       </Card>
       {pending ? (
