@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { resendSignupConfirmation, signup } from "@/modules/auth/server";
+import { resendSignupConfirmation, signup, startGoogleSignIn } from "@/modules/auth/server";
 
 export const Route = createFileRoute("/cadastro")({
   validateSearch: z.object({ produto: z.enum(["beauty", "barber"]).catch("beauty") }),
@@ -32,6 +32,7 @@ function Cadastro() {
   const navigate = useNavigate();
   const signupFn = useServerFn(signup);
   const resendFn = useServerFn(resendSignupConfirmation);
+  const googleFn = useServerFn(startGoogleSignIn);
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
   const [emailEnviado, setEmailEnviado] = useState<string>();
@@ -144,52 +145,85 @@ function Cadastro() {
                 </Button>
               </div>
             ) : (
-              <form className="grid gap-4" onSubmit={handleSubmit}>
-                <Campo id="fullName" label="Nome completo" autoComplete="name" />
-                <Campo id="businessName" label="Nome da empresa" autoComplete="organization" />
-                <Campo id="email" label="E-mail" type="email" autoComplete="email" />
-                <Campo
-                  id="password"
-                  label="Senha"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={8}
-                />
-                <Campo
-                  id="passwordConfirmation"
-                  label="Confirmar senha"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={8}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Use pelo menos 8 caracteres, incluindo letras e números.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Se você já usa outro produto Lu IA Studio, informe o mesmo e-mail e senha para
-                  adicionar esta empresa à sua conta atual.
-                </p>
-                {error ? (
-                  <p role="alert" className="text-sm text-destructive">
-                    {error}
-                  </p>
-                ) : null}
-                <Button type="submit" size="lg" disabled={pending}>
-                  {pending
-                    ? "Criando conta…"
-                    : `Criar conta no ${produto === "barber" ? "LuBarber Pro" : "LuBeauty Pro"}`}
+              <div className="grid gap-5">
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={async () => {
+                    setPending(true);
+                    setError(undefined);
+                    try {
+                      const result = await googleFn({ data: { productType: produto } });
+                      window.location.assign(result.url);
+                    } catch (cause) {
+                      setError(
+                        cause instanceof Error
+                          ? cause.message
+                          : "Não foi possível entrar com Google.",
+                      );
+                      setPending(false);
+                    }
+                  }}
+                >
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-white font-bold text-[#4285f4] shadow-sm">
+                    G
+                  </span>
+                  Continuar com Google
                 </Button>
-                <p className="text-center text-sm text-muted-foreground">
-                  Já possui uma conta?{" "}
-                  <Link
-                    to="/login"
-                    search={{ redirect: "/painel", produto }}
-                    className="inline-flex min-h-11 items-center px-2 text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    Entrar
-                  </Link>
-                </p>
-              </form>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="h-px flex-1 bg-border" />
+                  ou crie com e-mail
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <form className="grid gap-4" onSubmit={handleSubmit}>
+                  <Campo id="fullName" label="Nome completo" autoComplete="name" />
+                  <Campo id="businessName" label="Nome da empresa" autoComplete="organization" />
+                  <Campo id="email" label="E-mail" type="email" autoComplete="email" />
+                  <Campo
+                    id="password"
+                    label="Senha"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                  />
+                  <Campo
+                    id="passwordConfirmation"
+                    label="Confirmar senha"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Use pelo menos 8 caracteres, incluindo letras e números.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Se você já usa outro produto Lu IA Studio, informe o mesmo e-mail e senha para
+                    adicionar esta empresa à sua conta atual.
+                  </p>
+                  {error ? (
+                    <p role="alert" className="text-sm text-destructive">
+                      {error}
+                    </p>
+                  ) : null}
+                  <Button type="submit" size="lg" disabled={pending}>
+                    {pending
+                      ? "Criando conta…"
+                      : `Criar conta no ${produto === "barber" ? "LuBarber Pro" : "LuBeauty Pro"}`}
+                  </Button>
+                  <p className="text-center text-sm text-muted-foreground">
+                    Já possui uma conta?{" "}
+                    <Link
+                      to="/login"
+                      search={{ redirect: "/painel", produto }}
+                      className="inline-flex min-h-11 items-center px-2 text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      Entrar
+                    </Link>
+                  </p>
+                </form>
+              </div>
             )}
             <BrandCredit className="mt-6" />
           </CardContent>

@@ -24,6 +24,7 @@ import {
   BarChart3,
   Globe2,
   Megaphone,
+  ShieldCheck,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,9 @@ export const Route = createFileRoute("/painel")({
         to: "/login",
         search: { redirect: location.href },
       });
+    }
+    if (!session.user.betaAccessActive) {
+      throw redirect({ to: "/beta-fechado" });
     }
     if (session.user.productType === "beauty" && !session.user.onboardingCompleted) {
       throw redirect({ to: "/onboarding", search: { retorno: "/painel" } });
@@ -96,24 +100,25 @@ function Navegacao({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function AcoesInferiores({
+  session,
   onNavigate,
   onLogout,
 }: {
+  session: Session;
   onNavigate?: () => void;
   onLogout: () => void;
 }) {
   return (
     <div className="grid gap-1 border-t pt-4">
-      <Link
-        to="/painel/pagina-publica"
+      <a
+        href={`/p/${session.user.tenantSlug}`}
         target="_blank"
         rel="noreferrer"
-        preload="intent"
         onClick={onNavigate}
         className="mb-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:opacity-90"
       >
         <Globe2 className="h-4 w-4" /> Minha Página Pública
-      </Link>
+      </a>
       <Link
         to="/painel/configuracoes"
         preload="intent"
@@ -122,6 +127,16 @@ function AcoesInferiores({
       >
         <Settings className="h-4 w-4" /> Configurações
       </Link>
+      {session.user.isPlatformAdministrator ? (
+        <Link
+          to="/painel/admin-acessos"
+          preload="intent"
+          onClick={onNavigate}
+          className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-sidebar-accent/50"
+        >
+          <ShieldCheck className="h-4 w-4" /> Administração do Beta
+        </Link>
+      ) : null}
       <button
         type="button"
         onClick={onLogout}
@@ -205,7 +220,7 @@ function PainelLayout() {
   const [aberto, setAberto] = useState(false);
   const { session } = Route.useRouteContext();
   const navigate = useNavigate();
-  const router = useRouter();
+  const navigating = useRouterState({ select: (state) => state.status === "pending" });
   const logoutFn = useServerFn(logout);
   const tipo = session.user.productType === "barber" ? "barbearia" : "beleza";
   const tema = tipo === "barbearia" ? "tema-barbearia" : "tema-beleza";
@@ -214,32 +229,6 @@ function PainelLayout() {
     document.documentElement.classList.add(tema);
     return () => document.documentElement.classList.remove(tema);
   }, [tema]);
-
-  useEffect(() => {
-    const preload = () => {
-      void Promise.allSettled([
-        router.preloadRoute({ to: "/painel" }),
-        router.preloadRoute({ to: "/painel/empresa" }),
-        router.preloadRoute({ to: "/painel/agenda" }),
-        router.preloadRoute({ to: "/painel/profissionais" }),
-        router.preloadRoute({ to: "/painel/clientes" }),
-        router.preloadRoute({ to: "/painel/servicos" }),
-        router.preloadRoute({ to: "/painel/marketing" }),
-        router.preloadRoute({ to: "/painel/produtos" }),
-        router.preloadRoute({ to: "/painel/financeiro" }),
-        router.preloadRoute({ to: "/painel/estoque" }),
-        router.preloadRoute({ to: "/painel/relatorios" }),
-        router.preloadRoute({ to: "/painel/configuracoes" }),
-        router.preloadRoute({ to: "/painel/pagina-publica" }),
-      ]);
-    };
-    const idle = window.requestIdleCallback?.(preload, { timeout: 1800 });
-    const timer = idle === undefined ? window.setTimeout(preload, 400) : undefined;
-    return () => {
-      if (idle !== undefined) window.cancelIdleCallback?.(idle);
-      if (timer !== undefined) window.clearTimeout(timer);
-    };
-  }, [router, session.user.tenantId]);
 
   async function handleLogout() {
     await logoutFn();
@@ -250,6 +239,10 @@ function PainelLayout() {
     <AuthProvider session={session}>
       <LuviContextProvider session={session}>
         <div className={`${tema} min-h-screen bg-background lg:flex`}>
+          <div
+            className={`route-progress ${navigating ? "route-progress-visible" : ""}`}
+            aria-hidden="true"
+          />
           <BrandSplash tipo={tipo} />
           <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-sidebar p-4 lg:flex">
             <MarcaProduto tipo={tipo} />
@@ -264,7 +257,7 @@ function PainelLayout() {
             <div className="grid gap-3">
               <LuviOnboardingProgress />
               <p className="truncate px-1 text-xs text-muted-foreground">{session.user.email}</p>
-              <AcoesInferiores onLogout={() => void handleLogout()} />
+              <AcoesInferiores session={session} onLogout={() => void handleLogout()} />
               <BrandCredit />
             </div>
           </aside>
@@ -285,6 +278,7 @@ function PainelLayout() {
                   </div>
                   <div className="mt-4 grid gap-3">
                     <AcoesInferiores
+                      session={session}
                       onNavigate={() => setAberto(false)}
                       onLogout={() => void handleLogout()}
                     />

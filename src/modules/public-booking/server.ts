@@ -17,7 +17,7 @@ export const getPublicCompanyPage = createServerFn({ method: "GET" })
   .validator(slugSchema)
   .handler(async ({ data }): Promise<PublicPage | null> => {
     const supabase = createSupabaseServerClient();
-    const { data: page, error } = await supabase.rpc("get_public_company_page_v2", {
+    const { data: page, error } = await supabase.rpc("get_public_company_page_v3", {
       p_slug: data.slug,
     });
     if (error) throw new Error("Não foi possível carregar esta página agora.");
@@ -57,6 +57,39 @@ const bookingInput = availabilityInput.omit({ date: true, professionalId: true }
   fingerprint: z.string().min(8).max(100),
   website: z.string().max(0),
 });
+
+const simpleBookingInput = availabilityInput.omit({ date: true, professionalId: true }).extend({
+  professionalId: z.string().uuid(),
+  startsAt: z.string().datetime({ offset: true }),
+  customerName: z.string().trim().min(2).max(120),
+  customerPhone: z.string().trim().min(10).max(30),
+  requestId: z.string().uuid(),
+  fingerprint: z.string().min(8).max(100),
+  paymentMethod: z.enum(["pix", "card", "local", "mercado_pago"]),
+  paymentOption: z.enum(["deposit", "full"]),
+  website: z.string().max(0),
+});
+
+export const createSimplePublicBooking = createServerFn({ method: "POST" })
+  .validator(simpleBookingInput)
+  .handler(async ({ data }): Promise<BookingResult> => {
+    const supabase = createSupabaseServerClient();
+    const { data: result, error } = await supabase.rpc("create_public_booking_v3", {
+      p_slug: data.slug,
+      p_service_ids: data.serviceIds,
+      p_professional_id: data.professionalId,
+      p_starts_at: data.startsAt,
+      p_customer_name: data.customerName,
+      p_customer_phone: data.customerPhone,
+      p_request_id: data.requestId,
+      p_fingerprint: data.fingerprint,
+      p_payment_method: data.paymentMethod,
+      p_payment_option: data.paymentOption,
+      p_honeypot: data.website,
+    });
+    if (error) throw new Error("Não foi possível concluir o agendamento. Tente novamente.");
+    return bookingResultSchema.parse(result);
+  });
 
 export const createPublicBooking = createServerFn({ method: "POST" })
   .validator(bookingInput)
