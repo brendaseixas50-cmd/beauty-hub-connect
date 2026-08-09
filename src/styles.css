@@ -449,7 +449,22 @@
   color: #161616;
 }
 .tema-barbearia main [data-slot="card"] .text-muted-foreground {
-  color: #626262;
+  color: #4a4a4a;
+}
+.tema-barbearia main [data-slot="card"] label,
+.tema-barbearia main [data-slot="card"] p,
+.tema-barbearia main [data-slot="card"] span {
+  text-rendering: optimizeLegibility;
+}
+.tema-barbearia main [data-slot="card"] input,
+.tema-barbearia main [data-slot="card"] textarea,
+.tema-barbearia main [data-slot="card"] select {
+  color: #161616;
+  background-color: #ffffff;
+}
+.tema-barbearia main [data-slot="card"] input::placeholder,
+.tema-barbearia main [data-slot="card"] textarea::placeholder {
+  color: #595959;
 }
 
 .luvi-theme-beauty,
@@ -590,6 +605,13 @@
 }
 
 @media (max-width: 640px) {
+  main [data-slot="card"] {
+    border-radius: 1rem;
+  }
+  main [data-slot="card"] button,
+  main [data-slot="card"] a[role="button"] {
+    min-height: 2.75rem;
+  }
   .luvi-inline-card {
     align-items: flex-start;
     flex-wrap: wrap;

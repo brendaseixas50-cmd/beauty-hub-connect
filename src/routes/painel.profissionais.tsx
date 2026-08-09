@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Pencil, Plus } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { ImageUp, Pencil, Plus, UserRound } from "lucide-react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 
 import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ import {
   listProfessionals,
   listServices,
   saveProfessional,
+  uploadPublicMedia,
 } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
@@ -96,12 +97,20 @@ function ProfessionalsPage() {
           {filtered.map((professional) => (
             <Card key={professional.id} className="gap-4 p-5">
               <div className="flex items-start gap-4">
-                <span
-                  className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-sm font-semibold text-white"
-                  style={{ backgroundColor: professional.color }}
-                >
-                  {initials(professional.name)}
-                </span>
+                {professional.photo_url ? (
+                  <img
+                    src={professional.photo_url}
+                    alt={`Foto de ${professional.name}`}
+                    className="h-12 w-12 shrink-0 rounded-full border object-cover"
+                  />
+                ) : (
+                  <span
+                    className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-sm font-semibold text-white"
+                    style={{ backgroundColor: professional.color }}
+                  >
+                    {initials(professional.name)}
+                  </span>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-lg font-medium">{professional.name}</p>
                   <p className="truncate text-sm text-muted-foreground">
@@ -161,7 +170,39 @@ function ProfessionalDialog({
   onClose: () => void;
 }) {
   const save = useServerFn(saveProfessional);
+  const upload = useServerFn(uploadPublicMedia);
   const action = useMvpAction();
+  const [photoUrl, setPhotoUrl] = useState(professional?.photo_url ?? "");
+  const [uploading, setUploading] = useState(false);
+
+  async function onPhoto(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    if (!file || !professional) return;
+    if (
+      !(["image/jpeg", "image/png", "image/webp"] as string[]).includes(file.type) ||
+      file.size > 3 * 1024 * 1024
+    ) {
+      await action.run(
+        () => Promise.reject(new Error("Use JPG, PNG ou WebP com no máximo 3 MB.")),
+        "",
+      );
+      return;
+    }
+    setUploading(true);
+    try {
+      const result = await upload({
+        data: {
+          kind: "gallery",
+          key: professional.id,
+          mimeType: file.type as "image/jpeg" | "image/png" | "image/webp",
+          base64: await fileToBase64(file),
+        },
+      });
+      setPhotoUrl(result.url);
+    } finally {
+      setUploading(false);
+    }
+  }
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -179,7 +220,7 @@ function ProfessionalDialog({
             active: form.get("active") === "on",
             notes: String(form.get("notes")),
             bio: String(form.get("bio")),
-            photoUrl: String(form.get("photoUrl")),
+            photoUrl,
             serviceIds: form.getAll("serviceIds").map(String),
           },
         }),
@@ -204,12 +245,60 @@ function ProfessionalDialog({
             name="specialty"
             defaultValue={professional?.specialty ?? ""}
           />
-          <Field
-            label="URL da foto"
-            name="photoUrl"
-            type="url"
-            defaultValue={professional?.photo_url ?? ""}
-          />
+          <div className="grid gap-2">
+            <Label>Foto do profissional</Label>
+            <div className="flex items-center gap-4 rounded-2xl border p-3">
+              {photoUrl ? (
+                <img
+                  src={photoUrl}
+                  alt="Prévia da foto"
+                  className="h-20 w-20 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <span className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-muted">
+                  <UserRound className="h-8 w-8 text-muted-foreground" />
+                </span>
+              )}
+              <div className="grid min-w-0 flex-1 gap-2">
+                {professional ? (
+                  <>
+                    <label
+                      htmlFor="professional-photo"
+                      className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-medium"
+                    >
+                      <ImageUp className="h-4 w-4" />{" "}
+                      {uploading ? "Enviando…" : photoUrl ? "Substituir foto" : "Adicionar foto"}
+                    </label>
+                    <input
+                      id="professional-photo"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      disabled={uploading}
+                      onChange={(event) => void onPhoto(event)}
+                    />
+                    {photoUrl ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setPhotoUrl("")}
+                      >
+                        Remover foto
+                      </Button>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Salve o profissional e depois adicione a foto.
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  A foto aparecerá ao lado do nome no agendamento público.
+                </p>
+              </div>
+            </div>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Telefone" name="phone" defaultValue={professional?.phone ?? ""} />
             <Field
@@ -298,4 +387,13 @@ function initials(name: string) {
     .map((part) => part[0])
     .join("")
     .toUpperCase();
+}
+
+function fileToBase64(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+    reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+    reader.readAsDataURL(file);
+  });
 }
