@@ -38,12 +38,18 @@ bun install
 bun run dev
 ```
 
-As variáveis públicas necessárias estão documentadas em `.env.example`:
+As variáveis de ambiente necessárias estão documentadas em `.env.example`:
 
 ```env
 VITE_SUPABASE_URL=
 VITE_SUPABASE_PUBLISHABLE_KEY=
+GOOGLE_MAPS_SERVER_API_KEY=
 ```
+
+`GOOGLE_MAPS_SERVER_API_KEY` é opcional e reservada para recursos futuros da Google Maps
+Platform executados exclusivamente no servidor. A localização pública atual não depende dela e
+não exige OAuth ou configuração do Google pelo profissional. Se usada futuramente, deve existir
+somente nas variáveis protegidas da Vercel, com restrições de API e ambiente no Google Cloud.
 
 A publishable key identifica o projeto e foi criada para uso público. A segurança dos dados depende das políticas RLS. Nunca adicione uma chave `service_role` a variáveis `VITE_*`.
 
