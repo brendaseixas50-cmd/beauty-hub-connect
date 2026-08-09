@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { resolveSession } from "@/modules/auth/server";
+import { resolveOperationalContext } from "@/modules/auth/server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 import type {
   Appointment,
@@ -35,14 +35,14 @@ const optionalShortText = z
 
 async function tenantContext() {
   const supabase = createSupabaseServerClient();
-  const session = await resolveSession(supabase);
-  if (!session) throw new Error("Sua conta não possui uma empresa ativa.");
+  const context = await resolveOperationalContext(supabase);
+  if (!context) throw new Error("Sua conta não possui uma empresa ativa.");
 
   return {
     supabase,
-    user: { id: session.user.id },
-    tenantId: session.user.tenantId,
-    role: session.user.role,
+    user: { id: context.userId },
+    tenantId: context.tenantId,
+    role: context.role,
   };
 }
 
