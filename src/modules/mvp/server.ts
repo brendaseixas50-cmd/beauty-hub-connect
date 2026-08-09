@@ -281,6 +281,22 @@ const publicSettingsSchema = z.object({
     .or(z.literal(""))
     .transform((value) => value || null),
   description: optionalText,
+  addressLine: optionalShortText,
+  city: optionalShortText,
+  state: z
+    .string()
+    .trim()
+    .max(2)
+    .transform((value) => value.toUpperCase() || null),
+  postalCode: optionalShortText,
+  mapUrl: z
+    .string()
+    .trim()
+    .url()
+    .max(1000)
+    .or(z.literal(""))
+    .transform((value) => value || null),
+  showPublicLocation: z.boolean(),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   textColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
@@ -311,6 +327,12 @@ export const updatePublicSettings = createServerFn({ method: "POST" })
         logo_url: data.logoUrl,
         banner_url: data.bannerUrl,
         description: data.description,
+        address_line: data.addressLine,
+        city: data.city,
+        state: data.state,
+        postal_code: data.postalCode,
+        map_url: data.mapUrl,
+        show_public_location: data.showPublicLocation,
         primary_color: data.primaryColor,
         secondary_color: secondary,
         accent_color: secondary,
