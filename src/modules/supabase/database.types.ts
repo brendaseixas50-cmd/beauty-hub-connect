@@ -1497,6 +1497,7 @@ export type Database = {
       get_public_company_page_v2: { Args: { p_slug: string }; Returns: Json };
       get_public_company_page_v3: { Args: { p_slug: string }; Returns: Json };
       get_my_platform_access: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_my_session_bootstrap: { Args: Record<PropertyKey, never>; Returns: Json };
       switch_active_tenant: {
         Args: { target_tenant_id: string };
         Returns: undefined;

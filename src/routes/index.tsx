@@ -110,7 +110,7 @@ function ProductCard({ type }: { type: TipoNegocio }) {
       <div className="p-7 sm:p-10">
         <p className="text-eyebrow">{brand.estilo}</p>
         <h2 className="product-wordmark mt-3 text-3xl sm:text-4xl">{brand.nome} Pro</h2>
-        <p className="mt-2 font-semibold text-primary">{brand.assinatura}</p>
+        <p className="product-slogan mt-2 font-semibold">{brand.assinatura}</p>
         <p className="mt-3 max-w-md leading-relaxed text-muted-foreground">{brand.descricao}</p>
         <ul className="mt-6 grid gap-2 text-sm">
           {brand.recursos.map((feature) => (

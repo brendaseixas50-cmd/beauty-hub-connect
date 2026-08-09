@@ -27,7 +27,7 @@ export const marcasProduto: Record<TipoNegocio, MarcaProduto> = {
     tipo: "barbearia",
     nome: "LuBarber",
     selo: "Sistema de gestão premium",
-    assinatura: "Gestão inteligente para barbeiros de sucesso.",
+    assinatura: "Sistema inteligente para barbeiros que querem crescer.",
     descricao:
       "Uma experiência forte e direta para barbeiros, equipes e barbearias que querem crescer.",
     estilo: "Confiança, tecnologia e profissionalismo",

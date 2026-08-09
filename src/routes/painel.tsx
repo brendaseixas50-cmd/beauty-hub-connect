@@ -132,9 +132,9 @@ function AcoesInferiores({
           to="/painel/admin-acessos"
           preload="intent"
           onClick={onNavigate}
-          className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-sidebar-accent/50"
+          className="mt-2 flex min-h-12 items-center gap-3 rounded-xl border border-sidebar-primary/60 bg-sidebar-primary/10 px-3 py-3 text-sm font-semibold text-sidebar-foreground hover:bg-sidebar-primary/20"
         >
-          <ShieldCheck className="h-4 w-4" /> Administração do Beta
+          <ShieldCheck className="h-4 w-4 text-sidebar-primary" /> Painel Master · Autorizar contas
         </Link>
       ) : null}
       <button

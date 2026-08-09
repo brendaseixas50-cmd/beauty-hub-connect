@@ -14,12 +14,12 @@ export function evaluateLuviRules(context: LuviContextSnapshot): LuviSuggestion[
       id: "dashboard-today",
       title: copy(context, "Vamos preparar sua agenda?", "Vamos organizar os atendimentos?"),
       message:
-        facts.appointmentsToday === 0
+        (facts.appointmentsToday ?? 0) === 0
           ? copy(context, "Sua agenda está livre hoje.", "Não há atendimentos marcados para hoje.")
           : copy(
               context,
-              `Você tem ${facts.appointmentsToday} atendimento(s) marcado(s) para hoje.`,
-              `Hoje há ${facts.appointmentsToday} atendimento(s) na agenda.`,
+              `Você tem ${facts.appointmentsToday ?? 0} atendimento(s) marcado(s) para hoje.`,
+              `Hoje há ${facts.appointmentsToday ?? 0} atendimento(s) na agenda.`,
             ),
       priority: "informative",
       action: luviActions.agenda,
@@ -80,11 +80,11 @@ export function evaluateLuviRules(context: LuviContextSnapshot): LuviSuggestion[
   if (pathname.startsWith("/painel/agenda"))
     suggestions.push({
       id: "agenda-context",
-      title: facts.appointmentsToday === 0 ? "Sua agenda está livre" : "Agenda atualizada",
+      title: (facts.appointmentsToday ?? 0) === 0 ? "Sua agenda está livre" : "Agenda atualizada",
       message:
-        facts.appointmentsToday === 0
+        (facts.appointmentsToday ?? 0) === 0
           ? "Você pode criar um atendimento ou compartilhar sua página pública."
-          : `Há ${facts.appointmentsToday} atendimento(s) no período exibido.`,
+          : `Há ${facts.appointmentsToday ?? 0} atendimento(s) no período exibido.`,
       priority: "informative",
       action: luviActions.newAppointment,
       dismissible: true,

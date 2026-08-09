@@ -69,6 +69,9 @@ function PublicBookingApp() {
     "--muted-foreground": "#5f5f5f",
     "--border": theme.border,
     "--input": theme.border,
+    "--ring": company.productType === "barber" ? "#c9a227" : theme.primary,
+    "--destructive": company.productType === "barber" ? "#9f1d1d" : "#d54d83",
+    "--destructive-foreground": "#ffffff",
   } as CSSProperties;
 
   return (

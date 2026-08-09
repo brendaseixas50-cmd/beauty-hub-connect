@@ -77,6 +77,23 @@ const platformAccessSchema = z.object({
     )
     .default([]),
 });
+const sessionBootstrapSchema = z.object({
+  profileName: z.string(),
+  activeTenantId: z.string().uuid().nullable(),
+  companies: z.array(
+    z.object({
+      tenantId: z.string().uuid(),
+      tenantName: z.string(),
+      tenantSlug: z.string(),
+      logoUrl: z.string().nullable(),
+      productType: z.enum(["beauty", "barber"]),
+      onboardingCompleted: z.boolean(),
+      licenseStatus: z.enum(["trial", "active"]),
+      role: z.enum(roles),
+    }),
+  ),
+  platformAccess: platformAccessSchema,
+});
 const confirmSchema = z
   .object({
     code: z.string().min(1).optional(),
@@ -130,59 +147,17 @@ export async function resolveSession(
 
   if (userError || !user?.email) return null;
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile) return null;
-
-  const [
-    { data: memberships, error: membershipError },
-    { data: active },
-    { data: authSession },
-    { data: rawPlatformAccess },
-  ] = await Promise.all([
-    supabase.from("tenant_memberships").select("tenant_id, role").eq("user_id", user.id),
-    supabase.from("user_active_tenants").select("tenant_id").eq("user_id", user.id).maybeSingle(),
+  const [{ data: rawBootstrap, error: bootstrapError }, { data: authSession }] = await Promise.all([
+    supabase.rpc("get_my_session_bootstrap"),
     supabase.auth.getSession(),
-    supabase.rpc("get_my_platform_access"),
   ]);
-
-  if (membershipError || !memberships?.length || !authSession.session) return null;
-
-  const tenantIds = memberships.map((membership) => membership.tenant_id);
-  const [{ data: tenants, error: tenantError }, { data: licenses, error: licenseError }] =
-    await Promise.all([
-      supabase
-        .from("tenants")
-        .select("id, name, slug, status, product_type, onboarding_completed_at, logo_url")
-        .in("id", tenantIds)
-        .eq("status", "active"),
-      supabase
-        .from("tenant_licenses")
-        .select("tenant_id, product_type, status")
-        .in("tenant_id", tenantIds)
-        .in("status", ["trial", "active"]),
-    ]);
-
-  if (tenantError || licenseError || !tenants?.length || !licenses?.length) return null;
-
-  const platformAccess = platformAccessSchema
-    .catch({ isAdministrator: false, grants: [] })
-    .parse(rawPlatformAccess);
+  const parsedBootstrap = sessionBootstrapSchema.safeParse(rawBootstrap);
+  if (bootstrapError || !parsedBootstrap.success || !authSession.session) return null;
+  const bootstrap = parsedBootstrap.data;
+  const platformAccess = bootstrap.platformAccess;
   const now = Date.now();
-  const companies = memberships.flatMap((membership): CompanyAccess[] => {
-    const tenant = tenants.find((candidate) => candidate.id === membership.tenant_id);
-    const license = licenses.find(
-      (candidate) =>
-        candidate.tenant_id === membership.tenant_id &&
-        candidate.product_type === tenant?.product_type,
-    );
-    const role = z.enum(roles).safeParse(membership.role);
-    if (!tenant || !license || !role.success) return [];
-    const productType = tenant.product_type === "barber" ? "barber" : "beauty";
+  const companies = bootstrap.companies.flatMap((company): CompanyAccess[] => {
+    const productType = company.productType;
     const betaGrant = platformAccess.grants.find(
       (grant) =>
         grant.productType === productType &&
@@ -192,15 +167,15 @@ export async function resolveSession(
     );
     return [
       {
-        tenantId: tenant.id,
-        tenantName: tenant.name,
-        tenantSlug: tenant.slug,
-        logoUrl: tenant.logo_url,
+        tenantId: company.tenantId,
+        tenantName: company.tenantName,
+        tenantSlug: company.tenantSlug,
+        logoUrl: company.logoUrl,
         productType,
-        onboardingCompleted: Boolean(tenant.onboarding_completed_at),
-        licenseStatus: license.status === "trial" ? "trial" : "active",
-        role: role.data as Role,
-        permissions: getPermissionsForRole(role.data as Role),
+        onboardingCompleted: company.onboardingCompleted,
+        licenseStatus: company.licenseStatus,
+        role: company.role as Role,
+        permissions: getPermissionsForRole(company.role as Role),
         betaAccessActive: Boolean(betaGrant),
         betaAccessType: betaGrant?.accessType ?? null,
       },
@@ -208,9 +183,9 @@ export async function resolveSession(
   });
 
   if (!companies.length) return null;
-  const selected = selectActiveCompany(companies, active?.tenant_id);
+  const selected = selectActiveCompany(companies, bootstrap.activeTenantId);
   if (!selected) return null;
-  if (selected.tenantId !== active?.tenant_id) {
+  if (selected.tenantId !== bootstrap.activeTenantId) {
     const { error } = await supabase.rpc("switch_active_tenant", {
       target_tenant_id: selected.tenantId,
     });
@@ -221,7 +196,7 @@ export async function resolveSession(
     user: {
       id: user.id,
       email: user.email,
-      name: profile.full_name,
+      name: bootstrap.profileName,
       companies,
       isPlatformAdministrator: platformAccess.isAdministrator,
       ...selected,
@@ -255,8 +230,7 @@ export const login = createServerFn({ method: "POST" })
         target_tenant_id: preferredCompany.tenantId,
       });
       if (switchError) throw new Error("Não foi possível abrir o produto escolhido.");
-      session = await resolveSession(supabase);
-      if (!session) throw new Error("Não foi possível abrir o produto escolhido.");
+      session = { ...session, user: { ...session.user, ...preferredCompany } };
     }
 
     return session;
