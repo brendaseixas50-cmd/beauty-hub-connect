@@ -130,6 +130,8 @@ export const bookingResultSchema = z.object({
   depositCents: z.number().optional(),
   amountDueCents: z.number().optional(),
   remainingCents: z.number().optional(),
+  checkoutUrl: z.string().url().optional(),
+  paymentError: z.string().optional(),
 });
 
 export const storeOrderResultSchema = z.object({
@@ -140,6 +142,8 @@ export const storeOrderResultSchema = z.object({
   totalCents: z.number().int().nonnegative().optional(),
   paymentMethod: z.string().optional(),
   paymentStatus: z.string().optional(),
+  checkoutUrl: z.string().url().optional(),
+  paymentError: z.string().optional(),
 });
 
 export type PublicPage = z.infer<typeof publicPageSchema>;

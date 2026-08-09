@@ -25,3 +25,8 @@ export function getMercadoPagoEnv() {
     encryptionKey: process.env["MERCADO_PAGO_TOKEN_ENCRYPTION_KEY"],
   });
 }
+
+export function getMercadoPagoWebhookSecret() {
+  const value = process.env["MERCADO_PAGO_WEBHOOK_SECRET"];
+  return value && value.length >= 16 ? value : null;
+}

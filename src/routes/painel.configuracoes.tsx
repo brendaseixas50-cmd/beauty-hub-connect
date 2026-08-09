@@ -410,16 +410,29 @@ function PublicSettings({
               <input
                 name="mercadoPago"
                 type="checkbox"
-                defaultChecked={mercadoPago.connected && payments["mercadoPago"]}
-                disabled={!mercadoPago.connected}
+                defaultChecked={
+                  mercadoPago.connected && mercadoPago.webhookConfigured && payments["mercadoPago"]
+                }
+                disabled={!mercadoPago.connected || !mercadoPago.webhookConfigured}
               />
-              Mercado Pago · {mercadoPago.connected ? "conectado" : "conexão necessária"}
+              Mercado Pago ·{" "}
+              {mercadoPago.connected && mercadoPago.webhookConfigured
+                ? "pronto"
+                : mercadoPago.connected
+                  ? "webhook pendente"
+                  : "conexão necessária"}
             </label>
           </div>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
             O Mercado Pago só será liberado depois que a aplicação e o webhook forem conectados. O
             Access Token nunca deve ser colado neste formulário.
           </p>
+          {!mercadoPago.webhookConfigured ? (
+            <p className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+              A chave de assinatura do webhook ainda precisa ser cadastrada no ambiente seguro da
+              Vercel antes de liberar pagamentos.
+            </p>
+          ) : null}
         </div>
         <div className="grid gap-4 rounded-2xl border bg-muted/20 p-4 sm:p-5">
           <div className="flex items-start gap-3">

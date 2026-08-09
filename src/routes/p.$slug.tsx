@@ -222,6 +222,10 @@ function BookingWizard({ page }: { page: PageData }) {
       });
       if (!response.ok) throw new Error(response.error || "Não foi possível confirmar.");
       setResult(response);
+      if (response.checkoutUrl) {
+        window.location.assign(response.checkoutUrl);
+        return;
+      }
       if (paymentMethod === "local" && company.whatsapp)
         window.open(
           bookingWhatsappUrl(company.whatsapp, response, name, paymentMethod),
@@ -657,6 +661,14 @@ function BookingSuccess({
           </p>
         ) : null}
       </div>
+      {result.paymentError ? (
+        <p
+          role="alert"
+          className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950"
+        >
+          Agendamento reservado, mas o pagamento não pôde ser aberto: {result.paymentError}
+        </p>
+      ) : null}
       {url ? (
         <Button asChild size="lg">
           <a href={url} target="_blank" rel="noreferrer">
@@ -741,7 +753,13 @@ function StoreCatalog({ page }: { page: PageData }) {
         },
       });
       if (!result.ok) throw new Error(result.error || "Não foi possível concluir o pedido.");
+      if (result.checkoutUrl) {
+        window.location.assign(result.checkoutUrl);
+        return;
+      }
       setSuccess({ code: result.code ?? "", total: result.totalCents ?? total });
+      if (result.paymentError)
+        setError(`Pedido criado, mas o pagamento não pôde ser aberto: ${result.paymentError}`);
       setCart({});
       if (paymentMethod === "local" && page.company.whatsapp) {
         const message = [
@@ -777,6 +795,14 @@ function StoreCatalog({ page }: { page: PageData }) {
         <p className="text-sm text-muted-foreground">
           O pagamento está pendente até a confirmação da empresa.
         </p>
+        {error ? (
+          <p
+            role="alert"
+            className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950"
+          >
+            {error}
+          </p>
+        ) : null}
         <Button
           type="button"
           variant="outline"
