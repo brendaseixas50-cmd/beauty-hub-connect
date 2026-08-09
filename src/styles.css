@@ -248,6 +248,13 @@
 .tema-barbearia .product-wordmark {
   font-family: var(--font-display);
   font-weight: 600;
+  color: #ffffff;
+}
+.product-slogan {
+  color: var(--color-primary);
+}
+.tema-barbearia .product-slogan {
+  color: #e7c75f;
 }
 
 .brand-lockup {
@@ -276,9 +283,11 @@
   border-radius: 1.25rem;
   object-fit: contain;
   image-rendering: auto;
+  clip-path: inset(1px round 24%);
 }
 .barber-logo.brand-logo-symbol {
   border-radius: 999px;
+  clip-path: circle(49% at 50% 50%);
 }
 .brand-lockup-compact .beauty-logo {
   width: 8.5rem;
@@ -482,9 +491,9 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 24%;
+  object-position: 50% 33%;
   image-rendering: auto;
-  transform: scale(1.02);
+  transform: scale(1.72);
 }
 .luvi-avatar-small {
   width: 2.5rem;
