@@ -206,6 +206,12 @@ function PublicSettings({
             logoUrl: logo,
             bannerUrl: banner,
             description: String(form.get("description")),
+            addressLine: String(form.get("addressLine")),
+            city: String(form.get("city")),
+            state: String(form.get("state")),
+            postalCode: String(form.get("postalCode")),
+            mapUrl: String(form.get("mapUrl")),
+            showPublicLocation: form.get("showPublicLocation") === "on",
             primaryColor: primary,
             secondaryColor: secondary,
             textColor: text,
@@ -274,6 +280,76 @@ function PublicSettings({
             defaultValue={company.description ?? ""}
             maxLength={500}
           />
+        </div>
+        <div className="grid gap-4 rounded-2xl border p-4 sm:p-5">
+          <div>
+            <h3 className="font-semibold">Localização do estabelecimento</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Aparece somente no final da página pública, depois do agendamento.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2 sm:col-span-2">
+              <Label htmlFor="public-address">Endereço completo</Label>
+              <Input
+                id="public-address"
+                name="addressLine"
+                defaultValue={company.address_line ?? ""}
+                placeholder="Rua, número e bairro"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="public-city">Cidade</Label>
+              <Input id="public-city" name="city" defaultValue={company.city ?? ""} />
+            </div>
+            <div className="grid grid-cols-[1fr_7rem] gap-3">
+              <div className="grid gap-2">
+                <Label htmlFor="public-postal-code">CEP</Label>
+                <Input
+                  id="public-postal-code"
+                  name="postalCode"
+                  inputMode="numeric"
+                  defaultValue={company.postal_code ?? ""}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="public-state">UF</Label>
+                <Input
+                  id="public-state"
+                  name="state"
+                  maxLength={2}
+                  defaultValue={company.state ?? ""}
+                />
+              </div>
+            </div>
+            <div className="grid gap-2 sm:col-span-2">
+              <Label htmlFor="public-map-url">Link do Google Maps (opcional)</Label>
+              <Input
+                id="public-map-url"
+                name="mapUrl"
+                type="url"
+                defaultValue={company.map_url ?? ""}
+                placeholder="https://maps.google.com/..."
+              />
+              <p className="text-xs text-muted-foreground">
+                Se não informar o link, o mapa será localizado pelo endereço cadastrado.
+              </p>
+            </div>
+          </div>
+          <label className="flex items-start gap-3 rounded-xl bg-muted/40 p-4">
+            <input
+              name="showPublicLocation"
+              type="checkbox"
+              defaultChecked={company.show_public_location}
+              className="mt-1"
+            />
+            <span>
+              <strong className="block text-sm">Exibir localização na página pública</strong>
+              <span className="text-sm text-muted-foreground">
+                Mostra endereço, mapa e o botão “Como chegar”.
+              </span>
+            </span>
+          </label>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <SimpleColor
