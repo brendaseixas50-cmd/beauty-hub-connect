@@ -314,6 +314,84 @@ export type Database = {
           },
         ];
       };
+      payment_provider_connections: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          provider: string;
+          status: string;
+          provider_user_id: string | null;
+          account_email: string | null;
+          access_token_ciphertext: string | null;
+          refresh_token_ciphertext: string | null;
+          token_expires_at: string | null;
+          scopes: string | null;
+          last_error: string | null;
+          connected_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          provider: string;
+          status?: string;
+          provider_user_id?: string | null;
+          account_email?: string | null;
+          access_token_ciphertext?: string | null;
+          refresh_token_ciphertext?: string | null;
+          token_expires_at?: string | null;
+          scopes?: string | null;
+          last_error?: string | null;
+          connected_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["payment_provider_connections"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "payment_provider_connections_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      payment_provider_oauth_states: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          provider: string;
+          state_hash: string;
+          code_verifier_ciphertext: string;
+          redirect_uri: string;
+          expires_at: string;
+          used_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          provider: string;
+          state_hash: string;
+          code_verifier_ciphertext: string;
+          redirect_uri: string;
+          expires_at: string;
+          used_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["payment_provider_oauth_states"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "payment_provider_oauth_states_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       marketing_campaigns: {
         Row: {
           id: string;
