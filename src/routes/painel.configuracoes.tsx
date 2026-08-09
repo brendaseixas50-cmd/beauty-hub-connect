@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { ExternalLink, ImageUp, Trash2 } from "lucide-react";
+import { ExternalLink, ImageUp, Link2, ShieldCheck, Trash2, Unlink } from "lucide-react";
 
 import { PageHeader } from "@/components/mvp-page";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,17 @@ import {
   uploadPublicMedia,
 } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
+import {
+  disconnectMercadoPago,
+  getMercadoPagoConnection,
+  startMercadoPagoConnection,
+} from "@/modules/payments/mercado-pago.server";
 
 export const Route = createFileRoute("/painel/configuracoes")({
-  loader: () => getCompany(),
+  loader: async () => {
+    const [company, mercadoPago] = await Promise.all([getCompany(), getMercadoPagoConnection()]);
+    return { company, mercadoPago };
+  },
   head: () => ({ meta: [{ title: "Configurações — Beauty Hub Connect" }] }),
   component: SettingsPage,
 });
@@ -34,7 +42,7 @@ const days = [
 ] as const;
 
 function SettingsPage() {
-  const company = Route.useLoaderData();
+  const { company, mercadoPago } = Route.useLoaderData();
   const save = useServerFn(updateCompany);
   const action = useMvpAction();
   const hours = (company.business_hours ?? {}) as Record<string, string>;
@@ -140,15 +148,23 @@ function SettingsPage() {
           {action.pending ? "Salvando…" : "Salvar configurações"}
         </Button>
       </form>
-      <PublicSettings company={company} />
+      <PublicSettings company={company} mercadoPago={mercadoPago} />
     </div>
   );
 }
 
-function PublicSettings({ company }: { company: Awaited<ReturnType<typeof getCompany>> }) {
+function PublicSettings({
+  company,
+  mercadoPago,
+}: {
+  company: Awaited<ReturnType<typeof getCompany>>;
+  mercadoPago: Awaited<ReturnType<typeof getMercadoPagoConnection>>;
+}) {
   const save = useServerFn(updatePublicSettings);
   const upload = useServerFn(uploadPublicMedia);
   const action = useMvpAction();
+  const connect = useServerFn(startMercadoPagoConnection);
+  const disconnect = useServerFn(disconnectMercadoPago);
   const [logo, setLogo] = useState(company.logo_url ?? "");
   const [banner, setBanner] = useState(company.banner_url ?? "");
   const [primary, setPrimary] = useState(company.primary_color);
@@ -207,7 +223,7 @@ function PublicSettings({ company }: { company: Awaited<ReturnType<typeof getCom
               pix: form.get("pix") === "on",
               card: form.get("card") === "on",
               local: form.get("local") === "on",
-              mercadoPago: form.get("mercadoPago") === "on",
+              mercadoPago: mercadoPago.connected && form.get("mercadoPago") === "on",
             },
             publicStoreEnabled: form.get("publicStoreEnabled") === "on",
           },
@@ -390,15 +406,74 @@ function PublicSettings({ company }: { company: Awaited<ReturnType<typeof getCom
                 <input name={name} type="checkbox" defaultChecked={payments[name]} /> {label}
               </label>
             ))}
-            <label className="flex items-center gap-3 rounded-xl border border-dashed p-3 text-muted-foreground">
-              <input name="mercadoPago" type="checkbox" checked={false} disabled readOnly /> Mercado
-              Pago · aguardando conexão segura
+            <label className="flex items-center gap-3 rounded-xl border p-3">
+              <input
+                name="mercadoPago"
+                type="checkbox"
+                defaultChecked={mercadoPago.connected && payments["mercadoPago"]}
+                disabled={!mercadoPago.connected}
+              />
+              Mercado Pago · {mercadoPago.connected ? "conectado" : "conexão necessária"}
             </label>
           </div>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
             O Mercado Pago só será liberado depois que a aplicação e o webhook forem conectados. O
             Access Token nunca deve ser colado neste formulário.
           </p>
+        </div>
+        <div className="grid gap-4 rounded-2xl border bg-muted/20 p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 text-primary" />
+            <div>
+              <h3 className="font-semibold">Conexão segura com Mercado Pago</h3>
+              <p className="text-sm text-muted-foreground">
+                Cada empresa conecta a própria conta. Senhas e tokens nunca aparecem no painel.
+              </p>
+            </div>
+          </div>
+          {mercadoPago.connected ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-emerald-50 p-4 text-emerald-950">
+              <div>
+                <strong className="block">Conta conectada</strong>
+                <span className="text-sm">Pronta para habilitar testes de pagamento.</span>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  void action.run(async () => {
+                    await disconnect();
+                    window.location.reload();
+                  }, "Mercado Pago desconectado.")
+                }
+                disabled={action.pending}
+              >
+                <Unlink /> Desconectar
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {!mercadoPago.configured ? (
+                <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+                  Falta cadastrar as credenciais da aplicação no servidor antes de conectar a conta.
+                </p>
+              ) : null}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full sm:w-fit"
+                disabled={!mercadoPago.configured || action.pending}
+                onClick={() =>
+                  void action.run(async () => {
+                    const result = await connect();
+                    window.location.assign(result.url);
+                  }, "Abrindo a autorização do Mercado Pago…")
+                }
+              >
+                <Link2 /> Conectar Mercado Pago
+              </Button>
+            </div>
+          )}
         </div>
         <label className="flex items-center gap-3">
           <input

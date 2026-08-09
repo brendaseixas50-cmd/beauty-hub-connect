@@ -11,3 +11,17 @@ export function getServerEnv() {
     SIGNUP_RATE_LIMIT_SECRET: process.env["SIGNUP_RATE_LIMIT_SECRET"],
   });
 }
+
+const mercadoPagoEnvSchema = z.object({
+  clientId: z.string().min(1),
+  clientSecret: z.string().min(1),
+  encryptionKey: z.string().min(32),
+});
+
+export function getMercadoPagoEnv() {
+  return mercadoPagoEnvSchema.safeParse({
+    clientId: process.env["MERCADO_PAGO_CLIENT_ID"],
+    clientSecret: process.env["MERCADO_PAGO_CLIENT_SECRET"],
+    encryptionKey: process.env["MERCADO_PAGO_TOKEN_ENCRYPTION_KEY"],
+  });
+}

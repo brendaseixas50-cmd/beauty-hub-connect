@@ -33,6 +33,7 @@ import { Route as PainelProdutosRouteImport } from './routes/painel.produtos'
 import { Route as PainelProfissionaisRouteImport } from './routes/painel.profissionais'
 import { Route as PainelRelatoriosRouteImport } from './routes/painel.relatorios'
 import { Route as PainelServicosRouteImport } from './routes/painel.servicos'
+import { Route as IntegracoesMercadoPagoRetornoRouteImport } from './routes/integracoes.mercado-pago.retorno'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -154,6 +155,12 @@ const PainelServicosRoute = PainelServicosRouteImport.update({
   path: '/servicos',
   getParentRoute: () => PainelRoute,
 } as any)
+const IntegracoesMercadoPagoRetornoRoute =
+  IntegracoesMercadoPagoRetornoRouteImport.update({
+    id: '/integracoes/mercado-pago/retorno',
+    path: '/integracoes/mercado-pago/retorno',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
   '/painel/': typeof PainelIndexRoute
+  '/integracoes/mercado-pago/retorno': typeof IntegracoesMercadoPagoRetornoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -205,6 +213,7 @@ export interface FileRoutesByTo {
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
   '/painel': typeof PainelIndexRoute
+  '/integracoes/mercado-pago/retorno': typeof IntegracoesMercadoPagoRetornoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -232,6 +241,7 @@ export interface FileRoutesById {
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
   '/painel/': typeof PainelIndexRoute
+  '/integracoes/mercado-pago/retorno': typeof IntegracoesMercadoPagoRetornoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/painel/relatorios'
     | '/painel/servicos'
     | '/painel/'
+    | '/integracoes/mercado-pago/retorno'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/painel/relatorios'
     | '/painel/servicos'
     | '/painel'
+    | '/integracoes/mercado-pago/retorno'
   id:
     | '__root__'
     | '/'
@@ -311,6 +323,7 @@ export interface FileRouteTypes {
     | '/painel/relatorios'
     | '/painel/servicos'
     | '/painel/'
+    | '/integracoes/mercado-pago/retorno'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -324,6 +337,7 @@ export interface RootRouteChildren {
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
   PSlugRoute: typeof PSlugRoute
+  IntegracoesMercadoPagoRetornoRoute: typeof IntegracoesMercadoPagoRetornoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -496,6 +510,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PainelServicosRouteImport
       parentRoute: typeof PainelRoute
     }
+    '/integracoes/mercado-pago/retorno': {
+      id: '/integracoes/mercado-pago/retorno'
+      path: '/integracoes/mercado-pago/retorno'
+      fullPath: '/integracoes/mercado-pago/retorno'
+      preLoaderRoute: typeof IntegracoesMercadoPagoRetornoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -547,6 +568,7 @@ const rootRouteChildren: RootRouteChildren = {
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   AuthConfirmRoute: AuthConfirmRoute,
   PSlugRoute: PSlugRoute,
+  IntegracoesMercadoPagoRetornoRoute: IntegracoesMercadoPagoRetornoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
