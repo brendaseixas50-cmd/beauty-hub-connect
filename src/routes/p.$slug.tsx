@@ -226,12 +226,6 @@ function BookingWizard({ page }: { page: PageData }) {
         window.location.assign(response.checkoutUrl);
         return;
       }
-      if (paymentMethod === "local" && company.whatsapp)
-        window.open(
-          bookingWhatsappUrl(company.whatsapp, response, name, paymentMethod),
-          "_blank",
-          "noopener,noreferrer",
-        );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível concluir o agendamento.");
     } finally {
@@ -246,6 +240,7 @@ function BookingWizard({ page }: { page: PageData }) {
         timezone={company.timezone}
         customerName={name}
         whatsapp={company.whatsapp}
+        paymentMethod={paymentMethod}
       />
     );
 
@@ -535,7 +530,7 @@ function StepProfessionals({
               <img
                 src={professional.photoUrl}
                 alt=""
-                className="h-10 w-10 rounded-full object-cover"
+                className="h-12 w-12 shrink-0 rounded-full border object-cover"
               />
             ) : (
               <UserRound className="h-5 w-5" />
@@ -628,12 +623,16 @@ function BookingSuccess({
   timezone,
   customerName,
   whatsapp,
+  paymentMethod,
 }: {
   result: BookingResult;
   timezone: string;
   customerName: string;
   whatsapp: string | null;
+  paymentMethod: "pix" | "card" | "local" | "mercado_pago";
 }) {
+  const [summaryOpened, setSummaryOpened] = useState(false);
+  const localPayment = paymentMethod === "local";
   const url = whatsapp
     ? bookingWhatsappUrl(whatsapp, result, customerName, result.paymentMethod ?? "local")
     : null;
@@ -641,7 +640,11 @@ function BookingSuccess({
     <Card className="mt-5 items-center gap-5 p-6 text-center">
       <CheckCircle2 className="h-14 w-14 text-success" />
       <div>
-        <h2 className="text-2xl font-semibold">Agendamento realizado</h2>
+        <h2 className="text-2xl font-semibold">
+          {localPayment && !summaryOpened
+            ? "Envie o resumo para confirmar"
+            : "Agendamento confirmado"}
+        </h2>
         <p className="text-sm">Código {result.code}</p>
       </div>
       <div className="w-full rounded-2xl bg-secondary p-4 text-sm">
@@ -669,16 +672,35 @@ function BookingSuccess({
           Agendamento reservado, mas o pagamento não pôde ser aberto: {result.paymentError}
         </p>
       ) : null}
-      {url ? (
-        <Button asChild size="lg">
-          <a href={url} target="_blank" rel="noreferrer">
+      {localPayment && !url ? (
+        <p
+          role="alert"
+          className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950"
+        >
+          O estabelecimento precisa cadastrar o WhatsApp para concluir pagamentos no local.
+        </p>
+      ) : null}
+      {url && (!localPayment || !summaryOpened) ? (
+        <Button asChild size="lg" className="min-h-12 w-full sm:w-auto">
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => localPayment && setSummaryOpened(true)}
+          >
             <MessageCircle /> Enviar resumo pelo WhatsApp
           </a>
         </Button>
       ) : null}
-      <Button type="button" variant="outline" onClick={() => window.location.reload()}>
-        Finalizar
-      </Button>
+      {!localPayment ? (
+        <Button type="button" variant="outline" onClick={() => window.location.reload()}>
+          Finalizar
+        </Button>
+      ) : summaryOpened ? (
+        <Button type="button" variant="outline" onClick={() => window.location.reload()}>
+          Voltar ao início
+        </Button>
+      ) : null}
     </Card>
   );
 }
