@@ -121,7 +121,7 @@ function CompanyPage() {
       <PageHeader
         eyebrow="Cadastro empresarial"
         title="Empresa"
-        description="Mantenha os dados de contato e localização sempre atualizados."
+        description="Mantenha os dados atualizados e escolha a logo ou foto que identifica seu negócio dentro da gestão."
       />
 
       <form onSubmit={onSubmit} className="mt-8 grid gap-6">
@@ -197,7 +197,7 @@ function CompanyPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <MediaField
-              label="Logo"
+              label="Logo ou foto do negócio"
               kind="logo"
               url={logoUrl}
               pending={uploading === "logo"}
@@ -403,7 +403,7 @@ function MediaField({
         <img
           src={url}
           alt={`Prévia de ${label.toLowerCase()}`}
-          className={`w-full rounded-xl border object-cover ${kind === "logo" ? "h-32" : "h-32"}`}
+          className={`border object-cover ${kind === "logo" ? "mx-auto h-32 w-32 rounded-full" : "h-32 w-full rounded-xl"}`}
         />
       ) : (
         <div className="grid h-32 place-items-center rounded-xl border border-dashed text-sm text-muted-foreground">
