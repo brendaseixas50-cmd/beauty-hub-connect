@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
+import { createMercadoPagoCheckout } from "@/modules/payments/mercado-pago.server";
 import {
   availabilitySchema,
   bookingResultSchema,
@@ -90,7 +91,27 @@ export const createSimplePublicBooking = createServerFn({ method: "POST" })
       p_honeypot: data.website,
     });
     if (error) throw new Error("Não foi possível concluir o agendamento. Tente novamente.");
-    return bookingResultSchema.parse(result);
+    const booking = bookingResultSchema.parse(result);
+    if (booking.ok && data.paymentMethod === "mercado_pago" && booking.appointmentId) {
+      try {
+        const checkout = await createMercadoPagoCheckout({
+          slug: data.slug,
+          entityType: "appointment",
+          entityId: booking.appointmentId,
+          amountCents: booking.amountDueCents ?? booking.totalPriceCents ?? 0,
+          title: `Agendamento ${booking.code ?? "online"}`,
+          requestId: data.requestId,
+        });
+        return { ...booking, ...checkout };
+      } catch (cause) {
+        return {
+          ...booking,
+          paymentError:
+            cause instanceof Error ? cause.message : "Não foi possível abrir o pagamento.",
+        };
+      }
+    }
+    return booking;
   });
 
 export const createPublicBooking = createServerFn({ method: "POST" })
@@ -143,5 +164,25 @@ export const createPublicStoreOrder = createServerFn({ method: "POST" })
       p_honeypot: data.website,
     });
     if (error) throw new Error("Não foi possível concluir o pedido. Tente novamente.");
-    return storeOrderResultSchema.parse(result);
+    const order = storeOrderResultSchema.parse(result);
+    if (order.ok && data.paymentMethod === "mercado_pago" && order.orderId) {
+      try {
+        const checkout = await createMercadoPagoCheckout({
+          slug: data.slug,
+          entityType: "store_order",
+          entityId: order.orderId,
+          amountCents: order.totalCents ?? 0,
+          title: `Pedido ${order.code ?? "da loja"}`,
+          requestId: data.requestId,
+        });
+        return { ...order, ...checkout };
+      } catch (cause) {
+        return {
+          ...order,
+          paymentError:
+            cause instanceof Error ? cause.message : "Não foi possível abrir o pagamento.",
+        };
+      }
+    }
+    return order;
   });

@@ -392,6 +392,52 @@ export type Database = {
           },
         ];
       };
+      payment_provider_transactions: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          provider: string;
+          entity_type: string;
+          entity_id: string;
+          external_reference: string;
+          preference_id: string | null;
+          provider_payment_id: string | null;
+          amount_cents: number;
+          status: string;
+          status_detail: string | null;
+          checkout_url: string | null;
+          approved_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          provider: string;
+          entity_type: string;
+          entity_id: string;
+          external_reference: string;
+          preference_id?: string | null;
+          provider_payment_id?: string | null;
+          amount_cents: number;
+          status?: string;
+          status_detail?: string | null;
+          checkout_url?: string | null;
+          approved_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["payment_provider_transactions"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "payment_provider_transactions_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       marketing_campaigns: {
         Row: {
           id: string;
@@ -1498,6 +1544,18 @@ export type Database = {
       get_public_company_page_v3: { Args: { p_slug: string }; Returns: Json };
       get_my_platform_access: { Args: Record<PropertyKey, never>; Returns: Json };
       get_my_session_bootstrap: { Args: Record<PropertyKey, never>; Returns: Json };
+      apply_mercado_pago_payment: {
+        Args: {
+          p_tenant_id: string;
+          p_external_reference: string;
+          p_provider_payment_id: string;
+          p_status: string;
+          p_status_detail: string;
+          p_amount_cents: number;
+          p_approved_at?: string | null;
+        };
+        Returns: boolean;
+      };
       switch_active_tenant: {
         Args: { target_tenant_id: string };
         Returns: undefined;
