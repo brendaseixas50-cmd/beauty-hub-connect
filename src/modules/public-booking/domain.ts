@@ -31,6 +31,19 @@ const companySchema = z.object({
   textColor: z.string(),
   welcomeMessage: z.string().nullable(),
   cancellationPolicy: z.string().nullable(),
+  cancellationPolicyEnabled: z.boolean().default(false),
+  depositEnabled: z.boolean().default(false),
+  depositType: z.enum(["none", "percent_30", "percent_50", "fixed"]).default("none"),
+  depositValueCents: z.number().int().nonnegative().default(0),
+  paymentMethods: z
+    .object({
+      pix: z.boolean().default(false),
+      card: z.boolean().default(false),
+      local: z.boolean().default(true),
+      mercadoPago: z.boolean().default(false),
+    })
+    .default({ pix: false, card: false, local: true, mercadoPago: false }),
+  publicStoreEnabled: z.boolean().default(false),
   publicInformation: z.string().nullable(),
   bookingIntervalMinutes: z.number(),
 });
@@ -110,6 +123,11 @@ export const bookingResultSchema = z.object({
   totalPriceCents: z.number().optional(),
   notificationStatus: z.enum(["development", "pending", "sent"]).optional(),
   status: z.string().optional(),
+  paymentMethod: z.string().optional(),
+  paymentStatus: z.string().optional(),
+  depositCents: z.number().optional(),
+  amountDueCents: z.number().optional(),
+  remainingCents: z.number().optional(),
 });
 
 export type PublicPage = z.infer<typeof publicPageSchema>;

@@ -1097,11 +1097,15 @@ export type Database = {
           business_hours: Json;
           button_color: string;
           cancellation_policy: string | null;
+          cancellation_policy_enabled: boolean;
           card_color: string;
           city: string | null;
           created_at: string;
           description: string | null;
           document: string | null;
+          deposit_enabled: boolean;
+          deposit_type: string;
+          deposit_value_cents: number;
           email: string | null;
           facebook: string | null;
           id: string;
@@ -1117,11 +1121,13 @@ export type Database = {
           onboarding_completed_at: string | null;
           owner_id: string;
           phone: string | null;
+          payment_methods: Json;
           photo_url: string | null;
           postal_code: string | null;
           primary_color: string;
           product_type: string;
           public_information: string | null;
+          public_store_enabled: boolean;
           public_name: string | null;
           public_page_status: string;
           secondary_color: string;
@@ -1147,11 +1153,15 @@ export type Database = {
           business_hours?: Json;
           button_color?: string;
           cancellation_policy?: string | null;
+          cancellation_policy_enabled?: boolean;
           card_color?: string;
           city?: string | null;
           created_at?: string;
           description?: string | null;
           document?: string | null;
+          deposit_enabled?: boolean;
+          deposit_type?: string;
+          deposit_value_cents?: number;
           email?: string | null;
           facebook?: string | null;
           id?: string;
@@ -1167,11 +1177,13 @@ export type Database = {
           onboarding_completed_at?: string | null;
           owner_id: string;
           phone?: string | null;
+          payment_methods?: Json;
           photo_url?: string | null;
           postal_code?: string | null;
           primary_color?: string;
           product_type?: string;
           public_information?: string | null;
+          public_store_enabled?: boolean;
           public_name?: string | null;
           public_page_status?: string;
           secondary_color?: string;
@@ -1197,11 +1209,15 @@ export type Database = {
           business_hours?: Json;
           button_color?: string;
           cancellation_policy?: string | null;
+          cancellation_policy_enabled?: boolean;
           card_color?: string;
           city?: string | null;
           created_at?: string;
           description?: string | null;
           document?: string | null;
+          deposit_enabled?: boolean;
+          deposit_type?: string;
+          deposit_value_cents?: number;
           email?: string | null;
           facebook?: string | null;
           id?: string;
@@ -1217,11 +1233,13 @@ export type Database = {
           onboarding_completed_at?: string | null;
           owner_id?: string;
           phone?: string | null;
+          payment_methods?: Json;
           photo_url?: string | null;
           postal_code?: string | null;
           primary_color?: string;
           product_type?: string;
           public_information?: string | null;
+          public_store_enabled?: boolean;
           public_name?: string | null;
           public_page_status?: string;
           secondary_color?: string;
@@ -1278,6 +1296,37 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      admin_list_platform_access: {
+        Args: { search_email?: string };
+        Returns: {
+          access_type: string;
+          created_at: string;
+          email: string;
+          expires_at: string | null;
+          id: string;
+          notes: string | null;
+          product_type: string;
+          starts_at: string;
+          status: string;
+          updated_at: string;
+          user_id: string | null;
+        }[];
+      };
+      admin_remove_platform_access: {
+        Args: { target_id: string };
+        Returns: undefined;
+      };
+      admin_upsert_platform_access: {
+        Args: {
+          target_access_type: string;
+          target_email: string;
+          target_expires_at?: string | null;
+          target_notes?: string | null;
+          target_product: string;
+          target_status: string;
+        };
+        Returns: string;
+      };
       check_signup_attempt_and_account: {
         Args: { request_fingerprint: string; target_email: string };
         Returns: boolean;
@@ -1319,6 +1368,22 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_public_booking_v3: {
+        Args: {
+          p_customer_name: string;
+          p_customer_phone: string;
+          p_fingerprint: string;
+          p_honeypot?: string;
+          p_payment_method: string;
+          p_payment_option: string;
+          p_professional_id: string;
+          p_request_id: string;
+          p_service_ids: string[];
+          p_slug: string;
+          p_starts_at: string;
+        };
+        Returns: Json;
+      };
       get_public_booking_availability: {
         Args: {
           p_date: string;
@@ -1339,6 +1404,8 @@ export type Database = {
       };
       get_public_company_page: { Args: { p_slug: string }; Returns: Json };
       get_public_company_page_v2: { Args: { p_slug: string }; Returns: Json };
+      get_public_company_page_v3: { Args: { p_slug: string }; Returns: Json };
+      get_my_platform_access: { Args: Record<PropertyKey, never>; Returns: Json };
       switch_active_tenant: {
         Args: { target_tenant_id: string };
         Returns: undefined;

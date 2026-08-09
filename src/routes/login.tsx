@@ -103,6 +103,15 @@ function LoginPage() {
               <Label htmlFor="email">E-mail</Label>
               <Input id="email" name="email" type="email" autoComplete="email" required />
             </div>
+            <label className="flex min-h-11 items-center gap-3 text-sm">
+              <input
+                name="remember"
+                type="checkbox"
+                defaultChecked
+                className="h-4 w-4 accent-primary"
+              />
+              Manter conectado neste dispositivo
+            </label>
             <div className="grid gap-2">
               <div className="flex items-center justify-between gap-3">
                 <Label htmlFor="password">Senha</Label>

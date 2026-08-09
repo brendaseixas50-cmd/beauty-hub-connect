@@ -185,7 +185,7 @@ function PublicPageManager() {
             </Button>
           ) : null}
           <Button asChild type="button" variant="outline">
-            <Link to="/painel/empresa">
+            <Link to="/painel/configuracoes">
               <Settings2 className="h-4 w-4" /> Configurar página
             </Link>
           </Button>

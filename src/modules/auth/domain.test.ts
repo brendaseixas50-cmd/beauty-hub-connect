@@ -18,6 +18,8 @@ const beauty: CompanyAccess = {
   licenseStatus: "active",
   role: "owner",
   permissions: getPermissionsForRole("owner"),
+  betaAccessActive: true,
+  betaAccessType: "administrator",
 };
 
 const barber: CompanyAccess = {
@@ -30,6 +32,8 @@ const barber: CompanyAccess = {
   licenseStatus: "active",
   role: "receptionist",
   permissions: getPermissionsForRole("receptionist"),
+  betaAccessActive: true,
+  betaAccessType: "beta_tester",
 };
 
 describe("multi-company authentication domain", () => {

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CalendarDays, Check, Users, Wallet } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, LogIn, Users, Wallet } from "lucide-react";
 
 import bannerBeauty from "@/assets/brand/lubeauty-logo-horizontal.png";
 import bannerBarber from "@/assets/brand/lubarber-banner.png";
@@ -53,11 +53,6 @@ function Home() {
             <p className="font-display text-xl">Lu IA Studio</p>
             <p className="text-xs text-muted-foreground">Soluções para profissionais</p>
           </div>
-          <Button asChild variant="outline" className="rounded-full">
-            <Link to="/login" search={{ redirect: "/painel", produto: undefined }}>
-              Entrar
-            </Link>
-          </Button>
         </div>
       </header>
 
@@ -124,11 +119,18 @@ function ProductCard({ type }: { type: TipoNegocio }) {
             </li>
           ))}
         </ul>
-        <Button asChild size="lg" className="mt-8 w-full rounded-full sm:w-fit">
-          <Link to="/cadastro" search={{ produto: productType }}>
-            Criar conta <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
+        <div className="mt-8 grid grid-cols-2 gap-3">
+          <Button asChild size="lg" variant="outline" className="min-w-0 px-3 sm:px-5">
+            <Link to="/login" search={{ redirect: "/painel", produto: productType }}>
+              <LogIn /> <span className="truncate">Entrar no painel</span>
+            </Link>
+          </Button>
+          <Button asChild size="lg" className="min-w-0 px-3 sm:px-5">
+            <Link to="/cadastro" search={{ produto: productType }}>
+              <span className="truncate">Criar conta</span> <ArrowRight />
+            </Link>
+          </Button>
+        </div>
       </div>
     </article>
   );

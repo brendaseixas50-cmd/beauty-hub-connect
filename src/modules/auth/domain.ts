@@ -28,6 +28,8 @@ export interface CompanyAccess {
   licenseStatus: "trial" | "active";
   role: Role;
   permissions: readonly Permission[];
+  betaAccessActive: boolean;
+  betaAccessType: "administrator" | "courtesy" | "beta_tester" | null;
 }
 
 export interface AuthUser extends CompanyAccess {
@@ -35,6 +37,7 @@ export interface AuthUser extends CompanyAccess {
   email: string;
   name: string;
   companies: readonly CompanyAccess[];
+  isPlatformAdministrator: boolean;
 }
 
 export interface Session {

@@ -50,6 +50,7 @@ const emailSchema = z.object({
 const resendSchema = emailSchema.extend({ productType: z.enum(["beauty", "barber"]) });
 
 const switchCompanySchema = z.object({ tenantId: z.string().uuid() });
+const productSchema = z.object({ productType: z.enum(["beauty", "barber"]) });
 
 const updatePasswordSchema = z
   .object({
@@ -62,6 +63,20 @@ const updatePasswordSchema = z
   });
 
 const otpTypes = ["signup", "invite", "magiclink", "recovery", "email_change", "email"] as const;
+const platformAccessSchema = z.object({
+  isAdministrator: z.boolean().default(false),
+  grants: z
+    .array(
+      z.object({
+        productType: z.enum(["beauty", "barber"]),
+        accessType: z.enum(["administrator", "courtesy", "beta_tester"]),
+        status: z.enum(["active", "suspended", "revoked", "expired"]),
+        startsAt: z.string(),
+        expiresAt: z.string().nullable(),
+      }),
+    )
+    .default([]),
+});
 const confirmSchema = z
   .object({
     code: z.string().min(1).optional(),
@@ -75,6 +90,13 @@ const confirmSchema = z
 function callbackUrl(next: "/painel" | "/onboarding" | "/redefinir-senha"): string {
   const url = new URL("/auth/confirm", getRequestUrl().origin);
   url.searchParams.set("next", next);
+  return url.toString();
+}
+
+function oauthCallbackUrl(productType: "beauty" | "barber"): string {
+  const url = new URL("/auth/confirm", getRequestUrl().origin);
+  url.searchParams.set("next", "/painel");
+  url.searchParams.set("produto", productType);
   return url.toString();
 }
 
@@ -116,12 +138,17 @@ export async function resolveSession(
 
   if (profileError || !profile) return null;
 
-  const [{ data: memberships, error: membershipError }, { data: active }, { data: authSession }] =
-    await Promise.all([
-      supabase.from("tenant_memberships").select("tenant_id, role").eq("user_id", user.id),
-      supabase.from("user_active_tenants").select("tenant_id").eq("user_id", user.id).maybeSingle(),
-      supabase.auth.getSession(),
-    ]);
+  const [
+    { data: memberships, error: membershipError },
+    { data: active },
+    { data: authSession },
+    { data: rawPlatformAccess },
+  ] = await Promise.all([
+    supabase.from("tenant_memberships").select("tenant_id, role").eq("user_id", user.id),
+    supabase.from("user_active_tenants").select("tenant_id").eq("user_id", user.id).maybeSingle(),
+    supabase.auth.getSession(),
+    supabase.rpc("get_my_platform_access"),
+  ]);
 
   if (membershipError || !memberships?.length || !authSession.session) return null;
 
@@ -142,6 +169,10 @@ export async function resolveSession(
 
   if (tenantError || licenseError || !tenants?.length || !licenses?.length) return null;
 
+  const platformAccess = platformAccessSchema
+    .catch({ isAdministrator: false, grants: [] })
+    .parse(rawPlatformAccess);
+  const now = Date.now();
   const companies = memberships.flatMap((membership): CompanyAccess[] => {
     const tenant = tenants.find((candidate) => candidate.id === membership.tenant_id);
     const license = licenses.find(
@@ -151,17 +182,27 @@ export async function resolveSession(
     );
     const role = z.enum(roles).safeParse(membership.role);
     if (!tenant || !license || !role.success) return [];
+    const productType = tenant.product_type === "barber" ? "barber" : "beauty";
+    const betaGrant = platformAccess.grants.find(
+      (grant) =>
+        grant.productType === productType &&
+        grant.status === "active" &&
+        new Date(grant.startsAt).getTime() <= now &&
+        (!grant.expiresAt || new Date(grant.expiresAt).getTime() > now),
+    );
     return [
       {
         tenantId: tenant.id,
         tenantName: tenant.name,
         tenantSlug: tenant.slug,
         logoUrl: tenant.logo_url,
-        productType: tenant.product_type === "barber" ? "barber" : "beauty",
+        productType,
         onboardingCompleted: Boolean(tenant.onboarding_completed_at),
         licenseStatus: license.status === "trial" ? "trial" : "active",
         role: role.data as Role,
         permissions: getPermissionsForRole(role.data as Role),
+        betaAccessActive: Boolean(betaGrant),
+        betaAccessType: betaGrant?.accessType ?? null,
       },
     ];
   });
@@ -182,6 +223,7 @@ export async function resolveSession(
       email: user.email,
       name: profile.full_name,
       companies,
+      isPlatformAdministrator: platformAccess.isAdministrator,
       ...selected,
     },
     expiresAt: new Date(authSession.session.expires_at! * 1000).toISOString(),
@@ -218,6 +260,41 @@ export const login = createServerFn({ method: "POST" })
     }
 
     return session;
+  });
+
+export const startGoogleSignIn = createServerFn({ method: "POST" })
+  .validator(productSchema)
+  .handler(async ({ data }) => {
+    const supabase = createSupabaseServerClient();
+    const { data: oauth, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: oauthCallbackUrl(data.productType), skipBrowserRedirect: true },
+    });
+    if (error || !oauth.url) throw new Error("Não foi possível iniciar o acesso com Google.");
+    return { url: oauth.url };
+  });
+
+export const ensureOAuthProductCompany = createServerFn({ method: "POST" })
+  .validator(productSchema)
+  .handler(async ({ data }) => {
+    const supabase = createSupabaseServerClient();
+    const session = await resolveSession(supabase);
+    if (!session) throw new Error("Não foi possível concluir o acesso com Google.");
+    const existing = session.user.companies.find(
+      (company) => company.productType === data.productType,
+    );
+    if (existing) {
+      if (existing.tenantId !== session.user.tenantId) {
+        await supabase.rpc("switch_active_tenant", { target_tenant_id: existing.tenantId });
+      }
+      return { ok: true };
+    }
+    const { error } = await supabase.rpc("create_company_for_current_user", {
+      company_name: data.productType === "barber" ? "Minha barbearia" : "Meu negócio de beleza",
+      selected_product: data.productType,
+    });
+    if (error) throw new Error("Não foi possível preparar o produto escolhido.");
+    return { ok: true };
   });
 
 export const signup = createServerFn({ method: "POST" })

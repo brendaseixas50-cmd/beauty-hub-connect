@@ -99,6 +99,22 @@ const companySchema = z.object({
     .or(z.literal(""))
     .transform((value) => value || null),
   businessHours: z.record(z.string(), z.string().max(40)),
+  bookingPolicy: z
+    .object({
+      cancellationPolicyEnabled: z.boolean(),
+      cancellationPolicy: optionalText,
+      depositEnabled: z.boolean(),
+      depositType: z.enum(["none", "percent_30", "percent_50", "fixed"]),
+      depositValueCents: z.number().int().min(0),
+      paymentMethods: z.object({
+        pix: z.boolean(),
+        card: z.boolean(),
+        local: z.boolean(),
+        mercadoPago: z.boolean(),
+      }),
+      publicStoreEnabled: z.boolean(),
+    })
+    .optional(),
   publicPage: z
     .object({
       publicName: optionalShortText,
@@ -231,12 +247,92 @@ export const updateCompany = createServerFn({ method: "POST" })
         postal_code: data.postalCode,
         map_url: data.mapUrl,
         business_hours: data.businessHours,
+        ...(data.bookingPolicy
+          ? {
+              cancellation_policy_enabled: data.bookingPolicy.cancellationPolicyEnabled,
+              cancellation_policy: data.bookingPolicy.cancellationPolicy,
+              deposit_enabled: data.bookingPolicy.depositEnabled,
+              deposit_type: data.bookingPolicy.depositType,
+              deposit_value_cents: data.bookingPolicy.depositValueCents,
+              payment_methods: data.bookingPolicy.paymentMethods,
+              public_store_enabled: data.bookingPolicy.publicStoreEnabled,
+            }
+          : {}),
         ...publicValues,
       })
       .eq("id", tenantId)
       .select()
       .single();
     if (error || !updated) databaseError(error, "Não foi possível salvar a empresa.");
+    return updated;
+  });
+
+const publicSettingsSchema = z.object({
+  logoUrl: z
+    .string()
+    .url()
+    .max(1000)
+    .or(z.literal(""))
+    .transform((value) => value || null),
+  bannerUrl: z
+    .string()
+    .url()
+    .max(1000)
+    .or(z.literal(""))
+    .transform((value) => value || null),
+  description: optionalText,
+  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  textColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  pageEnabled: z.boolean(),
+  cancellationPolicyEnabled: z.boolean(),
+  cancellationPolicy: optionalText,
+  depositEnabled: z.boolean(),
+  depositType: z.enum(["none", "percent_30", "percent_50", "fixed"]),
+  depositValueCents: z.number().int().min(0),
+  paymentMethods: z.object({
+    pix: z.boolean(),
+    card: z.boolean(),
+    local: z.boolean(),
+    mercadoPago: z.boolean(),
+  }),
+  publicStoreEnabled: z.boolean(),
+});
+
+export const updatePublicSettings = createServerFn({ method: "POST" })
+  .validator(publicSettingsSchema)
+  .handler(async ({ data }): Promise<Company> => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const secondary = data.secondaryColor || data.primaryColor;
+    const { data: updated, error } = await supabase
+      .from("tenants")
+      .update({
+        logo_url: data.logoUrl,
+        banner_url: data.bannerUrl,
+        description: data.description,
+        primary_color: data.primaryColor,
+        secondary_color: secondary,
+        accent_color: secondary,
+        button_color: data.primaryColor,
+        card_color: "#ffffff",
+        menu_color: secondary,
+        background_color: "#ffffff",
+        title_color: data.textColor,
+        text_color: data.textColor,
+        public_page_status: data.pageEnabled ? "published" : "disabled",
+        cancellation_policy_enabled: data.cancellationPolicyEnabled,
+        cancellation_policy: data.cancellationPolicy,
+        deposit_enabled: data.depositEnabled,
+        deposit_type: data.depositEnabled ? data.depositType : "none",
+        deposit_value_cents: data.depositValueCents,
+        payment_methods: data.paymentMethods,
+        public_store_enabled: data.publicStoreEnabled,
+      })
+      .eq("id", tenantId)
+      .select("*")
+      .single();
+    if (error || !updated) databaseError(error, "Não foi possível atualizar a página pública.");
     return updated;
   });
 

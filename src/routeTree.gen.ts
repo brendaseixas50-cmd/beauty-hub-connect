@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BetaFechadoRouteImport } from './routes/beta-fechado'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -19,6 +20,7 @@ import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as PainelIndexRouteImport } from './routes/painel.index'
+import { Route as PainelAdminAcessosRouteImport } from './routes/painel.admin-acessos'
 import { Route as PainelAgendaRouteImport } from './routes/painel.agenda'
 import { Route as PainelClientesRouteImport } from './routes/painel.clientes'
 import { Route as PainelConfiguracoesRouteImport } from './routes/painel.configuracoes'
@@ -35,6 +37,11 @@ import { Route as PainelServicosRouteImport } from './routes/painel.servicos'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BetaFechadoRoute = BetaFechadoRouteImport.update({
+  id: '/beta-fechado',
+  path: '/beta-fechado',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CadastroRoute = CadastroRouteImport.update({
@@ -80,6 +87,11 @@ const PSlugRoute = PSlugRouteImport.update({
 const PainelIndexRoute = PainelIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => PainelRoute,
+} as any)
+const PainelAdminAcessosRoute = PainelAdminAcessosRouteImport.update({
+  id: '/admin-acessos',
+  path: '/admin-acessos',
   getParentRoute: () => PainelRoute,
 } as any)
 const PainelAgendaRoute = PainelAgendaRouteImport.update({
@@ -145,6 +157,7 @@ const PainelServicosRoute = PainelServicosRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/beta-fechado': typeof BetaFechadoRoute
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -153,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/p/$slug': typeof PSlugRoute
+  '/painel/admin-acessos': typeof PainelAdminAcessosRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
@@ -169,6 +183,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/beta-fechado': typeof BetaFechadoRoute
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -176,6 +191,7 @@ export interface FileRoutesByTo {
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/p/$slug': typeof PSlugRoute
+  '/painel/admin-acessos': typeof PainelAdminAcessosRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
@@ -193,6 +209,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/beta-fechado': typeof BetaFechadoRoute
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -201,6 +218,7 @@ export interface FileRoutesById {
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/p/$slug': typeof PSlugRoute
+  '/painel/admin-acessos': typeof PainelAdminAcessosRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
@@ -219,6 +237,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/beta-fechado'
     | '/cadastro'
     | '/login'
     | '/onboarding'
@@ -227,6 +246,7 @@ export interface FileRouteTypes {
     | '/redefinir-senha'
     | '/auth/confirm'
     | '/p/$slug'
+    | '/painel/admin-acessos'
     | '/painel/agenda'
     | '/painel/clientes'
     | '/painel/configuracoes'
@@ -243,6 +263,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/beta-fechado'
     | '/cadastro'
     | '/login'
     | '/onboarding'
@@ -250,6 +271,7 @@ export interface FileRouteTypes {
     | '/redefinir-senha'
     | '/auth/confirm'
     | '/p/$slug'
+    | '/painel/admin-acessos'
     | '/painel/agenda'
     | '/painel/clientes'
     | '/painel/configuracoes'
@@ -266,6 +288,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/beta-fechado'
     | '/cadastro'
     | '/login'
     | '/onboarding'
@@ -274,6 +297,7 @@ export interface FileRouteTypes {
     | '/redefinir-senha'
     | '/auth/confirm'
     | '/p/$slug'
+    | '/painel/admin-acessos'
     | '/painel/agenda'
     | '/painel/clientes'
     | '/painel/configuracoes'
@@ -291,6 +315,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BetaFechadoRoute: typeof BetaFechadoRoute
   CadastroRoute: typeof CadastroRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -308,6 +333,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/beta-fechado': {
+      id: '/beta-fechado'
+      path: '/beta-fechado'
+      fullPath: '/beta-fechado'
+      preLoaderRoute: typeof BetaFechadoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cadastro': {
@@ -371,6 +403,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/painel/'
       preLoaderRoute: typeof PainelIndexRouteImport
+      parentRoute: typeof PainelRoute
+    }
+    '/painel/admin-acessos': {
+      id: '/painel/admin-acessos'
+      path: '/admin-acessos'
+      fullPath: '/painel/admin-acessos'
+      preLoaderRoute: typeof PainelAdminAcessosRouteImport
       parentRoute: typeof PainelRoute
     }
     '/painel/agenda': {
@@ -461,6 +500,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface PainelRouteChildren {
+  PainelAdminAcessosRoute: typeof PainelAdminAcessosRoute
   PainelAgendaRoute: typeof PainelAgendaRoute
   PainelClientesRoute: typeof PainelClientesRoute
   PainelConfiguracoesRoute: typeof PainelConfiguracoesRoute
@@ -477,6 +517,7 @@ interface PainelRouteChildren {
 }
 
 const PainelRouteChildren: PainelRouteChildren = {
+  PainelAdminAcessosRoute: PainelAdminAcessosRoute,
   PainelAgendaRoute: PainelAgendaRoute,
   PainelClientesRoute: PainelClientesRoute,
   PainelConfiguracoesRoute: PainelConfiguracoesRoute,
@@ -497,6 +538,7 @@ const PainelRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BetaFechadoRoute: BetaFechadoRoute,
   CadastroRoute: CadastroRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,

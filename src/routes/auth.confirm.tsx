@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { BrandCredit } from "@/components/brand-experience";
 
-import { confirmAuth } from "@/modules/auth/server";
+import { confirmAuth, ensureOAuthProductCompany } from "@/modules/auth/server";
 
 const otpTypes = new Set(["signup", "invite", "magiclink", "recovery", "email_change", "email"]);
 
@@ -11,6 +11,7 @@ type ConfirmSearch = {
   type: "signup" | "invite" | "magiclink" | "recovery" | "email_change" | "email" | undefined;
   next: "/painel" | "/onboarding" | "/redefinir-senha";
   errorDescription: string | undefined;
+  produto: "beauty" | "barber" | undefined;
 };
 
 export const Route = createFileRoute("/auth/confirm")({
@@ -31,6 +32,12 @@ export const Route = createFileRoute("/auth/confirm")({
       typeof search["error_description"] === "string"
         ? search["error_description"].slice(0, 240)
         : undefined,
+    produto:
+      search["produto"] === "barber"
+        ? "barber"
+        : search["produto"] === "beauty"
+          ? "beauty"
+          : undefined,
   }),
   beforeLoad: async ({ search }) => {
     if (search.errorDescription) {
@@ -50,6 +57,9 @@ export const Route = createFileRoute("/auth/confirm")({
           type: search.type,
         },
       });
+      if (search.produto) {
+        await ensureOAuthProductCompany({ data: { productType: search.produto } });
+      }
     } catch (cause) {
       throw redirect({
         to: "/login",

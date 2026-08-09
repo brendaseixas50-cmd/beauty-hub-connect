@@ -1,13 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import type { FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
+import { ExternalLink, ImageUp, Trash2 } from "lucide-react";
 
 import { PageHeader } from "@/components/mvp-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getCompany, updateCompany } from "@/modules/mvp/server";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  getCompany,
+  updateCompany,
+  updatePublicSettings,
+  uploadPublicMedia,
+} from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
 
 export const Route = createFileRoute("/painel/configuracoes")({
@@ -133,6 +140,387 @@ function SettingsPage() {
           {action.pending ? "Salvando…" : "Salvar configurações"}
         </Button>
       </form>
+      <PublicSettings company={company} />
     </div>
   );
+}
+
+function PublicSettings({ company }: { company: Awaited<ReturnType<typeof getCompany>> }) {
+  const save = useServerFn(updatePublicSettings);
+  const upload = useServerFn(uploadPublicMedia);
+  const action = useMvpAction();
+  const [logo, setLogo] = useState(company.logo_url ?? "");
+  const [banner, setBanner] = useState(company.banner_url ?? "");
+  const [primary, setPrimary] = useState(company.primary_color);
+  const [secondary, setSecondary] = useState(company.secondary_color);
+  const [text, setText] = useState(company.text_color);
+  const payments = (company.payment_methods ?? {
+    pix: false,
+    card: false,
+    local: true,
+    mercadoPago: false,
+  }) as Record<string, boolean>;
+
+  async function uploadImage(event: ChangeEvent<HTMLInputElement>, kind: "logo" | "banner") {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
+    if (
+      !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
+      file.size > 3 * 1024 * 1024
+    )
+      return;
+    const result = await upload({
+      data: {
+        kind,
+        mimeType: file.type as "image/jpeg" | "image/png" | "image/webp",
+        base64: await fileToBase64(file),
+      },
+    });
+    if (kind === "logo") setLogo(result.url);
+    else setBanner(result.url);
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    await action.run(
+      () =>
+        save({
+          data: {
+            logoUrl: logo,
+            bannerUrl: banner,
+            description: String(form.get("description")),
+            primaryColor: primary,
+            secondaryColor: secondary,
+            textColor: text,
+            pageEnabled: form.get("pageEnabled") === "on",
+            cancellationPolicyEnabled: form.get("cancellationPolicyEnabled") === "on",
+            cancellationPolicy: String(form.get("cancellationPolicy")),
+            depositEnabled: form.get("depositEnabled") === "on",
+            depositType: String(form.get("depositType")) as
+              "none" | "percent_30" | "percent_50" | "fixed",
+            depositValueCents: Math.max(
+              0,
+              Math.round(Number(String(form.get("depositValue")).replace(",", ".")) * 100) || 0,
+            ),
+            paymentMethods: {
+              pix: form.get("pix") === "on",
+              card: form.get("card") === "on",
+              local: form.get("local") === "on",
+              mercadoPago: form.get("mercadoPago") === "on",
+            },
+            publicStoreEnabled: form.get("publicStoreEnabled") === "on",
+          },
+        }),
+      "Página pública atualizada com sucesso.",
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="mt-8 grid gap-6">
+      <Card className="grid gap-5 p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl">Página pública</h2>
+            <p className="text-sm text-muted-foreground">
+              Personalização simples, visual e aplicada imediatamente.
+            </p>
+          </div>
+          <Button asChild variant="outline">
+            <a href={`/p/${company.slug}`} target="_blank" rel="noreferrer">
+              <ExternalLink /> Visualizar página pública
+            </a>
+          </Button>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ImageSetting
+            label="Logo redonda"
+            help="Recomendado: imagem quadrada."
+            url={logo}
+            kind="logo"
+            onChange={uploadImage}
+            onRemove={() => setLogo("")}
+          />
+          <ImageSetting
+            label="Banner quadrado"
+            help="Recomendado: imagem 1:1 com área segura central."
+            url={banner}
+            kind="banner"
+            onChange={uploadImage}
+            onRemove={() => setBanner("")}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="public-description">Descrição sobre a empresa</Label>
+          <Textarea
+            id="public-description"
+            name="description"
+            defaultValue={company.description ?? ""}
+            maxLength={500}
+          />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <SimpleColor
+            label="Cor principal"
+            value={primary}
+            onChange={setPrimary}
+            presets={["#ec78a8", "#a66ef2", "#1b4d63", "#c9a227"]}
+          />
+          <SimpleColor
+            label="Cor secundária"
+            value={secondary}
+            onChange={setSecondary}
+            presets={["#f5afc8", "#c9b8ff", "#2f2f2f", "#d9b670"]}
+          />
+          <SimpleColor
+            label="Cor do texto"
+            value={text}
+            onChange={setText}
+            presets={["#161616", "#5e5e5e", "#ffffff", "#1b4d63"]}
+          />
+        </div>
+        <div
+          className="overflow-hidden rounded-2xl border"
+          style={{ background: secondary, color: text }}
+        >
+          {banner ? (
+            <img
+              src={banner}
+              alt="Prévia do banner"
+              className="aspect-square max-h-52 w-full object-cover"
+            />
+          ) : null}
+          <div className="grid gap-3 p-5">
+            {logo ? (
+              <img
+                src={logo}
+                alt="Prévia da logo"
+                className="h-16 w-16 rounded-full object-cover"
+              />
+            ) : (
+              <div className="grid h-16 w-16 place-items-center rounded-full bg-white/70 font-semibold">
+                {company.name.slice(0, 2).toUpperCase()}
+              </div>
+            )}
+            <strong>{company.name}</strong>
+            <button
+              type="button"
+              className="min-h-11 rounded-xl px-4 font-semibold"
+              style={{ background: primary, color: contrastColor(primary) }}
+            >
+              Agendar
+            </button>
+            <p className="text-sm">Exemplo de texto da sua página.</p>
+          </div>
+        </div>
+        <label className="flex items-start gap-3 rounded-xl border p-4">
+          <input
+            name="pageEnabled"
+            type="checkbox"
+            defaultChecked={company.public_page_status === "published"}
+          />
+          <span>
+            <strong className="block text-sm">Página pública ativa</strong>
+            <span className="text-sm text-muted-foreground">
+              Disponibiliza o agendamento para clientes.
+            </span>
+          </span>
+        </label>
+      </Card>
+
+      <Card className="grid gap-5 p-5 sm:p-6">
+        <h2 className="text-xl">Políticas de Agendamento</h2>
+        <label className="flex items-center gap-3">
+          <input
+            name="cancellationPolicyEnabled"
+            type="checkbox"
+            defaultChecked={company.cancellation_policy_enabled}
+          />{" "}
+          Ativar política de cancelamento
+        </label>
+        <div className="grid gap-2">
+          <Label htmlFor="cancellationPolicy">Texto da política</Label>
+          <Textarea
+            id="cancellationPolicy"
+            name="cancellationPolicy"
+            defaultValue={company.cancellation_policy ?? ""}
+            maxLength={500}
+          />
+        </div>
+        <label className="flex items-center gap-3">
+          <input name="depositEnabled" type="checkbox" defaultChecked={company.deposit_enabled} />{" "}
+          Cobrar sinal
+        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="depositType">Regra do sinal</Label>
+            <select
+              id="depositType"
+              name="depositType"
+              defaultValue={company.deposit_type}
+              className="h-11 rounded-xl border bg-card px-3"
+            >
+              <option value="none">Não cobrar</option>
+              <option value="percent_30">30%</option>
+              <option value="percent_50">50%</option>
+              <option value="fixed">Valor fixo</option>
+            </select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="depositValue">Valor fixo (R$)</Label>
+            <Input
+              id="depositValue"
+              name="depositValue"
+              inputMode="decimal"
+              defaultValue={(company.deposit_value_cents / 100).toFixed(2).replace(".", ",")}
+            />
+          </div>
+        </div>
+        <div>
+          <h3 className="font-semibold">Meios de pagamento</h3>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {(
+              [
+                ["pix", "Pix"],
+                ["card", "Cartão"],
+                ["local", "Pagamento no local"],
+                ["mercadoPago", "Mercado Pago"],
+              ] as const
+            ).map(([name, label]) => (
+              <label key={name} className="flex items-center gap-3 rounded-xl border p-3">
+                <input name={name} type="checkbox" defaultChecked={payments[name]} /> {label}
+              </label>
+            ))}
+          </div>
+        </div>
+        <label className="flex items-center gap-3">
+          <input
+            name="publicStoreEnabled"
+            type="checkbox"
+            defaultChecked={company.public_store_enabled}
+          />{" "}
+          Ativar Loja na página pública
+        </label>
+        <Button type="submit" size="lg" disabled={action.pending} className="w-full sm:w-fit">
+          {action.pending ? "Salvando…" : "Salvar alterações"}
+        </Button>
+      </Card>
+    </form>
+  );
+}
+
+function ImageSetting({
+  label,
+  help,
+  url,
+  kind,
+  onChange,
+  onRemove,
+}: {
+  label: string;
+  help: string;
+  url: string;
+  kind: "logo" | "banner";
+  onChange: (event: ChangeEvent<HTMLInputElement>, kind: "logo" | "banner") => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="grid gap-3 rounded-2xl border p-4">
+      <div>
+        <strong>{label}</strong>
+        <p className="text-xs text-muted-foreground">{help}</p>
+      </div>
+      {url ? (
+        <img
+          src={url}
+          alt={`Prévia ${label}`}
+          className={
+            kind === "logo"
+              ? "h-28 w-28 rounded-full object-cover"
+              : "aspect-square max-h-56 w-full rounded-2xl object-cover"
+          }
+        />
+      ) : null}
+      <div className="flex gap-2">
+        <label className="inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold">
+          <ImageUp /> {url ? "Substituir" : "Adicionar"}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            onChange={(event) => void onChange(event, kind)}
+          />
+        </label>
+        {url ? (
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            onClick={onRemove}
+            aria-label={`Remover ${label}`}
+          >
+            <Trash2 />
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+function SimpleColor({
+  label,
+  value,
+  onChange,
+  presets,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  presets: string[];
+}) {
+  return (
+    <div className="grid gap-2">
+      <Label>{label}</Label>
+      <div className="flex flex-wrap gap-2">
+        {presets.map((color) => (
+          <button
+            key={color}
+            type="button"
+            aria-label={`Selecionar ${color}`}
+            className={`h-8 w-8 rounded-lg border-2 ${value === color ? "border-primary" : "border-white"}`}
+            style={{ background: color }}
+            onClick={() => onChange(color)}
+          />
+        ))}
+      </div>
+      <label className="flex items-center gap-2 text-xs">
+        <input
+          type="color"
+          value={value}
+          onChange={(event) => onChange(event.currentTarget.value)}
+          className="h-10 w-12"
+        />{" "}
+        Mais opções
+      </label>
+      <Input
+        value={value}
+        onChange={(event) => onChange(event.currentTarget.value)}
+        maxLength={7}
+      />
+    </div>
+  );
+}
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+    reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+    reader.readAsDataURL(file);
+  });
+}
+function contrastColor(hex: string) {
+  const value = hex.replace("#", "");
+  const r = Number.parseInt(value.slice(0, 2), 16);
+  const g = Number.parseInt(value.slice(2, 4), 16);
+  const b = Number.parseInt(value.slice(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 145 ? "#161616" : "#ffffff";
 }
