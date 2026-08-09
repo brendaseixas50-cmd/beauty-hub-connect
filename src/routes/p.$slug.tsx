@@ -994,8 +994,9 @@ function StoreCatalog({ page }: { page: PageData }) {
 function CompanyInformation({ page }: { page: PageData }) {
   const { company, gallery } = page;
   const address = [company.addressLine, company.city, company.state].filter(Boolean).join(" · ");
+  const showLocation = company.showPublicLocation && Boolean(address);
   if (
-    !address &&
+    !showLocation &&
     !company.whatsapp &&
     !company.instagram &&
     !gallery.length &&
@@ -1005,11 +1006,38 @@ function CompanyInformation({ page }: { page: PageData }) {
   return (
     <section className="mt-12 grid gap-5 border-t pt-8">
       <h2 className="text-xl font-semibold">Informações</h2>
-      {address ? (
-        <p className="flex gap-2">
-          <MapPin className="h-5 w-5 shrink-0" />
-          {address}
-        </p>
+      {showLocation ? (
+        <div className="grid gap-4 overflow-hidden rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+          <div className="flex gap-3">
+            <MapPin className="mt-0.5 h-6 w-6 shrink-0 text-primary" />
+            <div>
+              <h3 className="font-semibold">Localização</h3>
+              <p className="mt-1 text-sm leading-relaxed">{address}</p>
+              {company.postalCode ? (
+                <p className="text-sm text-muted-foreground">CEP {company.postalCode}</p>
+              ) : null}
+            </div>
+          </div>
+          <iframe
+            title={`Mapa de ${company.name}`}
+            src={`https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`}
+            className="h-64 w-full rounded-xl border-0 sm:h-72"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+          <Button asChild size="lg" className="min-h-12 w-full rounded-xl">
+            <a
+              href={
+                company.mapUrl ||
+                `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`
+              }
+              target="_blank"
+              rel="noreferrer"
+            >
+              <MapPin /> Como chegar
+            </a>
+          </Button>
+        </div>
       ) : null}
       {company.whatsapp ? (
         <a
