@@ -19,6 +19,8 @@ const companySchema = z.object({
   postalCode: z.string().nullable(),
   mapUrl: z.string().nullable(),
   showPublicLocation: z.boolean().default(false),
+  latitude: z.number().min(-90).max(90).nullable().default(null),
+  longitude: z.number().min(-180).max(180).nullable().default(null),
   businessHours: z.record(z.string(), z.string()),
   timezone: z.string(),
   primaryColor: z.string(),
