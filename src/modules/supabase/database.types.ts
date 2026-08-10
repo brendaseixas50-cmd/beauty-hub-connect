@@ -1234,7 +1234,9 @@ export type Database = {
           facebook: string | null;
           id: string;
           instagram: string | null;
+          latitude: number | null;
           logo_url: string | null;
+          longitude: number | null;
           map_url: string | null;
           menu_color: string;
           meta_access_token_secret_name: string;
@@ -1291,7 +1293,9 @@ export type Database = {
           facebook?: string | null;
           id?: string;
           instagram?: string | null;
+          latitude?: number | null;
           logo_url?: string | null;
+          longitude?: number | null;
           map_url?: string | null;
           menu_color?: string;
           meta_access_token_secret_name?: string;
@@ -1348,7 +1352,9 @@ export type Database = {
           facebook?: string | null;
           id?: string;
           instagram?: string | null;
+          latitude?: number | null;
           logo_url?: string | null;
+          longitude?: number | null;
           map_url?: string | null;
           menu_color?: string;
           meta_access_token_secret_name?: string;
