@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { ExternalLink, ImageUp, Link2, ShieldCheck, Trash2, Unlink } from "lucide-react";
+import { toast } from "sonner";
 
 import { PageHeader } from "@/components/mvp-page";
 import { Button } from "@/components/ui/button";
@@ -51,34 +52,33 @@ function SettingsPage() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const businessHours = Object.fromEntries(days.map(([key]) => [key, String(form.get(key))]));
-    await action.run(
-      () =>
-        save({
-          data: {
-            name: company.name,
-            productType: company.product_type === "barber" ? "barber" : "beauty",
-            document: company.document ?? "",
-            email: company.email ?? "",
-            phone: company.phone ?? "",
-            whatsapp: company.whatsapp ?? "",
-            whatsappInitialMessage: company.whatsapp_initial_message ?? "",
-            whatsappNotificationPhone: company.whatsapp_notification_phone ?? "",
-            whatsappIntegrationMode: "development",
-            metaPhoneNumberId: company.meta_phone_number_id ?? "",
-            metaWabaId: company.meta_waba_id ?? "",
-            instagram: company.instagram ?? "",
-            facebook: company.facebook ?? "",
-            description: company.description ?? "",
-            addressLine: company.address_line ?? "",
-            city: company.city ?? "",
-            state: company.state ?? "",
-            postalCode: company.postal_code ?? "",
-            mapUrl: company.map_url ?? "",
-            businessHours,
-          },
-        }),
-      "Configurações atualizadas.",
-    );
+    await action.run(async () => {
+      const result = await save({
+        data: {
+          name: company.name,
+          productType: company.product_type === "barber" ? "barber" : "beauty",
+          document: company.document ?? "",
+          email: company.email ?? "",
+          phone: company.phone ?? "",
+          whatsapp: company.whatsapp ?? "",
+          whatsappInitialMessage: company.whatsapp_initial_message ?? "",
+          whatsappNotificationPhone: company.whatsapp_notification_phone ?? "",
+          whatsappIntegrationMode: "development",
+          metaPhoneNumberId: company.meta_phone_number_id ?? "",
+          metaWabaId: company.meta_waba_id ?? "",
+          instagram: company.instagram ?? "",
+          facebook: company.facebook ?? "",
+          description: company.description ?? "",
+          addressLine: company.address_line ?? "",
+          city: company.city ?? "",
+          state: company.state ?? "",
+          postalCode: company.postal_code ?? "",
+          mapUrl: company.map_url ?? "",
+          businessHours,
+        },
+      });
+      if (result.locationWarning) toast.warning(result.locationWarning);
+    }, "Configurações atualizadas.");
   }
 
   return (
@@ -199,43 +199,42 @@ function PublicSettings({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    await action.run(
-      () =>
-        save({
-          data: {
-            logoUrl: logo,
-            bannerUrl: banner,
-            description: String(form.get("description")),
-            addressLine: String(form.get("addressLine")),
-            city: String(form.get("city")),
-            state: String(form.get("state")),
-            postalCode: String(form.get("postalCode")),
-            mapUrl: String(form.get("mapUrl")),
-            showPublicLocation: form.get("showPublicLocation") === "on",
-            primaryColor: primary,
-            secondaryColor: secondary,
-            textColor: text,
-            pageEnabled: form.get("pageEnabled") === "on",
-            cancellationPolicyEnabled: form.get("cancellationPolicyEnabled") === "on",
-            cancellationPolicy: String(form.get("cancellationPolicy")),
-            depositEnabled: form.get("depositEnabled") === "on",
-            depositType: String(form.get("depositType")) as
-              "none" | "percent_30" | "percent_50" | "fixed",
-            depositValueCents: Math.max(
-              0,
-              Math.round(Number(String(form.get("depositValue")).replace(",", ".")) * 100) || 0,
-            ),
-            paymentMethods: {
-              pix: form.get("pix") === "on",
-              card: form.get("card") === "on",
-              local: form.get("local") === "on",
-              mercadoPago: mercadoPago.connected && form.get("mercadoPago") === "on",
-            },
-            publicStoreEnabled: form.get("publicStoreEnabled") === "on",
+    await action.run(async () => {
+      const result = await save({
+        data: {
+          logoUrl: logo,
+          bannerUrl: banner,
+          description: String(form.get("description")),
+          addressLine: String(form.get("addressLine")),
+          city: String(form.get("city")),
+          state: String(form.get("state")),
+          postalCode: String(form.get("postalCode")),
+          mapUrl: String(form.get("mapUrl")),
+          showPublicLocation: form.get("showPublicLocation") === "on",
+          primaryColor: primary,
+          secondaryColor: secondary,
+          textColor: text,
+          pageEnabled: form.get("pageEnabled") === "on",
+          cancellationPolicyEnabled: form.get("cancellationPolicyEnabled") === "on",
+          cancellationPolicy: String(form.get("cancellationPolicy")),
+          depositEnabled: form.get("depositEnabled") === "on",
+          depositType: String(form.get("depositType")) as
+            "none" | "percent_30" | "percent_50" | "fixed",
+          depositValueCents: Math.max(
+            0,
+            Math.round(Number(String(form.get("depositValue")).replace(",", ".")) * 100) || 0,
+          ),
+          paymentMethods: {
+            pix: form.get("pix") === "on",
+            card: form.get("card") === "on",
+            local: form.get("local") === "on",
+            mercadoPago: mercadoPago.connected && form.get("mercadoPago") === "on",
           },
-        }),
-      "Página pública atualizada com sucesso.",
-    );
+          publicStoreEnabled: form.get("publicStoreEnabled") === "on",
+        },
+      });
+      if (result.locationWarning) toast.warning(result.locationWarning);
+    }, "Página pública atualizada com sucesso.");
   }
 
   return (
