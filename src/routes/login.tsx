@@ -1,16 +1,18 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle, LockKeyhole } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 
 import { MarcaProduto } from "@/components/marca-produto";
-import { BrandCredit, BrandSplash } from "@/components/brand-experience";
+import { BrandCredit } from "@/components/brand-experience";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getSession, login, startGoogleSignIn, switchCompany } from "@/modules/auth/server";
+import { login, startGoogleSignIn, switchCompany } from "@/modules/auth/server";
+import { cacheSession, peekSession, readSession } from "@/modules/auth/session-query";
 
 const safeRedirect = z
   .string()
@@ -26,14 +28,21 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/login")({
   validateSearch: searchSchema,
-  beforeLoad: async ({ search }) => {
-    const session = await getSession();
+  beforeLoad: async ({ context, search }) => {
+    const cachedSession = peekSession(context.queryClient);
+    // A navigation from the public landing page must reveal the login form immediately.
+    // Direct server requests and already-cached authenticated sessions still preserve the redirect.
+    const session =
+      typeof window === "undefined" || cachedSession !== undefined
+        ? await readSession(context.queryClient)
+        : null;
     if (session) {
       const preferred = search.produto
         ? session.user.companies.find((company) => company.productType === search.produto)
         : undefined;
       if (preferred && preferred.tenantId !== session.user.tenantId) {
-        await switchCompany({ data: { tenantId: preferred.tenantId } });
+        const nextSession = await switchCompany({ data: { tenantId: preferred.tenantId } });
+        cacheSession(context.queryClient, nextSession);
       }
       throw redirect({ href: search.redirect });
     }
@@ -44,6 +53,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const search = Route.useSearch();
   const loginFn = useServerFn(login);
   const googleFn = useServerFn(startGoogleSignIn);
@@ -58,13 +68,14 @@ function LoginPage() {
     const form = new FormData(event.currentTarget);
 
     try {
-      await loginFn({
+      const session = await loginFn({
         data: {
           email: String(form.get("email")),
           password: String(form.get("password")),
           productType: search.produto,
         },
       });
+      cacheSession(queryClient, session);
       await navigate({ href: search.redirect });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível entrar.");
@@ -77,7 +88,6 @@ function LoginPage() {
     <main
       className={`${tipo === "barbearia" ? "tema-barbearia" : "tema-beleza"} flex min-h-screen items-center justify-center bg-background px-4 py-12`}
     >
-      <BrandSplash tipo={tipo} />
       <Card className="w-full max-w-md border-border/70 shadow-xl">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">

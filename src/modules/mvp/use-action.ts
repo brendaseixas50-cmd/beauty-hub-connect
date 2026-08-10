@@ -11,7 +11,10 @@ export function useMvpAction() {
     try {
       await task();
       toast.success(success);
-      await router.invalidate();
+      const activeRouteId = router.state.matches.at(-1)?.routeId;
+      if (activeRouteId) {
+        void router.invalidate({ filter: (match) => match.routeId === activeRouteId });
+      }
       return true;
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : "Não foi possível concluir a operação.");

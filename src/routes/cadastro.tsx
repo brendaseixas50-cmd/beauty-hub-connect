@@ -1,16 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, LoaderCircle, MailCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 
 import { MarcaProduto } from "@/components/marca-produto";
-import { BrandCredit, BrandSplash } from "@/components/brand-experience";
+import { BrandCredit } from "@/components/brand-experience";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { resendSignupConfirmation, signup, startGoogleSignIn } from "@/modules/auth/server";
+import { cacheSession } from "@/modules/auth/session-query";
 
 export const Route = createFileRoute("/cadastro")({
   validateSearch: z.object({ produto: z.enum(["beauty", "barber"]).catch("beauty") }),
@@ -30,6 +32,7 @@ function Cadastro() {
   const { produto } = Route.useSearch();
   const tipo = produto === "barber" ? "barbearia" : "beleza";
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const signupFn = useServerFn(signup);
   const resendFn = useServerFn(resendSignupConfirmation);
   const googleFn = useServerFn(startGoogleSignIn);
@@ -59,6 +62,7 @@ function Cadastro() {
       if (result.requiresEmailConfirmation) {
         setEmailEnviado(email);
       } else {
+        cacheSession(queryClient, result.session);
         await navigate({ to: produto === "beauty" ? "/onboarding" : "/painel" });
       }
     } catch (cause) {
@@ -87,7 +91,6 @@ function Cadastro() {
     <main
       className={`${tipo === "barbearia" ? "tema-barbearia" : "tema-beleza"} min-h-screen bg-secondary/40 px-4 py-10`}
     >
-      <BrandSplash tipo={tipo} />
       <div className="mx-auto w-full max-w-lg">
         <Link
           to="/"

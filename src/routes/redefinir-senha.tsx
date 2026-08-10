@@ -8,11 +8,12 @@ import { BrandCredit } from "@/components/brand-experience";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getSession, updatePassword } from "@/modules/auth/server";
+import { updatePassword } from "@/modules/auth/server";
+import { readSession } from "@/modules/auth/session-query";
 
 export const Route = createFileRoute("/redefinir-senha")({
-  beforeLoad: async () => {
-    if (!(await getSession())) {
+  beforeLoad: async ({ context }) => {
+    if (!(await readSession(context.queryClient))) {
       throw redirect({
         to: "/login",
         search: {

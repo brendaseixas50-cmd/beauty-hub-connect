@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarDays, Check, LogIn, Users, Wallet } from "lucide-react";
 
-import logoBeauty from "@/assets/brand/lubeauty-app-icon.png";
-import logoBarber from "@/assets/brand/lubarber-logo-round.png";
+import logoBeauty from "@/assets/brand/lubeauty-app-icon.webp";
+import logoBarber from "@/assets/brand/lubarber-logo-round.webp";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { marcasProduto, type TipoNegocio } from "@/products/catalog";
@@ -105,7 +105,14 @@ function ProductCard({ type }: { type: TipoNegocio }) {
       className={`${theme} overflow-hidden rounded-[20px] border border-border bg-background text-foreground shadow-xl`}
     >
       <div className="product-card-visual" aria-label={`Logo ${brand.nome} Pro`}>
-        <img src={images[type]} alt={`Identidade oficial ${brand.nome} Pro`} />
+        <img
+          src={images[type]}
+          alt={`Identidade oficial ${brand.nome} Pro`}
+          width={1024}
+          height={1024}
+          loading={type === "barbearia" ? "lazy" : "eager"}
+          decoding="async"
+        />
       </div>
       <div className="p-7 sm:p-10">
         <p className="text-eyebrow">{brand.estilo}</p>
