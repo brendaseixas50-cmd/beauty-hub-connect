@@ -1,8 +1,8 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle, LockKeyhole } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
 
 import { MarcaProduto } from "@/components/marca-produto";
@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login, startGoogleSignIn, switchCompany } from "@/modules/auth/server";
-import { cacheSession, peekSession, readSession } from "@/modules/auth/session-query";
+import { cacheSession, clearSessionCache, peekSession } from "@/modules/auth/session-query";
 
 const safeRedirect = z
   .string()
@@ -28,25 +28,6 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/login")({
   validateSearch: searchSchema,
-  beforeLoad: async ({ context, search }) => {
-    const cachedSession = peekSession(context.queryClient);
-    // A navigation from the public landing page must reveal the login form immediately.
-    // Direct server requests and already-cached authenticated sessions still preserve the redirect.
-    const session =
-      typeof window === "undefined" || cachedSession !== undefined
-        ? await readSession(context.queryClient)
-        : null;
-    if (session) {
-      const preferred = search.produto
-        ? session.user.companies.find((company) => company.productType === search.produto)
-        : undefined;
-      if (preferred && preferred.tenantId !== session.user.tenantId) {
-        const nextSession = await switchCompany({ data: { tenantId: preferred.tenantId } });
-        cacheSession(context.queryClient, nextSession);
-      }
-      throw redirect({ href: search.redirect });
-    }
-  },
   head: () => ({ meta: [{ title: "Entrar — Lu IA Studio" }] }),
   component: LoginPage,
 });
@@ -57,9 +38,35 @@ function LoginPage() {
   const search = Route.useSearch();
   const loginFn = useServerFn(login);
   const googleFn = useServerFn(startGoogleSignIn);
+  const switchFn = useServerFn(switchCompany);
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
   const tipo = search.produto === "barber" ? "barbearia" : "beleza";
+
+  useEffect(() => {
+    const session = peekSession(queryClient);
+    if (!session) return;
+    let active = true;
+    void (async () => {
+      try {
+        const preferred = search.produto
+          ? session.user.companies.find((company) => company.productType === search.produto)
+          : undefined;
+        const nextSession =
+          preferred && preferred.tenantId !== session.user.tenantId
+            ? await switchFn({ data: { tenantId: preferred.tenantId } })
+            : session;
+        if (!active) return;
+        cacheSession(queryClient, nextSession);
+        await navigate({ href: search.redirect, replace: true });
+      } catch {
+        clearSessionCache(queryClient);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [navigate, queryClient, search.produto, search.redirect, switchFn]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
