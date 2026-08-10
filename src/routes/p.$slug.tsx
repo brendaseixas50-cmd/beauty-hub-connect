@@ -995,6 +995,10 @@ function CompanyInformation({ page }: { page: PageData }) {
   const { company, gallery } = page;
   const address = [company.addressLine, company.city, company.state].filter(Boolean).join(" · ");
   const showLocation = company.showPublicLocation && Boolean(address);
+  const mapDestination =
+    company.latitude !== null && company.longitude !== null
+      ? `${company.latitude},${company.longitude}`
+      : address;
   if (
     !showLocation &&
     !company.whatsapp &&
@@ -1020,7 +1024,7 @@ function CompanyInformation({ page }: { page: PageData }) {
           </div>
           <iframe
             title={`Mapa de ${company.name}`}
-            src={`https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`}
+            src={`https://www.google.com/maps?q=${encodeURIComponent(mapDestination)}&output=embed`}
             className="h-64 w-full rounded-xl border-0 sm:h-72"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
@@ -1029,7 +1033,7 @@ function CompanyInformation({ page }: { page: PageData }) {
             <a
               href={
                 company.mapUrl ||
-                `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`
+                `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapDestination)}`
               }
               target="_blank"
               rel="noreferrer"
