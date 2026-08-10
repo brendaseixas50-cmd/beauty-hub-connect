@@ -1,5 +1,5 @@
-import beautyLogo from "@/assets/brand/lubeauty-app-icon.png";
-import barberLogo from "@/assets/brand/lubarber-logo-round.png";
+import beautyLogo from "@/assets/brand/lubeauty-app-icon.webp";
+import barberLogo from "@/assets/brand/lubarber-logo-round.webp";
 import { marcasProduto } from "@/products/catalog";
 
 export function MarcaProduto({

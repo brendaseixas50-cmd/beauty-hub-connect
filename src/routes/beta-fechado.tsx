@@ -6,11 +6,13 @@ import { BrandCredit } from "@/components/brand-experience";
 import { MarcaProduto } from "@/components/marca-produto";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getSession, logout } from "@/modules/auth/server";
+import { logout } from "@/modules/auth/server";
+import { clearSessionCache, readSession } from "@/modules/auth/session-query";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/beta-fechado")({
-  beforeLoad: async () => {
-    const session = await getSession();
+  beforeLoad: async ({ context }) => {
+    const session = await readSession(context.queryClient);
     if (!session)
       throw redirect({ to: "/login", search: { redirect: "/painel", produto: undefined } });
     if (session.user.betaAccessActive) throw redirect({ to: "/painel" });
@@ -24,6 +26,7 @@ function ClosedBetaPage() {
   const { session } = Route.useRouteContext();
   const logoutFn = useServerFn(logout);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isBarber = session.user.productType === "barber";
   const tipo = isBarber ? "barbearia" : "beleza";
 
@@ -56,6 +59,7 @@ function ClosedBetaPage() {
           className="w-full sm:w-auto"
           onClick={async () => {
             await logoutFn();
+            clearSessionCache(queryClient);
             await navigate({
               to: "/login",
               search: { redirect: "/painel", produto: session.user.productType },

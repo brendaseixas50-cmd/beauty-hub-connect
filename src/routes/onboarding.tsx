@@ -5,13 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 
 import { MarcaProduto } from "@/components/marca-produto";
-import { BrandCredit, BrandSplash } from "@/components/brand-experience";
+import { BrandCredit } from "@/components/brand-experience";
 import { LuviWelcome } from "@/modules/luvi-core/components";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getSession } from "@/modules/auth/server";
+import { readSession } from "@/modules/auth/session-query";
 import { centsFromInput } from "@/modules/mvp/domain";
 import {
   completeOnboarding,
@@ -25,8 +25,8 @@ export const Route = createFileRoute("/onboarding")({
   validateSearch: z.object({
     retorno: z.enum(["/painel", "/painel/configuracoes"]).catch("/painel"),
   }),
-  beforeLoad: async () => {
-    const session = await getSession();
+  beforeLoad: async ({ context }) => {
+    const session = await readSession(context.queryClient);
     if (!session) throw redirect({ to: "/login", search: { redirect: "/onboarding" } });
     return { session };
   },
@@ -158,7 +158,6 @@ function OnboardingPage() {
     <main
       className={`${tipo === "barbearia" ? "tema-barbearia" : "tema-beleza"} min-h-screen bg-secondary/30 px-4 py-8`}
     >
-      <BrandSplash tipo={tipo} />
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between gap-4">
           <MarcaProduto tipo={tipo} />

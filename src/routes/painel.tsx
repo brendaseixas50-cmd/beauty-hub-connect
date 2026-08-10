@@ -8,6 +8,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
   CalendarDays,
@@ -30,8 +31,9 @@ import {
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { MarcaProduto } from "@/components/marca-produto";
-import { BrandCredit, BrandSplash } from "@/components/brand-experience";
-import { getSession, logout, switchCompany } from "@/modules/auth/server";
+import { BrandCredit } from "@/components/brand-experience";
+import { logout, switchCompany } from "@/modules/auth/server";
+import { cacheSession, clearSessionCache, readSession } from "@/modules/auth/session-query";
 import { AuthProvider } from "@/modules/auth/context";
 import type { Session } from "@/modules/auth/domain";
 import { LuviAssistant, LuviOnboardingProgress } from "@/modules/luvi-core/components";
@@ -39,8 +41,8 @@ import { LuviContextProvider } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel")({
   staleTime: 5 * 60_000,
-  beforeLoad: async ({ location }) => {
-    const session = await getSession();
+  beforeLoad: async ({ context, location }) => {
+    const session = await readSession(context.queryClient);
     if (!session) {
       throw redirect({
         to: "/login",
@@ -185,6 +187,7 @@ function Marca({ session }: { session: Session }) {
 function CompanySwitcher({ session }: { session: Session }) {
   const switchFn = useServerFn(switchCompany);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [pending, setPending] = useState(false);
 
@@ -194,7 +197,8 @@ function CompanySwitcher({ session }: { session: Session }) {
     if (tenantId === session.user.tenantId) return;
     setPending(true);
     try {
-      await switchFn({ data: { tenantId } });
+      const nextSession = await switchFn({ data: { tenantId } });
+      cacheSession(queryClient, nextSession);
       await router.invalidate();
       await navigate({ to: "/painel", replace: true });
     } finally {
@@ -225,10 +229,15 @@ function PainelLayout() {
   const [aberto, setAberto] = useState(false);
   const { session } = Route.useRouteContext();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const navigating = useRouterState({ select: (state) => state.status === "pending" });
   const logoutFn = useServerFn(logout);
   const tipo = session.user.productType === "barber" ? "barbearia" : "beleza";
   const tema = tipo === "barbearia" ? "tema-barbearia" : "tema-beleza";
+
+  useEffect(() => {
+    cacheSession(queryClient, session);
+  }, [queryClient, session]);
 
   useEffect(() => {
     document.documentElement.classList.add(tema);
@@ -237,6 +246,7 @@ function PainelLayout() {
 
   async function handleLogout() {
     await logoutFn();
+    clearSessionCache(queryClient);
     await navigate({ to: "/login" });
   }
 
@@ -248,7 +258,6 @@ function PainelLayout() {
             className={`route-progress ${navigating ? "route-progress-visible" : ""}`}
             aria-hidden="true"
           />
-          <BrandSplash tipo={tipo} />
           <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r bg-sidebar p-4 lg:flex">
             <MarcaProduto tipo={tipo} />
             <div className="my-4 border-t" />
