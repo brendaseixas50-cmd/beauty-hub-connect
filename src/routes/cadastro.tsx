@@ -225,6 +225,7 @@ function Cadastro() {
                     <Link
                       to="/login"
                       search={{ redirect: "/painel", produto }}
+                      preload="render"
                       className="inline-flex min-h-11 items-center px-2 text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       Entrar

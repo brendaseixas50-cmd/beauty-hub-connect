@@ -128,12 +128,16 @@ function ProductCard({ type }: { type: TipoNegocio }) {
         </ul>
         <div className="mt-8 grid grid-cols-2 gap-3">
           <Button asChild size="lg" variant="outline" className="min-w-0 px-3 sm:px-5">
-            <Link to="/login" search={{ redirect: "/painel", produto: productType }}>
+            <Link
+              to="/login"
+              search={{ redirect: "/painel", produto: productType }}
+              preload="render"
+            >
               <LogIn /> <span className="truncate">Entrar no painel</span>
             </Link>
           </Button>
           <Button asChild size="lg" className="min-w-0 px-3 sm:px-5">
-            <Link to="/cadastro" search={{ produto: productType }}>
+            <Link to="/cadastro" search={{ produto: productType }} preload="render">
               <span className="truncate">Criar conta</span> <ArrowRight />
             </Link>
           </Button>

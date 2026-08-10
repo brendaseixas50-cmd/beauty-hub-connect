@@ -192,6 +192,7 @@ function LoginPage() {
                 <Link
                   to="/cadastro"
                   search={{ produto: search.produto ?? "beauty" }}
+                  preload="render"
                   className="inline-flex min-h-11 items-center px-2 text-primary hover:underline"
                 >
                   Criar conta
