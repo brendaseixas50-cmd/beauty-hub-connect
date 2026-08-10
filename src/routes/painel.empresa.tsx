@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, Copy, ExternalLink, ImageUp } from "lucide-react";
 import { useState, type ChangeEvent, type FormEvent } from "react";
+import { toast } from "sonner";
 
 import { PageHeader } from "@/components/mvp-page";
 import { Button } from "@/components/ui/button";
@@ -32,55 +33,54 @@ function CompanyPage() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    await action.run(
-      () =>
-        save({
-          data: {
-            name: String(form.get("name")),
-            productType: company.product_type === "barber" ? "barber" : "beauty",
-            document: String(form.get("document")),
-            email: String(form.get("email")),
-            phone: String(form.get("phone")),
-            whatsapp: String(form.get("whatsapp")),
-            whatsappInitialMessage: String(form.get("whatsappInitialMessage")),
-            whatsappNotificationPhone: String(form.get("whatsappNotificationPhone")),
-            whatsappIntegrationMode: "development",
-            metaPhoneNumberId: String(form.get("metaPhoneNumberId")),
-            metaWabaId: String(form.get("metaWabaId")),
-            instagram: String(form.get("instagram")),
-            facebook: String(form.get("facebook")),
-            description: String(form.get("description")),
-            addressLine: String(form.get("addressLine")),
-            city: String(form.get("city")),
-            state: String(form.get("state")),
-            postalCode: String(form.get("postalCode")),
-            mapUrl: String(form.get("mapUrl")),
-            businessHours: (company.business_hours ?? {}) as Record<string, string>,
-            publicPage: {
-              publicName: String(form.get("publicName")),
-              logoUrl,
-              bannerUrl,
-              photoUrl,
-              primaryColor: String(form.get("primaryColor")),
-              secondaryColor: String(form.get("secondaryColor")),
-              accentColor: String(form.get("accentColor")),
-              buttonColor: String(form.get("buttonColor")),
-              cardColor: String(form.get("cardColor")),
-              menuColor: String(form.get("menuColor")),
-              backgroundColor: String(form.get("backgroundColor")),
-              titleColor: String(form.get("titleColor")),
-              textColor: String(form.get("textColor")),
-              welcomeMessage: String(form.get("welcomeMessage")),
-              cancellationPolicy: String(form.get("cancellationPolicy")),
-              publicInformation: String(form.get("publicInformation")),
-              status: form.get("publicPageEnabled") === "on" ? "published" : "disabled",
-              bookingIntervalMinutes: Number(form.get("bookingIntervalMinutes")) as
-                10 | 15 | 20 | 30 | 45 | 60,
-            },
+    await action.run(async () => {
+      const result = await save({
+        data: {
+          name: String(form.get("name")),
+          productType: company.product_type === "barber" ? "barber" : "beauty",
+          document: String(form.get("document")),
+          email: String(form.get("email")),
+          phone: String(form.get("phone")),
+          whatsapp: String(form.get("whatsapp")),
+          whatsappInitialMessage: String(form.get("whatsappInitialMessage")),
+          whatsappNotificationPhone: String(form.get("whatsappNotificationPhone")),
+          whatsappIntegrationMode: "development",
+          metaPhoneNumberId: String(form.get("metaPhoneNumberId")),
+          metaWabaId: String(form.get("metaWabaId")),
+          instagram: String(form.get("instagram")),
+          facebook: String(form.get("facebook")),
+          description: String(form.get("description")),
+          addressLine: String(form.get("addressLine")),
+          city: String(form.get("city")),
+          state: String(form.get("state")),
+          postalCode: String(form.get("postalCode")),
+          mapUrl: String(form.get("mapUrl")),
+          businessHours: (company.business_hours ?? {}) as Record<string, string>,
+          publicPage: {
+            publicName: String(form.get("publicName")),
+            logoUrl,
+            bannerUrl,
+            photoUrl,
+            primaryColor: String(form.get("primaryColor")),
+            secondaryColor: String(form.get("secondaryColor")),
+            accentColor: String(form.get("accentColor")),
+            buttonColor: String(form.get("buttonColor")),
+            cardColor: String(form.get("cardColor")),
+            menuColor: String(form.get("menuColor")),
+            backgroundColor: String(form.get("backgroundColor")),
+            titleColor: String(form.get("titleColor")),
+            textColor: String(form.get("textColor")),
+            welcomeMessage: String(form.get("welcomeMessage")),
+            cancellationPolicy: String(form.get("cancellationPolicy")),
+            publicInformation: String(form.get("publicInformation")),
+            status: form.get("publicPageEnabled") === "on" ? "published" : "disabled",
+            bookingIntervalMinutes: Number(form.get("bookingIntervalMinutes")) as
+              10 | 15 | 20 | 30 | 45 | 60,
           },
-        }),
-      "Dados da empresa atualizados.",
-    );
+        },
+      });
+      if (result.locationWarning) toast.warning(result.locationWarning);
+    }, "Dados da empresa atualizados.");
   }
 
   async function onMedia(event: ChangeEvent<HTMLInputElement>, kind: "logo" | "banner" | "photo") {

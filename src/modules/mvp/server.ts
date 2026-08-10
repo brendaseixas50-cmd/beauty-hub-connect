@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { resolveOperationalContext } from "@/modules/auth/server";
+import { resolveAddressWithGoogleMaps } from "@/modules/maps/google-maps.server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 import type {
   Appointment,
@@ -59,6 +60,58 @@ function requireManager(role: string) {
   if (role !== "owner" && role !== "admin") {
     throw new Error("Você não possui permissão para realizar esta alteração.");
   }
+}
+
+type CompanyUpdateResult = { company: Company; locationWarning: string | null };
+
+type CompanyLocation = {
+  addressLine: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+};
+
+async function geocodingValues(
+  current: Company,
+  location: CompanyLocation,
+): Promise<{ latitude?: number | null; longitude?: number | null; warning: string | null }> {
+  const addressChanged =
+    current.address_line !== location.addressLine ||
+    current.city !== location.city ||
+    current.state !== location.state ||
+    current.postal_code !== location.postalCode;
+  const hasCoordinates = current.latitude !== null && current.longitude !== null;
+
+  if (!location.addressLine) return { latitude: null, longitude: null, warning: null };
+  if (!addressChanged && hasCoordinates) return { warning: null };
+
+  const address = [
+    location.addressLine,
+    location.city,
+    location.state,
+    location.postalCode,
+    "Brasil",
+  ]
+    .filter(Boolean)
+    .join(", ");
+  try {
+    const coordinates = await resolveAddressWithGoogleMaps(address);
+    if (coordinates) {
+      return {
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        warning: null,
+      };
+    }
+  } catch {
+    // Address and all other settings must still be saved when the provider is unavailable.
+  }
+  return {
+    latitude: null,
+    longitude: null,
+    warning:
+      "As configurações foram salvas, mas não conseguimos localizar esse endereço. Confira rua, número, cidade, UF e CEP.",
+  };
 }
 
 const companySchema = z.object({
@@ -175,9 +228,22 @@ export const getCompany = createServerFn({ method: "GET" }).handler(async (): Pr
 
 export const updateCompany = createServerFn({ method: "POST" })
   .validator(companySchema)
-  .handler(async ({ data }): Promise<Company> => {
+  .handler(async ({ data }): Promise<CompanyUpdateResult> => {
     const { supabase, tenantId, role } = await tenantContext();
     requireManager(role);
+    const { data: current, error: currentError } = await supabase
+      .from("tenants")
+      .select("*")
+      .eq("id", tenantId)
+      .single();
+    if (currentError || !current)
+      databaseError(currentError, "Não foi possível carregar os dados da empresa.");
+    const geocoding = await geocodingValues(current, {
+      addressLine: data.addressLine,
+      city: data.city,
+      state: data.state,
+      postalCode: data.postalCode,
+    });
     if (data.publicPage?.status === "published") {
       const [{ count: services }, { count: professionals }] = await Promise.all([
         supabase
@@ -245,6 +311,9 @@ export const updateCompany = createServerFn({ method: "POST" })
         city: data.city,
         state: data.state,
         postal_code: data.postalCode,
+        ...(geocoding.latitude !== undefined
+          ? { latitude: geocoding.latitude, longitude: geocoding.longitude }
+          : {}),
         map_url: data.mapUrl,
         business_hours: data.businessHours,
         ...(data.bookingPolicy
@@ -264,7 +333,7 @@ export const updateCompany = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error || !updated) databaseError(error, "Não foi possível salvar a empresa.");
-    return updated;
+    return { company: updated, locationWarning: geocoding.warning };
   });
 
 const publicSettingsSchema = z.object({
@@ -317,9 +386,22 @@ const publicSettingsSchema = z.object({
 
 export const updatePublicSettings = createServerFn({ method: "POST" })
   .validator(publicSettingsSchema)
-  .handler(async ({ data }): Promise<Company> => {
+  .handler(async ({ data }): Promise<CompanyUpdateResult> => {
     const { supabase, tenantId, role } = await tenantContext();
     requireManager(role);
+    const { data: current, error: currentError } = await supabase
+      .from("tenants")
+      .select("*")
+      .eq("id", tenantId)
+      .single();
+    if (currentError || !current)
+      databaseError(currentError, "Não foi possível carregar os dados da empresa.");
+    const geocoding = await geocodingValues(current, {
+      addressLine: data.addressLine,
+      city: data.city,
+      state: data.state,
+      postalCode: data.postalCode,
+    });
     const secondary = data.secondaryColor || data.primaryColor;
     const { data: updated, error } = await supabase
       .from("tenants")
@@ -331,6 +413,9 @@ export const updatePublicSettings = createServerFn({ method: "POST" })
         city: data.city,
         state: data.state,
         postal_code: data.postalCode,
+        ...(geocoding.latitude !== undefined
+          ? { latitude: geocoding.latitude, longitude: geocoding.longitude }
+          : {}),
         map_url: data.mapUrl,
         show_public_location: data.showPublicLocation,
         primary_color: data.primaryColor,
@@ -355,7 +440,7 @@ export const updatePublicSettings = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error || !updated) databaseError(error, "Não foi possível atualizar a página pública.");
-    return updated;
+    return { company: updated, locationWarning: geocoding.warning };
   });
 
 const publicMediaSchema = z.object({
