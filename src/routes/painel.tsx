@@ -156,6 +156,7 @@ function AcoesInferiores({
 }
 
 function Marca({ session }: { session: Session }) {
+  const [logoFalhou, setLogoFalhou] = useState(false);
   const initials = session.user.tenantName
     .split(/\s+/)
     .slice(0, 2)
@@ -165,11 +166,12 @@ function Marca({ session }: { session: Session }) {
 
   return (
     <div className="flex min-w-0 items-center gap-3">
-      {session.user.logoUrl ? (
+      {session.user.logoUrl && !logoFalhou ? (
         <img
           src={session.user.logoUrl}
           alt={`Logo ${session.user.tenantName}`}
-          className="h-10 w-10 shrink-0 rounded-full object-cover"
+          onError={() => setLogoFalhou(true)}
+          className="h-10 w-10 shrink-0 rounded-full border bg-background object-contain p-0.5"
         />
       ) : (
         <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
@@ -246,8 +248,14 @@ function PainelLayout() {
 
   async function handleLogout() {
     await logoutFn();
+    await queryClient.cancelQueries();
     clearSessionCache(queryClient);
-    await navigate({ to: "/login" });
+    queryClient.clear();
+    await navigate({
+      to: "/login",
+      search: { redirect: "/painel", produto: session.user.productType },
+      replace: true,
+    });
   }
 
   return (
