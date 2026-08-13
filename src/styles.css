@@ -480,6 +480,12 @@
 .tema-barbearia main [data-slot="card"] .bg-secondary .text-muted-foreground {
   color: #4a4a4a;
 }
+/* Campos e botões auxiliares com bg-background dentro de card claro ficariam preto no preto. */
+.tema-barbearia main [data-slot="card"] .bg-background,
+.tema-barbearia main [data-slot="card"] .bg-card {
+  background-color: #ffffff;
+  color: #161616;
+}
 /* Dourado puro perde contraste como texto sobre branco. */
 .tema-barbearia main [data-slot="card"] .text-primary {
   color: #806413;
