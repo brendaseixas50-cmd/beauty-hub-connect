@@ -109,7 +109,7 @@ function ServicesPage() {
               <div className="flex flex-wrap items-center gap-4 text-sm">
                 <span className="font-medium">{brl(service.price_cents)}</span>
                 <span className="flex items-center gap-1 text-muted-foreground">
-                  <Clock className="h-4 w-4" /> {service.duration_minutes} min
+                  <Clock className="h-4 w-4" /> {formatDuration(service.duration_minutes)}
                 </span>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -150,8 +150,13 @@ function ServiceDialog({ service, onClose }: { service: Service | null; onClose:
             name: String(form.get("name")),
             category: String(form.get("category")),
             description: String(form.get("description")),
-            durationMinutes: Number(form.get("durationMinutes")),
-            priceCents: centsFromInput(String(form.get("price"))),
+            durationMinutes:
+              Math.max(
+                0,
+                Number(form.get("durationHours") || 0) * 60 +
+                  Number(form.get("durationMinutesPart") || 0),
+              ) || 60,
+            priceCents: centsFromInput(String(form.get("price") ?? "")),
             active: form.get("active") === "on",
           },
         }),
@@ -173,21 +178,50 @@ function ServiceDialog({ service, onClose }: { service: Service | null; onClose:
           <Field label="Nome" name="name" defaultValue={service?.name ?? ""} required />
           <Field label="Categoria" name="category" defaultValue={service?.category ?? ""} />
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              label="Duração (minutos)"
-              name="durationMinutes"
-              type="number"
-              min={5}
-              defaultValue={service?.duration_minutes ?? 60}
-              required
-            />
+            <div className="grid gap-2">
+              <Label htmlFor="durationHours">Duração</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="durationHours"
+                    name="durationHours"
+                    type="number"
+                    min={0}
+                    max={12}
+                    placeholder="0"
+                    defaultValue={
+                      service ? Math.floor(service.duration_minutes / 60) || "" : ""
+                    }
+                  />
+                  <span className="text-sm text-muted-foreground">h</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="durationMinutesPart"
+                    name="durationMinutesPart"
+                    type="number"
+                    min={0}
+                    max={59}
+                    step={5}
+                    placeholder="30"
+                    defaultValue={service ? service.duration_minutes % 60 || "" : ""}
+                  />
+                  <span className="text-sm text-muted-foreground">min</span>
+                </div>
+              </div>
+            </div>
             <Field
               label="Preço (R$)"
               name="price"
               inputMode="decimal"
-              defaultValue={service ? (service.price_cents / 100).toFixed(2).replace(".", ",") : ""}
-              required
+              placeholder="0,00"
+              defaultValue={
+                service?.price_cents
+                  ? (service.price_cents / 100).toFixed(2).replace(".", ",")
+                  : ""
+              }
             />
+
           </div>
           <div className="grid gap-2">
             <Label htmlFor="description">Descrição</Label>
@@ -226,4 +260,12 @@ function Field({
       <Input id={name} name={name} {...props} />
     </div>
   );
+}
+
+function formatDuration(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours && rest) return `${hours}h${String(rest).padStart(2, "0")}`;
+  if (hours) return `${hours}h`;
+  return `${rest} min`;
 }

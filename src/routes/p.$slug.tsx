@@ -55,10 +55,10 @@ function PublicBookingApp() {
   const { company } = page;
   const theme = publicTheme(company);
   const style = {
-    "--background": "#ffffff",
-    "--foreground": "#1f1f1f",
-    "--card": "#ffffff",
-    "--card-foreground": "#1f1f1f",
+    "--background": theme.background,
+    "--foreground": theme.foreground,
+    "--card": theme.card,
+    "--card-foreground": theme.foreground,
     "--primary": theme.primary,
     "--primary-foreground": contrast(theme.primary),
     "--secondary": theme.secondary,
@@ -66,7 +66,7 @@ function PublicBookingApp() {
     "--accent": theme.secondary,
     "--accent-foreground": contrast(theme.secondary),
     "--muted": theme.secondary,
-    "--muted-foreground": "#5f5f5f",
+    "--muted-foreground": theme.mutedForeground,
     "--border": theme.border,
     "--input": theme.border,
     "--ring": company.productType === "barber" ? "#c9a227" : theme.primary,
@@ -79,17 +79,20 @@ function PublicBookingApp() {
       <header className="border-b bg-card px-4 py-4 shadow-sm">
         <div className="mx-auto flex max-w-2xl items-center gap-3">
           {company.logoUrl ? (
-            <img
-              src={company.logoUrl}
-              alt={`Logo ${company.name}`}
-              className="h-14 w-14 rounded-full object-cover"
-            />
+            <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-full border bg-card">
+              <img
+                src={company.logoUrl}
+                alt={`Logo ${company.name}`}
+                className="h-full w-full object-contain p-0.5"
+              />
+            </span>
           ) : (
             <div className="grid h-14 w-14 place-items-center rounded-full bg-secondary text-lg font-bold">
               {company.name.slice(0, 2).toUpperCase()}
             </div>
           )}
           <h1 className="min-w-0 truncate font-display text-2xl font-semibold">{company.name}</h1>
+
         </div>
       </header>
 
@@ -634,8 +637,9 @@ function BookingSuccess({
   const [summaryOpened, setSummaryOpened] = useState(false);
   const localPayment = paymentMethod === "local";
   const url = whatsapp
-    ? bookingWhatsappUrl(whatsapp, result, customerName, result.paymentMethod ?? "local")
+    ? bookingWhatsappUrl(whatsapp, result, customerName, result.paymentMethod ?? "local", timezone)
     : null;
+
   return (
     <Card className="mt-5 items-center gap-5 p-6 text-center">
       <CheckCircle2 className="h-14 w-14 text-success" />
@@ -1142,12 +1146,15 @@ function formatTime(value: string, timezone: string) {
   });
 }
 function formatSlot(value: string, timezone: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "long",
-    timeStyle: "short",
+  const date = new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
     timeZone: timezone,
   }).format(new Date(value));
+  return `${date} às ${formatTime(value, timezone)}`;
 }
+
 function dateInTimeZone(timezone: string, days = 0) {
   const value = new Date();
   value.setDate(value.getDate() + days);
@@ -1180,29 +1187,63 @@ function publicTheme(company: PageData["company"]) {
     );
   const primary = legacyWrongColor ? "#161616" : company.primaryColor;
   const secondaryBase = legacyWrongColor ? "#c9a227" : company.secondaryColor;
+  const background = /^#[0-9a-f]{6}$/i.test(company.backgroundColor ?? "")
+    ? company.backgroundColor
+    : "#ffffff";
+  const darkBackground = luminance(background) < 0.5;
+  const foreground = textOnBackground(company.textColor, background);
   return {
     primary,
-    secondary: mixWithWhite(secondaryBase, barber ? 0.88 : 0.9),
-    border: mixWithWhite(barber ? "#c9a227" : primary, 0.72),
+    secondary: mixWith(secondaryBase, background, barber ? 0.88 : 0.9),
+    border: mixWith(barber ? "#c9a227" : primary, background, 0.72),
+    background,
+    foreground,
+    card: darkBackground ? mixWith(background, "#ffffff", 0.1) : "#ffffff",
+    mutedForeground: mixWith(foreground, background, 0.35),
   };
 }
 
-function mixWithWhite(hex: string, whiteRatio: number) {
+function luminance(hex: string) {
   const value = hex.replace("#", "");
-  if (!/^[0-9a-f]{6}$/i.test(value)) return "#f5f5f5";
+  if (!/^[0-9a-f]{6}$/i.test(value)) return 1;
+  const channel = (offset: number) => Number.parseInt(value.slice(offset, offset + 2), 16);
+  return (channel(0) * 299 + channel(2) * 587 + channel(4) * 114) / 1000 / 255;
+}
+
+function textOnBackground(text: string, background: string) {
+  if (!/^#[0-9a-f]{6}$/i.test(text ?? "")) return contrast(background);
+  return Math.abs(luminance(text) - luminance(background)) >= 0.42
+    ? text
+    : contrast(background);
+}
+
+function mixWith(hex: string, target: string, ratio: number) {
+  const value = hex.replace("#", "");
+  const other = (target ?? "#ffffff").replace("#", "");
+  if (!/^[0-9a-f]{6}$/i.test(value) || !/^[0-9a-f]{6}$/i.test(other)) return "#f5f5f5";
   const channel = (offset: number) =>
     Math.round(
-      Number.parseInt(value.slice(offset, offset + 2), 16) * (1 - whiteRatio) + 255 * whiteRatio,
+      Number.parseInt(value.slice(offset, offset + 2), 16) * (1 - ratio) +
+        Number.parseInt(other.slice(offset, offset + 2), 16) * ratio,
     )
       .toString(16)
       .padStart(2, "0");
   return `#${channel(0)}${channel(2)}${channel(4)}`;
 }
+
+
+const paymentLabels: Record<string, string> = {
+  local: "Pagamento no local",
+  pix: "Pix",
+  card: "Cartão",
+  mercadoPago: "Pagamento online",
+};
 function bookingWhatsappUrl(
   phone: string,
   result: BookingResult,
   name: string,
   paymentMethod: string,
+  timezone: string,
 ) {
   const lines = [
     "Olá!",
@@ -1210,11 +1251,12 @@ function bookingWhatsappUrl(
     `Nome: ${name}`,
     `Serviços: ${result.services?.join(", ") ?? ""}`,
     `Profissional: ${result.professional ?? ""}`,
-    `Data e horário: ${result.startsAt ?? ""}`,
+    `Data e horário: ${result.startsAt ? formatSlot(result.startsAt, timezone) : ""}`,
     `Valor total: ${result.totalPriceCents !== undefined ? brl(result.totalPriceCents) : ""}`,
     result.depositCents ? `Sinal solicitado: ${brl(result.depositCents)}` : "",
     result.remainingCents ? `Saldo restante: ${brl(result.remainingCents)}` : "",
-    `Forma de pagamento: ${paymentMethod === "local" ? "Pagamento no local" : paymentMethod}`,
+    `Forma de pagamento: ${paymentLabels[paymentMethod] ?? paymentMethod}`,
+
     "Gostaria de combinar a confirmação do meu agendamento.",
   ].filter(Boolean);
   return `https://wa.me/${digits(phone)}?text=${encodeURIComponent(lines.join("\n"))}`;
