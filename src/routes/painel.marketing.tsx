@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ExternalLink, MessageCircle, Plus, Save } from "lucide-react";
+import { MessageCircle, Plus, Save } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 
 import { EmptyState, PageHeader } from "@/components/mvp-page";
