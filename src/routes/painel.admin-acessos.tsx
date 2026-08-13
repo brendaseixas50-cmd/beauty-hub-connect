@@ -171,7 +171,7 @@ function BetaAccessAdmin() {
           onSubmit={async (event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
-            setTenants(await tenantsFn({ data: { email: String(form.get("empresa")) } }));
+            setTenants((await tenantsFn({ data: { email: String(form.get("empresa") ?? "") } })) ?? []);
           }}
         >
           <Input name="empresa" type="search" placeholder="Localizar por nome ou link" />
@@ -205,7 +205,7 @@ function BetaAccessAdmin() {
                       setMessage(undefined);
                       try {
                         await planFn({ data: { tenantId: tenant.id, planCode: code } });
-                        setTenants(await tenantsFn({ data: { email: "" } }));
+                        setTenants((await tenantsFn({ data: { email: "" } })) ?? []);
                         setMessage("Plano atualizado com sucesso.");
                       } catch (cause) {
                         setMessage(
