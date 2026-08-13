@@ -38,6 +38,7 @@ import { AuthProvider } from "@/modules/auth/context";
 import type { Session } from "@/modules/auth/domain";
 import { LuviAssistant, LuviOnboardingProgress } from "@/modules/luvi-core/components";
 import { LuviContextProvider } from "@/modules/luvi-core/context";
+import { lembrarProduto, produtoLembrado } from "@/lib/produto-preferido";
 
 export const Route = createFileRoute("/painel")({
   staleTime: 5 * 60_000,
