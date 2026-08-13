@@ -29,7 +29,6 @@ function Dashboard() {
   const data = Route.useLoaderData();
   const { session } = Route.useRouteContext();
   const firstName = session.user.name.split(" ")[0];
-  const product = session.user.productType === "barber" ? "LuBarber Pro" : "LuBeauty Pro";
 
   return (
     <div>
@@ -44,7 +43,7 @@ function Dashboard() {
         }}
       />
       <PageHeader
-        eyebrow={product}
+        eyebrow="Visão geral"
         title={`Olá, ${firstName}`}
         description="Acompanhe os principais números da empresa e os atendimentos de hoje."
         action={

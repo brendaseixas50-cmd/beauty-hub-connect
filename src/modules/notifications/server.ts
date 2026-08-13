@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 
-import { resolveSession } from "@/modules/auth/server";
+import { resolveSession } from "@/modules/auth/session.server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 
 export const listNotifications = createServerFn({ method: "GET" }).handler(async () => {

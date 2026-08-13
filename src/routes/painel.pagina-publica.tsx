@@ -150,9 +150,6 @@ function PublicPageManager() {
               {status.label}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {company.product_type === "barber" ? "LuBarber Pro" : "LuBeauty Pro"}
-          </p>
         </div>
 
         <div className="rounded-xl border bg-muted/40 p-4">

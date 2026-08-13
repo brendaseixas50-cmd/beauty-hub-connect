@@ -10,12 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  coresDaEmpresa,
-  corDeContraste,
-  derivarPaleta,
-  textoSeguro,
-} from "@/lib/cores-publicas";
+import { coresDaEmpresa, corDeContraste, derivarPaleta, textoSeguro } from "@/lib/cores-publicas";
 import { formatarTelefone, telefoneInternacional } from "@/lib/telefone";
 import { getCompany, updateCompany, uploadPublicMedia } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
@@ -98,12 +93,7 @@ function CompanyPage() {
             publicInformation: String(form.get("publicInformation")),
             status: form.get("publicPageEnabled") === "on" ? "published" : "disabled",
             bookingIntervalMinutes: Number(form.get("bookingIntervalMinutes")) as
-              | 10
-              | 15
-              | 20
-              | 30
-              | 45
-              | 60,
+              10 | 15 | 20 | 30 | 45 | 60,
           },
         },
       });
@@ -154,18 +144,8 @@ function CompanyPage() {
           <Field label="Nome da empresa" name="name" defaultValue={company.name} required />
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="CPF ou CNPJ" name="document" defaultValue={company.document ?? ""} />
-            <Field
-              label="E-mail"
-              name="email"
-              type="email"
-              defaultValue={company.email ?? ""}
-            />
-            <PhoneField
-              label="Telefone"
-              id="phone"
-              value={telefone}
-              onValueChange={setTelefone}
-            />
+            <Field label="E-mail" name="email" type="email" defaultValue={company.email ?? ""} />
+            <PhoneField label="Telefone" id="phone" value={telefone} onValueChange={setTelefone} />
             <PhoneField
               label="WhatsApp"
               id="whatsapp"
@@ -438,7 +418,9 @@ function MediaField({
           <img
             src={url}
             alt={`Prévia de ${label.toLowerCase()}`}
-            className={kind === "logo" ? "h-full w-full object-contain p-1" : "h-full w-full object-cover"}
+            className={
+              kind === "logo" ? "h-full w-full object-contain p-1" : "h-full w-full object-cover"
+            }
           />
         </span>
       ) : (
