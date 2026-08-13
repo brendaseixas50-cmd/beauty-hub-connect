@@ -1424,7 +1424,86 @@ export type Database = {
           },
         ];
       };
+      subscription_plans: {
+        Row: {
+          id: string;
+          code: string;
+          name: string;
+          professional_limit: number;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          name: string;
+          professional_limit: number;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          name?: string;
+          professional_limit?: number;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      tenant_subscriptions: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          plan_id: string;
+          status: string;
+          provider: string;
+          current_period_ends_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id?: string;
+          plan_id: string;
+          status?: string;
+          provider?: string;
+          current_period_ends_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          plan_id?: string;
+          status?: string;
+          provider?: string;
+          current_period_ends_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tenant_subscriptions_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "subscription_plans";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tenant_subscriptions_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: true;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
+
     Views: {
       [_ in never]: never;
     };

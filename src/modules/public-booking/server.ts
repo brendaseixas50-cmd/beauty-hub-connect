@@ -45,7 +45,9 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
       p_professional_id: data.professionalId,
     });
     if (error) throw new Error("Não foi possível consultar os horários.");
-    return availabilitySchema.parse(availability ?? { date: data.date, slots: [] });
+    const parsed = availabilitySchema.parse(availability ?? { date: data.date, slots: [] });
+    const { filterSlotsByProfessionalAgenda } = await import("./disponibilidade.server");
+    return { ...parsed, slots: await filterSlotsByProfessionalAgenda(data.slug, parsed.slots) };
   });
 
 const bookingInput = availabilityInput.omit({ date: true, professionalId: true }).extend({
@@ -77,6 +79,14 @@ export const createSimplePublicBooking = createServerFn({ method: "POST" })
   .validator(simpleBookingInput)
   .handler(async ({ data }): Promise<BookingResult> => {
     const supabase = createSupabaseServerClient();
+    const { publicBookingBlockReason } = await import("./disponibilidade.server");
+    const blocked = await publicBookingBlockReason({
+      slug: data.slug,
+      professionalId: data.professionalId,
+      serviceIds: data.serviceIds,
+      startsAt: data.startsAt,
+    });
+    if (blocked) return { ok: false, error: blocked };
     const { data: result, error } = await supabase.rpc("create_public_booking_v3", {
       p_slug: data.slug,
       p_service_ids: data.serviceIds,
@@ -118,6 +128,14 @@ export const createPublicBooking = createServerFn({ method: "POST" })
   .validator(bookingInput)
   .handler(async ({ data }): Promise<BookingResult> => {
     const supabase = createSupabaseServerClient();
+    const { publicBookingBlockReason } = await import("./disponibilidade.server");
+    const blocked = await publicBookingBlockReason({
+      slug: data.slug,
+      professionalId: data.professionalId,
+      serviceIds: data.serviceIds,
+      startsAt: data.startsAt,
+    });
+    if (blocked) return { ok: false, error: blocked };
     const { data: result, error } = await supabase.rpc("create_public_booking_v2", {
       p_slug: data.slug,
       p_service_ids: data.serviceIds,

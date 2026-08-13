@@ -4,6 +4,8 @@ import { z } from "zod";
 import { resolveOperationalContext } from "@/modules/auth/session.server";
 import { resolveAddressWithGoogleMaps } from "@/modules/maps/google-maps.server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
+import type { Json } from "@/modules/supabase/database.types";
+import { parseWorkingHours, professionalSlotBlockReason } from "./agenda-disponibilidade";
 import type {
   Appointment,
   Client,
@@ -48,6 +50,7 @@ async function tenantContext() {
 }
 
 function databaseError(error: { code?: string; message: string } | null, fallback: string): never {
+  if (error?.code === "P0001" && error.message) throw new Error(error.message);
   if (error?.code === "23P01")
     throw new Error("Este profissional já possui um atendimento nesse horário.");
   if (error?.code === "23503")
@@ -60,6 +63,65 @@ function requireManager(role: string) {
   if (role !== "owner" && role !== "admin") {
     throw new Error("Você não possui permissão para realizar esta alteração.");
   }
+}
+
+type SupabaseServerClient = ReturnType<typeof createSupabaseServerClient>;
+
+async function planCapacity(
+  supabase: SupabaseServerClient,
+  tenantId: string,
+): Promise<{ name: string; limit: number }> {
+  const { data } = await supabase
+    .from("tenant_subscriptions")
+    .select("status, plan:subscription_plans(code, name, professional_limit)")
+    .eq("tenant_id", tenantId)
+    .in("status", ["beta", "trial", "active"])
+    .maybeSingle();
+  const plan = data?.plan;
+  if (!plan) return { name: "Solo", limit: 1 };
+  // Contracted limits: Solo = 1 profissional, Equipe = 5 profissionais.
+  const contracted: Record<string, number> = { solo: 1, team: 5 };
+  const limit = contracted[plan.code] ?? plan.professional_limit;
+  return { name: plan.name, limit: Math.max(limit, 1) };
+}
+
+export async function professionalAvailabilityIssue({
+  supabase,
+  tenantId,
+  professionalId,
+  startsAt,
+  endsAt,
+}: {
+  supabase: SupabaseServerClient;
+  tenantId: string;
+  professionalId: string;
+  startsAt: string;
+  endsAt: string;
+}): Promise<string | null> {
+  const [professional, tenant, unavailability] = await Promise.all([
+    supabase
+      .from("professionals")
+      .select("working_hours")
+      .eq("id", professionalId)
+      .eq("tenant_id", tenantId)
+      .maybeSingle(),
+    supabase.from("tenants").select("timezone").eq("id", tenantId).maybeSingle(),
+    supabase
+      .from("professional_unavailability")
+      .select("starts_at, ends_at")
+      .eq("tenant_id", tenantId)
+      .eq("professional_id", professionalId)
+      .lt("starts_at", endsAt)
+      .gt("ends_at", startsAt),
+  ]);
+  if (!professional.data) return "Profissional indisponível.";
+  return professionalSlotBlockReason({
+    workingHours: parseWorkingHours(professional.data.working_hours),
+    timeZone: tenant.data?.timezone ?? "America/Sao_Paulo",
+    startsAt,
+    endsAt,
+    unavailability: unavailability.data ?? [],
+  });
 }
 
 type CompanyUpdateResult = { company: Company; locationWarning: string | null };
@@ -629,6 +691,24 @@ export const saveProfessional = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<Professional> => {
     const { supabase, tenantId, role } = await tenantContext();
     requireManager(role);
+    if (data.active) {
+      const [plan, activeProfessionals] = await Promise.all([
+        planCapacity(supabase, tenantId),
+        supabase
+          .from("professionals")
+          .select("id")
+          .eq("tenant_id", tenantId)
+          .eq("active", true),
+      ]);
+      const others = (activeProfessionals.data ?? []).filter(
+        (professional) => professional.id !== data.id,
+      ).length;
+      if (others >= plan.limit) {
+        throw new Error(
+          `Seu plano ${plan.name} permite ${plan.limit} profissional${plan.limit > 1 ? "is" : ""} ativo${plan.limit > 1 ? "s" : ""}. Faça upgrade do plano para cadastrar mais.`,
+        );
+      }
+    }
     const values = {
       tenant_id: tenantId,
       name: data.name,
@@ -683,6 +763,132 @@ export const deleteProfessional = createServerFn({ method: "POST" })
     if (error) databaseError(error, "Não foi possível excluir o profissional.");
     return { success: true } as const;
   });
+
+const scheduleDaySchema = z.object({
+  weekday: z.number().int().min(0).max(6),
+  dayOff: z.boolean(),
+  startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  endsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  breakStartsAt: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .or(z.literal(""))
+    .transform((value) => value || null),
+  breakEndsAt: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .or(z.literal(""))
+    .transform((value) => value || null),
+});
+
+export const saveProfessionalSchedule = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      professionalId: z.string().uuid(),
+      followCompanyHours: z.boolean(),
+      days: z.array(scheduleDaySchema).max(7),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const workingHours: Record<string, Json> = {};
+    if (!data.followCompanyHours) {
+      for (const day of data.days) {
+        if (!day.dayOff && day.endsAt <= day.startsAt)
+          throw new Error("O horário final deve ser maior que o inicial.");
+        if (day.breakStartsAt && day.breakEndsAt && day.breakEndsAt <= day.breakStartsAt)
+          throw new Error("O intervalo informado é inválido.");
+        workingHours[String(day.weekday)] = {
+          dayOff: day.dayOff,
+          startsAt: day.startsAt,
+          endsAt: day.endsAt,
+          breakStartsAt: day.breakStartsAt,
+          breakEndsAt: day.breakEndsAt,
+        };
+      }
+    }
+    const { error } = await supabase
+      .from("professionals")
+      .update({ working_hours: workingHours })
+      .eq("id", data.professionalId)
+      .eq("tenant_id", tenantId);
+    if (error) databaseError(error, "Não foi possível salvar a agenda do profissional.");
+    return { success: true } as const;
+  });
+
+export const listProfessionalUnavailability = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabase, tenantId } = await tenantContext();
+  const { data, error } = await supabase
+    .from("professional_unavailability")
+    .select("id, professional_id, starts_at, ends_at, reason")
+    .eq("tenant_id", tenantId)
+    .gte("ends_at", new Date(Date.now() - 86_400_000).toISOString())
+    .order("starts_at");
+  if (error) databaseError(error, "Não foi possível carregar os bloqueios.");
+  return data ?? [];
+});
+
+export const saveProfessionalUnavailability = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      professionalId: z.string().uuid(),
+      startsAt: z.string().datetime({ offset: true }),
+      endsAt: z.string().datetime({ offset: true }),
+      reason: optionalShortText,
+    }),
+  )
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role, user } = await tenantContext();
+    requireManager(role);
+    if (new Date(data.endsAt) <= new Date(data.startsAt))
+      throw new Error("O fim do bloqueio deve ser depois do início.");
+    const { error } = await supabase.from("professional_unavailability").insert({
+      tenant_id: tenantId,
+      professional_id: data.professionalId,
+      starts_at: data.startsAt,
+      ends_at: data.endsAt,
+      reason: data.reason,
+      created_by: user.id,
+    });
+    if (error) databaseError(error, "Não foi possível salvar o bloqueio.");
+    return { success: true } as const;
+  });
+
+export const deleteProfessionalUnavailability = createServerFn({ method: "POST" })
+  .validator(idSchema)
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const { error } = await supabase
+      .from("professional_unavailability")
+      .delete()
+      .eq("id", data.id)
+      .eq("tenant_id", tenantId);
+    if (error) databaseError(error, "Não foi possível remover o bloqueio.");
+    return { success: true } as const;
+  });
+
+export const getProfessionalCapacity = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabase, tenantId } = await tenantContext();
+  const [plan, professionals] = await Promise.all([
+    planCapacity(supabase, tenantId),
+    supabase
+      .from("professionals")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("active", true),
+  ]);
+  const used = professionals.count ?? 0;
+  return {
+    planName: plan.name,
+    limit: plan.limit,
+    used,
+    remaining: Math.max(plan.limit - used, 0),
+    canAddMore: used < plan.limit,
+  };
+});
+
 
 const clientSchema = z.object({
   id: z.string().uuid().optional(),
@@ -1241,6 +1447,16 @@ export const saveAppointment = createServerFn({ method: "POST" })
     if (serviceError || !service) databaseError(serviceError, "Serviço inválido.");
     const startsAt = new Date(data.startsAt);
     const endsAt = new Date(startsAt.getTime() + service.duration_minutes * 60_000);
+    if (data.status === "scheduled" || data.status === "confirmed") {
+      const blocked = await professionalAvailabilityIssue({
+        supabase,
+        tenantId,
+        professionalId: data.professionalId,
+        startsAt: startsAt.toISOString(),
+        endsAt: endsAt.toISOString(),
+      });
+      if (blocked) throw new Error(blocked);
+    }
     const values = {
       tenant_id: tenantId,
       client_id: data.clientId,

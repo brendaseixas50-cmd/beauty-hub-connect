@@ -21,25 +21,42 @@ import { Textarea } from "@/components/ui/textarea";
 import type { ProfessionalWithServices } from "@/modules/mvp/domain";
 import {
   deleteProfessional,
+  deleteProfessionalUnavailability,
+  getProfessionalCapacity,
+  listProfessionalUnavailability,
   listProfessionals,
   listServices,
   saveProfessional,
+  saveProfessionalSchedule,
+  saveProfessionalUnavailability,
   uploadPublicMedia,
 } from "@/modules/mvp/server";
+import {
+  emptyDaySchedule,
+  hasCustomWorkingHours,
+  parseWorkingHours,
+  weekdayLabels,
+  type DaySchedule,
+} from "@/modules/mvp/agenda-disponibilidade";
 import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/profissionais")({
   loader: async () => {
-    const [professionals, services] = await Promise.all([listProfessionals(), listServices()]);
-    return { professionals, services };
+    const [professionals, services, capacity, blocks] = await Promise.all([
+      listProfessionals(),
+      listServices(),
+      getProfessionalCapacity(),
+      listProfessionalUnavailability(),
+    ]);
+    return { professionals, services, capacity, blocks };
   },
   head: () => ({ meta: [{ title: "Profissionais — Beauty Hub Connect" }] }),
   component: ProfessionalsPage,
 });
 
 function ProfessionalsPage() {
-  const { professionals, services } = Route.useLoaderData();
+  const { professionals, services, capacity, blocks } = Route.useLoaderData();
   const remove = useServerFn(deleteProfessional);
   const action = useMvpAction();
   const [search, setSearch] = useState("");
@@ -68,11 +85,33 @@ function ProfessionalsPage() {
         title="Profissionais"
         description="Organize a equipe, comissões e disponibilidade na agenda."
         action={
-          <Button className="rounded-full" onClick={() => setEditing(null)}>
+          <Button
+            className="rounded-full"
+            disabled={!capacity.canAddMore}
+            onClick={() => setEditing(null)}
+          >
             <Plus className="h-4 w-4" /> Novo profissional
           </Button>
         }
       />
+
+      <Card className="mt-2 mb-6 flex flex-col gap-2 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-medium">
+            Plano {capacity.planName} · {capacity.used} de {capacity.limit} profissionais ativos
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {capacity.canAddMore
+              ? `Você ainda pode ativar ${capacity.remaining} profissional(is) neste plano.`
+              : "Limite do plano atingido. Faça upgrade para ativar mais profissionais."}
+          </p>
+        </div>
+        {!capacity.canAddMore ? (
+          <Badge variant="destructive" className="w-fit">
+            Limite atingido
+          </Badge>
+        ) : null}
+      </Card>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <SearchField value={search} onChange={setSearch} placeholder="Buscar profissional" />
         <select
@@ -153,6 +192,7 @@ function ProfessionalsPage() {
         <ProfessionalDialog
           professional={editing}
           services={services}
+          blocks={blocks.filter((block) => block.professional_id === editing?.id)}
           onClose={() => setEditing(undefined)}
         />
       ) : null}
@@ -163,15 +203,35 @@ function ProfessionalsPage() {
 function ProfessionalDialog({
   professional,
   services,
+  blocks,
   onClose,
 }: {
   professional: ProfessionalWithServices | null;
   services: Awaited<ReturnType<typeof listServices>>;
+  blocks: Awaited<ReturnType<typeof listProfessionalUnavailability>>;
   onClose: () => void;
 }) {
   const save = useServerFn(saveProfessional);
+  const saveSchedule = useServerFn(saveProfessionalSchedule);
+  const saveBlock = useServerFn(saveProfessionalUnavailability);
+  const removeBlock = useServerFn(deleteProfessionalUnavailability);
   const upload = useServerFn(uploadPublicMedia);
   const action = useMvpAction();
+  const initialHours = parseWorkingHours(professional?.working_hours);
+  const [followCompanyHours, setFollowCompanyHours] = useState(
+    !hasCustomWorkingHours(initialHours),
+  );
+  const [days, setDays] = useState<DaySchedule[]>(() =>
+    weekdayLabels.map((_, weekday) => initialHours[String(weekday)] ?? defaultDay(weekday)),
+  );
+  const [blockStart, setBlockStart] = useState("");
+  const [blockEnd, setBlockEnd] = useState("");
+  const [blockReason, setBlockReason] = useState("");
+  function updateDay(weekday: number, patch: Partial<DaySchedule>) {
+    setDays((current) =>
+      current.map((day, index) => (index === weekday ? { ...day, ...patch } : day)),
+    );
+  }
   const [photoUrl, setPhotoUrl] = useState(professional?.photo_url ?? "");
   const [uploading, setUploading] = useState(false);
 
@@ -206,9 +266,10 @@ function ProfessionalDialog({
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    let savedId = professional?.id ?? "";
     const ok = await action.run(
-      () =>
-        save({
+      async () => {
+        const saved = await save({
           data: {
             id: professional?.id,
             name: String(form.get("name")),
@@ -223,10 +284,34 @@ function ProfessionalDialog({
             photoUrl,
             serviceIds: form.getAll("serviceIds").map(String),
           },
-        }),
+        });
+        savedId = saved.id;
+        return saved;
+      },
       professional ? "Profissional atualizado." : "Profissional cadastrado.",
     );
-    if (ok) onClose();
+    if (!ok) return;
+    if (savedId) {
+      await action.run(
+        () =>
+          saveSchedule({
+            data: {
+              professionalId: savedId,
+              followCompanyHours,
+              days: days.map((day, weekday) => ({
+                weekday,
+                dayOff: day.dayOff,
+                startsAt: day.startsAt,
+                endsAt: day.endsAt,
+                breakStartsAt: day.breakStartsAt ?? "",
+                breakEndsAt: day.breakEndsAt ?? "",
+              })),
+            },
+          }),
+        "Agenda do profissional salva.",
+      );
+    }
+    onClose();
   }
 
   return (
@@ -346,6 +431,172 @@ function ProfessionalDialog({
               Sem seleção, o profissional ficará disponível para todos os serviços.
             </p>
           </div>
+          <div className="grid gap-3 rounded-2xl border p-3">
+            <div>
+              <Label>Agenda individual</Label>
+              <p className="text-xs text-muted-foreground">
+                Dias, horários e intervalos deste profissional. A página pública mostra apenas os
+                horários realmente livres para ele.
+              </p>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={followCompanyHours}
+                onChange={(event) => setFollowCompanyHours(event.currentTarget.checked)}
+              />
+              Seguir os horários da empresa
+            </label>
+            {!followCompanyHours ? (
+              <div className="grid gap-2">
+                {days.map((day, weekday) => (
+                  <div key={weekday} className="grid gap-2 rounded-xl bg-muted/50 p-3 sm:grid-cols-2">
+                    <label className="flex items-center gap-2 text-sm font-medium">
+                      <input
+                        type="checkbox"
+                        checked={!day.dayOff}
+                        onChange={(event) =>
+                          updateDay(weekday, { dayOff: !event.currentTarget.checked })
+                        }
+                      />
+                      {weekdayLabels[weekday]}
+                    </label>
+                    {day.dayOff ? (
+                      <span className="text-sm text-muted-foreground">Folga</span>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          type="time"
+                          aria-label={`Início ${weekdayLabels[weekday]}`}
+                          value={day.startsAt}
+                          onChange={(event) =>
+                            updateDay(weekday, { startsAt: event.currentTarget.value })
+                          }
+                        />
+                        <Input
+                          type="time"
+                          aria-label={`Fim ${weekdayLabels[weekday]}`}
+                          value={day.endsAt}
+                          onChange={(event) =>
+                            updateDay(weekday, { endsAt: event.currentTarget.value })
+                          }
+                        />
+                        <Input
+                          type="time"
+                          aria-label={`Início do intervalo ${weekdayLabels[weekday]}`}
+                          value={day.breakStartsAt ?? ""}
+                          onChange={(event) =>
+                            updateDay(weekday, { breakStartsAt: event.currentTarget.value || null })
+                          }
+                        />
+                        <Input
+                          type="time"
+                          aria-label={`Fim do intervalo ${weekdayLabels[weekday]}`}
+                          value={day.breakEndsAt ?? ""}
+                          onChange={(event) =>
+                            updateDay(weekday, { breakEndsAt: event.currentTarget.value || null })
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {professional ? (
+            <div className="grid gap-3 rounded-2xl border p-3">
+              <div>
+                <Label>Folgas e bloqueios</Label>
+                <p className="text-xs text-muted-foreground">
+                  Períodos em que este profissional não recebe agendamentos.
+                </p>
+              </div>
+              {blocks.length ? (
+                <ul className="grid gap-2">
+                  {blocks.map((block) => (
+                    <li
+                      key={block.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted/50 p-3 text-sm"
+                    >
+                      <span>
+                        {formatBlock(block.starts_at)} → {formatBlock(block.ends_at)}
+                        {block.reason ? ` · ${block.reason}` : ""}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          void action.run(
+                            () => removeBlock({ data: { id: block.id } }),
+                            "Bloqueio removido.",
+                          )
+                        }
+                      >
+                        Remover
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhum bloqueio cadastrado.</p>
+              )}
+              <div className="grid gap-2 sm:grid-cols-3">
+                <Input
+                  type="datetime-local"
+                  aria-label="Início do bloqueio"
+                  value={blockStart}
+                  onChange={(event) => setBlockStart(event.currentTarget.value)}
+                />
+                <Input
+                  type="datetime-local"
+                  aria-label="Fim do bloqueio"
+                  value={blockEnd}
+                  onChange={(event) => setBlockEnd(event.currentTarget.value)}
+                />
+                <Input
+                  aria-label="Motivo do bloqueio"
+                  placeholder="Motivo (opcional)"
+                  value={blockReason}
+                  onChange={(event) => setBlockReason(event.currentTarget.value)}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-fit"
+                disabled={!blockStart || !blockEnd || action.pending}
+                onClick={() =>
+                  void action
+                    .run(
+                      () =>
+                        saveBlock({
+                          data: {
+                            professionalId: professional.id,
+                            startsAt: new Date(blockStart).toISOString(),
+                            endsAt: new Date(blockEnd).toISOString(),
+                            reason: blockReason,
+                          },
+                        }),
+                      "Bloqueio adicionado.",
+                    )
+                    .then((ok) => {
+                      if (ok) {
+                        setBlockStart("");
+                        setBlockEnd("");
+                        setBlockReason("");
+                      }
+                    })
+                }
+              >
+                Adicionar bloqueio
+              </Button>
+            </div>
+          ) : null}
+
           <div className="grid gap-2">
             <Label htmlFor="notes">Observações</Label>
             <Textarea id="notes" name="notes" defaultValue={professional?.notes ?? ""} />
@@ -380,6 +631,20 @@ function Field({
     </div>
   );
 }
+function defaultDay(weekday: number): DaySchedule {
+  const base = emptyDaySchedule();
+  return { ...base, dayOff: weekday === 0 };
+}
+
+function formatBlock(value: string) {
+  return new Date(value).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function initials(name: string) {
   return name
     .split(/\s+/)
