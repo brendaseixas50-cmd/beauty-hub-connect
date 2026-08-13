@@ -59,11 +59,17 @@ function SettingsPage() {
   const save = useServerFn(updateCompany);
   const action = useMvpAction();
   const hours = (company.business_hours ?? {}) as Record<string, string>;
+  const [horarios, setHorarios] = useState<Record<string, string>>(() =>
+    Object.fromEntries(days.map(([key]) => [key, hours[key] ?? "closed"])),
+  );
+
+  function atualizarDia(key: string, valor: string) {
+    setHorarios((atual) => ({ ...atual, [key]: valor }));
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const businessHours = Object.fromEntries(days.map(([key]) => [key, String(form.get(key))]));
+    const businessHours = horarios;
     await action.run(async () => {
       const result = await save({
         data: {
