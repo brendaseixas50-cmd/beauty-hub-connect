@@ -57,3 +57,69 @@ export const removePlatformAccess = createServerFn({ method: "POST" })
     if (error) throw new Error("Não foi possível remover este acesso.");
     return { ok: true };
   });
+
+const planCodeSchema = z.enum(["solo", "team"]);
+const tenantPlanSchema = z.object({ tenantId: z.string().uuid(), planCode: planCodeSchema });
+
+/** Planos comerciais liberados no beta: Solo (1 profissional) e Equipe (8 profissionais). */
+export const listTenantPlans = createServerFn({ method: "GET" })
+  .validator(searchSchema)
+  .handler(async ({ data }) => {
+    await requirePlatformAdministrator();
+    const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
+    const admin = createSupabaseAdminClient();
+    const query = admin
+      .from("tenants")
+      .select("id, name, slug, product_type, subscription:tenant_subscriptions(status, plan:subscription_plans(code, name))")
+      .order("name")
+      .limit(40);
+    const { data: rows, error } = data.email
+      ? await query.or(`name.ilike.%${data.email}%,slug.ilike.%${data.email}%`)
+      : await query;
+    if (error) throw new Error("Não foi possível listar as empresas.");
+    return (rows ?? []).map((row) => {
+      const active = (row.subscription ?? []).find((item) =>
+        ["beta", "trial", "active"].includes(item.status),
+      );
+      const code = active?.plan?.code === "team" ? "team" : "solo";
+      return {
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        productType: row.product_type,
+        planCode: code as "solo" | "team",
+        planName: code === "team" ? "Equipe (até 8)" : "Solo (1 profissional)",
+      };
+    });
+  });
+
+export const setTenantPlan = createServerFn({ method: "POST" })
+  .validator(tenantPlanSchema)
+  .handler(async ({ data }) => {
+    await requirePlatformAdministrator();
+    const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
+    const admin = createSupabaseAdminClient();
+    const { data: plan } = await admin
+      .from("subscription_plans")
+      .select("id")
+      .eq("code", data.planCode)
+      .maybeSingle();
+    if (!plan) throw new Error("Plano indisponível no banco de dados.");
+    const { data: current } = await admin
+      .from("tenant_subscriptions")
+      .select("id")
+      .eq("tenant_id", data.tenantId)
+      .in("status", ["beta", "trial", "active"])
+      .limit(1)
+      .maybeSingle();
+    const { error } = current
+      ? await admin
+          .from("tenant_subscriptions")
+          .update({ plan_id: plan.id, status: "beta" })
+          .eq("id", current.id)
+      : await admin
+          .from("tenant_subscriptions")
+          .insert({ tenant_id: data.tenantId, plan_id: plan.id, status: "beta", provider: "manual" });
+    if (error) throw new Error("Não foi possível alterar o plano desta empresa.");
+    return { ok: true };
+  });
