@@ -26,3 +26,9 @@ export function telefoneInternacional(value: string | null | undefined) {
   const digits = telefoneLocal(value);
   return digits ? `+55${digits}` : "";
 }
+
+/** Digitos prontos para links wa.me, sempre com o código do Brasil. */
+export function whatsappDigits(value: string | null | undefined) {
+  const local = telefoneLocal(value);
+  return local ? `55${local}` : "";
+}
