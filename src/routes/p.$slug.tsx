@@ -92,7 +92,6 @@ function PublicBookingApp() {
             </div>
           )}
           <h1 className="min-w-0 truncate font-display text-2xl font-semibold">{company.name}</h1>
-
         </div>
       </header>
 
@@ -1212,9 +1211,7 @@ function luminance(hex: string) {
 
 function textOnBackground(text: string, background: string) {
   if (!/^#[0-9a-f]{6}$/i.test(text ?? "")) return contrast(background);
-  return Math.abs(luminance(text) - luminance(background)) >= 0.42
-    ? text
-    : contrast(background);
+  return Math.abs(luminance(text) - luminance(background)) >= 0.42 ? text : contrast(background);
 }
 
 function mixWith(hex: string, target: string, ratio: number) {
@@ -1230,7 +1227,6 @@ function mixWith(hex: string, target: string, ratio: number) {
       .padStart(2, "0");
   return `#${channel(0)}${channel(2)}${channel(4)}`;
 }
-
 
 const paymentLabels: Record<string, string> = {
   local: "Pagamento no local",

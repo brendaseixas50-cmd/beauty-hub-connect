@@ -189,9 +189,7 @@ function ServiceDialog({ service, onClose }: { service: Service | null; onClose:
                     min={0}
                     max={12}
                     placeholder="0"
-                    defaultValue={
-                      service ? Math.floor(service.duration_minutes / 60) || "" : ""
-                    }
+                    defaultValue={service ? Math.floor(service.duration_minutes / 60) || "" : ""}
                   />
                   <span className="text-sm text-muted-foreground">h</span>
                 </div>
@@ -216,12 +214,9 @@ function ServiceDialog({ service, onClose }: { service: Service | null; onClose:
               inputMode="decimal"
               placeholder="0,00"
               defaultValue={
-                service?.price_cents
-                  ? (service.price_cents / 100).toFixed(2).replace(".", ",")
-                  : ""
+                service?.price_cents ? (service.price_cents / 100).toFixed(2).replace(".", ",") : ""
               }
             />
-
           </div>
           <div className="grid gap-2">
             <Label htmlFor="description">Descrição</Label>

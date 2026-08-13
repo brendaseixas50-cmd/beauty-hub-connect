@@ -207,10 +207,7 @@ function BookingSettings({
           cancellationPolicy: String(form.get("cancellationPolicy")),
           depositEnabled: form.get("depositEnabled") === "on",
           depositType: String(form.get("depositType")) as
-            | "none"
-            | "percent_30"
-            | "percent_50"
-            | "fixed",
+            "none" | "percent_30" | "percent_50" | "fixed",
           depositValueCents: Math.max(
             0,
             Math.round(Number(String(form.get("depositValue")).replace(",", ".")) * 100) || 0,
