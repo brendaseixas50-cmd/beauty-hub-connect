@@ -31,6 +31,7 @@ import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/agenda")({
+  staleTime: 60_000,
   loader: () => getAgenda(),
   head: () => ({ meta: [{ title: "Agenda — Beauty Hub Connect" }] }),
   component: AgendaPage,

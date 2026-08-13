@@ -23,6 +23,7 @@ import {
 } from "@/modules/beta-access/server";
 
 export const Route = createFileRoute("/painel/admin-acessos")({
+  staleTime: 60_000,
   beforeLoad: ({ context }) => {
     const administrator =
       context.session.user.isPlatformAdministrator ||

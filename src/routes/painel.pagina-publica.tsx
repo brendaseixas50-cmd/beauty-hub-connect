@@ -24,6 +24,7 @@ import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/pagina-publica")({
+  staleTime: 60_000,
   loader: async () => {
     const [company, content] = await Promise.all([getCompany(), getPublicPageContent()]);
     return { company, ...content };

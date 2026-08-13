@@ -28,6 +28,7 @@ import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/financeiro")({
+  staleTime: 60_000,
   loader: () => listFinancialEntries(),
   head: () => ({ meta: [{ title: "Financeiro — Beauty Hub Connect" }] }),
   component: FinancePage,

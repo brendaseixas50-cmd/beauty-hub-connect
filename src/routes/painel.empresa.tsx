@@ -16,6 +16,7 @@ import { getCompany, updateCompany, uploadPublicMedia } from "@/modules/mvp/serv
 import { useMvpAction } from "@/modules/mvp/use-action";
 
 export const Route = createFileRoute("/painel/empresa")({
+  staleTime: 60_000,
   loader: () => getCompany(),
   head: () => ({
     meta: [

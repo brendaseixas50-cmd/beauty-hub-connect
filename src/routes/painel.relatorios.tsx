@@ -10,6 +10,7 @@ import { brl } from "@/modules/mvp/domain";
 import { getReports } from "@/modules/mvp/server";
 
 export const Route = createFileRoute("/painel/relatorios")({
+  staleTime: 60_000,
   loader: () => getReports(),
   head: () => ({ meta: [{ title: "Relatórios — Beauty Hub Connect" }] }),
   component: ReportsPage,

@@ -43,6 +43,7 @@ import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/profissionais")({
+  staleTime: 60_000,
   loader: async () => {
     const [professionals, services, capacity, blocks] = await Promise.all([
       listProfessionals(),
