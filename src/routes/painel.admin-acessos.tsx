@@ -58,28 +58,29 @@ type AccessRow = Awaited<ReturnType<typeof listPlatformAccess>>[number];
 type TenantPlanRow = Awaited<ReturnType<typeof listTenantPlans>>[number];
 
 function BetaAccessAdmin() {
-  const { rows: initialRows, tenants: initialTenants } = Route.useLoaderData();
+  const { rows: initialRows, tenants: initialTenants, loadError } = Route.useLoaderData();
   const listFn = useServerFn(listPlatformAccess);
   const saveFn = useServerFn(savePlatformAccess);
   const removeFn = useServerFn(removePlatformAccess);
   const tenantsFn = useServerFn(listTenantPlans);
   const planFn = useServerFn(setTenantPlan);
-  const [rows, setRows] = useState(initialRows);
-  const [tenants, setTenants] = useState(initialTenants);
-  const [message, setMessage] = useState<string>();
+  const [rows, setRows] = useState<AccessRow[]>(initialRows ?? []);
+  const [tenants, setTenants] = useState<TenantPlanRow[]>(initialTenants ?? []);
+  const [message, setMessage] = useState<string | undefined>(loadError ?? undefined);
   const [pending, setPending] = useState(false);
 
   async function refresh(email = "") {
-    setRows(await listFn({ data: { email } }));
+    setRows((await listFn({ data: { email } })) ?? []);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
     setPending(true);
     setMessage(undefined);
-    const form = new FormData(event.currentTarget);
     try {
-      const expires = String(form.get("expiresAt"));
+      const expires = String(form.get("expiresAt") ?? "");
       await saveFn({
         data: {
           email: String(form.get("email")),
@@ -88,10 +89,10 @@ function BetaAccessAdmin() {
             "administrator" | "courtesy" | "beta_tester",
           status: String(form.get("status")) as "active" | "suspended" | "revoked" | "expired",
           expiresAt: expires ? new Date(`${expires}T23:59:59-03:00`).toISOString() : null,
-          notes: String(form.get("notes")),
+          notes: String(form.get("notes") ?? ""),
         },
       });
-      event.currentTarget.reset();
+      formElement.reset();
       await refresh();
       setMessage("Acesso atualizado com sucesso.");
     } catch (cause) {
@@ -100,6 +101,7 @@ function BetaAccessAdmin() {
       setPending(false);
     }
   }
+
 
   return (
     <div className="max-w-5xl">
