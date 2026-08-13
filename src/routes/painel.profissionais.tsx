@@ -224,6 +224,9 @@ function ProfessionalDialog({
   const [days, setDays] = useState<DaySchedule[]>(() =>
     weekdayLabels.map((_, weekday) => initialHours[String(weekday)] ?? defaultDay(weekday)),
   );
+  const [blockStart, setBlockStart] = useState("");
+  const [blockEnd, setBlockEnd] = useState("");
+  const [blockReason, setBlockReason] = useState("");
   function updateDay(weekday: number, patch: Partial<DaySchedule>) {
     setDays((current) =>
       current.map((day, index) => (index === weekday ? { ...day, ...patch } : day)),
@@ -428,6 +431,172 @@ function ProfessionalDialog({
               Sem seleção, o profissional ficará disponível para todos os serviços.
             </p>
           </div>
+          <div className="grid gap-3 rounded-2xl border p-3">
+            <div>
+              <Label>Agenda individual</Label>
+              <p className="text-xs text-muted-foreground">
+                Dias, horários e intervalos deste profissional. A página pública mostra apenas os
+                horários realmente livres para ele.
+              </p>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={followCompanyHours}
+                onChange={(event) => setFollowCompanyHours(event.currentTarget.checked)}
+              />
+              Seguir os horários da empresa
+            </label>
+            {!followCompanyHours ? (
+              <div className="grid gap-2">
+                {days.map((day, weekday) => (
+                  <div key={weekday} className="grid gap-2 rounded-xl bg-muted/50 p-3 sm:grid-cols-2">
+                    <label className="flex items-center gap-2 text-sm font-medium">
+                      <input
+                        type="checkbox"
+                        checked={!day.dayOff}
+                        onChange={(event) =>
+                          updateDay(weekday, { dayOff: !event.currentTarget.checked })
+                        }
+                      />
+                      {weekdayLabels[weekday]}
+                    </label>
+                    {day.dayOff ? (
+                      <span className="text-sm text-muted-foreground">Folga</span>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          type="time"
+                          aria-label={`Início ${weekdayLabels[weekday]}`}
+                          value={day.startsAt}
+                          onChange={(event) =>
+                            updateDay(weekday, { startsAt: event.currentTarget.value })
+                          }
+                        />
+                        <Input
+                          type="time"
+                          aria-label={`Fim ${weekdayLabels[weekday]}`}
+                          value={day.endsAt}
+                          onChange={(event) =>
+                            updateDay(weekday, { endsAt: event.currentTarget.value })
+                          }
+                        />
+                        <Input
+                          type="time"
+                          aria-label={`Início do intervalo ${weekdayLabels[weekday]}`}
+                          value={day.breakStartsAt ?? ""}
+                          onChange={(event) =>
+                            updateDay(weekday, { breakStartsAt: event.currentTarget.value || null })
+                          }
+                        />
+                        <Input
+                          type="time"
+                          aria-label={`Fim do intervalo ${weekdayLabels[weekday]}`}
+                          value={day.breakEndsAt ?? ""}
+                          onChange={(event) =>
+                            updateDay(weekday, { breakEndsAt: event.currentTarget.value || null })
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {professional ? (
+            <div className="grid gap-3 rounded-2xl border p-3">
+              <div>
+                <Label>Folgas e bloqueios</Label>
+                <p className="text-xs text-muted-foreground">
+                  Períodos em que este profissional não recebe agendamentos.
+                </p>
+              </div>
+              {blocks.length ? (
+                <ul className="grid gap-2">
+                  {blocks.map((block) => (
+                    <li
+                      key={block.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted/50 p-3 text-sm"
+                    >
+                      <span>
+                        {formatBlock(block.starts_at)} → {formatBlock(block.ends_at)}
+                        {block.reason ? ` · ${block.reason}` : ""}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          void action.run(
+                            () => removeBlock({ data: { id: block.id } }),
+                            "Bloqueio removido.",
+                          )
+                        }
+                      >
+                        Remover
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhum bloqueio cadastrado.</p>
+              )}
+              <div className="grid gap-2 sm:grid-cols-3">
+                <Input
+                  type="datetime-local"
+                  aria-label="Início do bloqueio"
+                  value={blockStart}
+                  onChange={(event) => setBlockStart(event.currentTarget.value)}
+                />
+                <Input
+                  type="datetime-local"
+                  aria-label="Fim do bloqueio"
+                  value={blockEnd}
+                  onChange={(event) => setBlockEnd(event.currentTarget.value)}
+                />
+                <Input
+                  aria-label="Motivo do bloqueio"
+                  placeholder="Motivo (opcional)"
+                  value={blockReason}
+                  onChange={(event) => setBlockReason(event.currentTarget.value)}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-fit"
+                disabled={!blockStart || !blockEnd || action.pending}
+                onClick={() =>
+                  void action
+                    .run(
+                      () =>
+                        saveBlock({
+                          data: {
+                            professionalId: professional.id,
+                            startsAt: new Date(blockStart).toISOString(),
+                            endsAt: new Date(blockEnd).toISOString(),
+                            reason: blockReason,
+                          },
+                        }),
+                      "Bloqueio adicionado.",
+                    )
+                    .then((ok) => {
+                      if (ok) {
+                        setBlockStart("");
+                        setBlockEnd("");
+                        setBlockReason("");
+                      }
+                    })
+                }
+              >
+                Adicionar bloqueio
+              </Button>
+            </div>
+          ) : null}
+
           <div className="grid gap-2">
             <Label htmlFor="notes">Observações</Label>
             <Textarea id="notes" name="notes" defaultValue={professional?.notes ?? ""} />
@@ -462,6 +631,20 @@ function Field({
     </div>
   );
 }
+function defaultDay(weekday: number): DaySchedule {
+  const base = emptyDaySchedule();
+  return { ...base, dayOff: weekday === 0 };
+}
+
+function formatBlock(value: string) {
+  return new Date(value).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function initials(name: string) {
   return name
     .split(/\s+/)
