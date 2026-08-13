@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { ExternalLink, Link2, ShieldCheck, Unlink } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,16 +54,32 @@ const days = [
   ["sunday", "Domingo"],
 ] as const;
 
+function ehFechado(valor: string | undefined) {
+  const texto = (valor ?? "").trim().toLowerCase();
+  return !texto || texto === "closed" || texto === "fechado";
+}
+
+function intervalo(valor: string | undefined): [string, string] {
+  const [abre, fecha] = (valor ?? "").split("-");
+  return [(abre ?? "").trim() || "09:00", (fecha ?? "").trim() || "18:00"];
+}
+
 function SettingsPage() {
   const { company, mercadoPago } = Route.useLoaderData();
   const save = useServerFn(updateCompany);
   const action = useMvpAction();
   const hours = (company.business_hours ?? {}) as Record<string, string>;
+  const [horarios, setHorarios] = useState<Record<string, string>>(() =>
+    Object.fromEntries(days.map(([key]) => [key, hours[key] ?? "closed"])),
+  );
+
+  function atualizarDia(key: string, valor: string) {
+    setHorarios((atual) => ({ ...atual, [key]: valor }));
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const businessHours = Object.fromEntries(days.map(([key]) => [key, String(form.get(key))]));
+    const businessHours = horarios;
     await action.run(async () => {
       const result = await save({
         data: {
@@ -105,15 +121,59 @@ function SettingsPage() {
           <div>
             <h2 className="text-xl">Horários de funcionamento</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Use o formato 09:00-18:00 ou escreva “closed” nos dias fechados.
+              Informe o horário de abertura e fechamento ou marque o dia como fechado.
             </p>
           </div>
-          {days.map(([key, label]) => (
-            <div key={key} className="grid items-center gap-2 sm:grid-cols-[12rem_minmax(0,1fr)]">
-              <Label htmlFor={key}>{label}</Label>
-              <Input id={key} name={key} defaultValue={hours[key] ?? "closed"} required />
-            </div>
-          ))}
+          {days.map(([key, label]) => {
+            const fechado = ehFechado(horarios[key]);
+            const [abre, fecha] = intervalo(horarios[key]);
+            return (
+              <div
+                key={key}
+                className="grid gap-2 border-b pb-4 last:border-0 last:pb-0 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-center"
+              >
+                <Label htmlFor={`${key}-abre`}>{label}</Label>
+                <div className="flex flex-wrap items-center gap-3">
+                  {fechado ? (
+                    <span className="text-sm font-medium text-muted-foreground">Fechado</span>
+                  ) : (
+                    <>
+                      <Input
+                        id={`${key}-abre`}
+                        type="time"
+                        className="w-32"
+                        value={abre}
+                        onChange={(event) =>
+                          atualizarDia(key, `${event.currentTarget.value}-${fecha}`)
+                        }
+                      />
+                      <span className="text-sm text-muted-foreground">às</span>
+                      <Input
+                        id={`${key}-fecha`}
+                        type="time"
+                        className="w-32"
+                        value={fecha}
+                        onChange={(event) =>
+                          atualizarDia(key, `${abre}-${event.currentTarget.value}`)
+                        }
+                      />
+                    </>
+                  )}
+                  <label className="ml-auto flex min-h-11 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-primary"
+                      checked={fechado}
+                      onChange={(event) =>
+                        atualizarDia(key, event.currentTarget.checked ? "closed" : "09:00-18:00")
+                      }
+                    />
+                    Fechado
+                  </label>
+                </div>
+              </div>
+            );
+          })}
           <Button
             type="submit"
             size="lg"

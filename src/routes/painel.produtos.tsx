@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Pencil, Plus } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { ImageUp, Pencil, Plus } from "lucide-react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 
 import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { brl, centsFromInput, type Product } from "@/modules/mvp/domain";
-import { deleteProduct, listProducts, saveProduct } from "@/modules/mvp/server";
+import {
+  deleteProduct,
+  listProducts,
+  saveProduct,
+  uploadPublicMedia,
+} from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
@@ -161,7 +166,41 @@ function ProductsPage() {
 
 function ProductDialog({ product, onClose }: { product: Product | null; onClose: () => void }) {
   const save = useServerFn(saveProduct);
+  const upload = useServerFn(uploadPublicMedia);
   const action = useMvpAction();
+  const [imageUrl, setImageUrl] = useState(product?.image_url ?? "");
+  const [mediaKey] = useState(() => product?.id ?? crypto.randomUUID());
+  const [uploading, setUploading] = useState(false);
+
+  async function onImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
+    if (
+      !(["image/jpeg", "image/png", "image/webp"] as string[]).includes(file.type) ||
+      file.size > 3 * 1024 * 1024
+    ) {
+      await action.run(
+        () => Promise.reject(new Error("Use JPG, PNG ou WebP com no máximo 3 MB.")),
+        "",
+      );
+      return;
+    }
+    setUploading(true);
+    try {
+      const result = await upload({
+        data: {
+          kind: "gallery",
+          key: mediaKey,
+          mimeType: file.type as "image/jpeg" | "image/png" | "image/webp",
+          base64: await fileToBase64(file),
+        },
+      });
+      setImageUrl(result.url);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -180,7 +219,7 @@ function ProductDialog({ product, onClose }: { product: Product | null; onClose:
             minimumStock: Number(form.get("minimumStock")),
             unit: String(form.get("unit")),
             active: form.get("active") === "on",
-            imageUrl: String(form.get("imageUrl")),
+            imageUrl,
             publicVisible: form.get("publicVisible") === "on",
           },
         }),
@@ -249,12 +288,43 @@ function ProductDialog({ product, onClose }: { product: Product | null; onClose:
               defaultValue={product?.description ?? ""}
             />
           </div>
-          <Field
-            label="URL da imagem pública"
-            name="imageUrl"
-            type="url"
-            defaultValue={product?.image_url ?? ""}
-          />
+          <div className="grid gap-2">
+            <Label htmlFor="product-image">Foto do produto</Label>
+            <div className="flex items-center gap-4">
+              <span className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-xl border bg-muted text-xs text-muted-foreground">
+                {imageUrl ? (
+                  <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  "Sem foto"
+                )}
+              </span>
+              <div className="grid gap-2">
+                <label
+                  htmlFor="product-image"
+                  className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border bg-background px-4 text-sm font-medium hover:bg-accent"
+                >
+                  <ImageUp className="h-4 w-4" /> {uploading ? "Enviando…" : "Enviar foto"}
+                </label>
+                {imageUrl ? (
+                  <button
+                    type="button"
+                    className="text-left text-xs text-muted-foreground underline"
+                    onClick={() => setImageUrl("")}
+                  >
+                    Remover foto
+                  </button>
+                ) : null}
+              </div>
+            </div>
+            <input
+              id="product-image"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              disabled={uploading}
+              onChange={(event) => void onImage(event)}
+            />
+          </div>
           <label className="flex items-center gap-2 text-sm">
             <input name="active" type="checkbox" defaultChecked={product?.active ?? true} /> Produto
             ativo
@@ -292,4 +362,13 @@ function Field({
       <Input id={name} name={name} {...props} />
     </div>
   );
+}
+
+function fileToBase64(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+    reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+    reader.readAsDataURL(file);
+  });
 }
