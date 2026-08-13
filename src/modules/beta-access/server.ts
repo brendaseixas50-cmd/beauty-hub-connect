@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { resolveSession } from "@/modules/auth/server";
+import { resolveSession } from "@/modules/auth/session.server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 
 const searchSchema = z.object({ email: z.string().trim().max(254).default("") });

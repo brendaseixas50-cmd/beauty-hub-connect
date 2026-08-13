@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 import { createSupabaseAdminClient } from "@/modules/supabase/admin-client";
-import { roles, selectCompanyForProduct, type Session } from "./domain";
+import { selectCompanyForProduct, type Session } from "./domain";
 import {
   authErrorMessage,
   callbackUrl,
@@ -69,8 +69,6 @@ const confirmSchema = z
   .refine((data) => Boolean(data.code || (data.tokenHash && data.type)), {
     message: "Link de confirmação inválido.",
   });
-
-export { resolveSession, resolveOperationalContext };
 
 export const getSession = createServerFn({ method: "GET" }).handler(() => resolveSession());
 

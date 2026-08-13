@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { resolveSession } from "@/modules/auth/server";
+import { resolveSession } from "@/modules/auth/session.server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 
 export interface SpecialtyOption {

@@ -11,7 +11,7 @@ import { getRequestUrl } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 import { getMercadoPagoEnv, getMercadoPagoWebhookSecret } from "@/lib/server-env";
-import { resolveSession } from "@/modules/auth/server";
+import { resolveSession } from "@/modules/auth/session.server";
 import { createSupabaseAdminClient } from "@/modules/supabase/admin-client";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 

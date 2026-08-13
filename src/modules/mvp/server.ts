@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { resolveOperationalContext } from "@/modules/auth/server";
+import { resolveOperationalContext } from "@/modules/auth/session.server";
 import { resolveAddressWithGoogleMaps } from "@/modules/maps/google-maps.server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 import type {
