@@ -375,8 +375,8 @@ function PhoneField({
   return (
     <div className="grid gap-2">
       <Label htmlFor={id}>{label}</Label>
-      <div className="flex items-center gap-2 rounded-xl border bg-background pl-3 focus-within:ring-2 focus-within:ring-ring">
-        <span className="text-sm font-medium text-muted-foreground">+55</span>
+      <div className="bg-card flex items-center gap-2 rounded-xl border pl-3 focus-within:ring-2 focus-within:ring-ring">
+        <span className="text-muted-foreground text-sm font-medium">+55</span>
         <Input
           id={id}
           inputMode="tel"
