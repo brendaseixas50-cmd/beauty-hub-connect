@@ -79,8 +79,8 @@ async function planCapacity(
     .maybeSingle();
   const plan = data?.plan;
   if (!plan) return { name: "Solo", limit: 1 };
-  // Contracted limits: Solo = 1 profissional, Equipe = 5 profissionais.
-  const contracted: Record<string, number> = { solo: 1, team: 5 };
+  // Contracted limits: Solo = 1 profissional, Equipe = 8 profissionais.
+  const contracted: Record<string, number> = { solo: 1, team: 8 };
   const limit = contracted[plan.code] ?? plan.professional_limit;
   return { name: plan.name, limit: Math.max(limit, 1) };
 }
