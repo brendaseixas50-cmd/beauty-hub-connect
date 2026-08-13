@@ -1473,7 +1473,9 @@ export const saveAppointment = createServerFn({ method: "POST" })
         professionalId: data.professionalId,
         startsAt: startsAt.toISOString(),
         endsAt: endsAt.toISOString(),
+        ignoreAppointmentId: data.id,
       });
+
       if (blocked) throw new Error(blocked);
     }
     const values = {
