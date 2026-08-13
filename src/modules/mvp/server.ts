@@ -4,6 +4,7 @@ import { z } from "zod";
 import { resolveOperationalContext } from "@/modules/auth/session.server";
 import { resolveAddressWithGoogleMaps } from "@/modules/maps/google-maps.server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
+import type { Json } from "@/modules/supabase/database.types";
 import type {
   Appointment,
   Client,
@@ -60,6 +61,23 @@ function requireManager(role: string) {
   if (role !== "owner" && role !== "admin") {
     throw new Error("Você não possui permissão para realizar esta alteração.");
   }
+}
+
+type SupabaseServerClient = ReturnType<typeof createSupabaseServerClient>;
+
+async function planCapacity(
+  supabase: SupabaseServerClient,
+  tenantId: string,
+): Promise<{ name: string; limit: number }> {
+  const { data } = await supabase
+    .from("tenant_subscriptions")
+    .select("status, plan:subscription_plans(name, professional_limit)")
+    .eq("tenant_id", tenantId)
+    .in("status", ["beta", "trial", "active"])
+    .maybeSingle();
+  const plan = data?.plan;
+  if (!plan) return { name: "Solo", limit: 1 };
+  return { name: plan.name, limit: Math.max(plan.professional_limit, 1) };
 }
 
 type CompanyUpdateResult = { company: Company; locationWarning: string | null };
@@ -712,7 +730,7 @@ export const saveProfessionalSchedule = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabase, tenantId, role } = await tenantContext();
     requireManager(role);
-    const workingHours: Record<string, unknown> = {};
+    const workingHours: Record<string, Json> = {};
     if (!data.followCompanyHours) {
       for (const day of data.days) {
         if (!day.dayOff && day.endsAt <= day.startsAt)
