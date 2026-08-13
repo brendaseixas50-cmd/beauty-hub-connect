@@ -14,7 +14,11 @@ type TenantAgenda = {
   unavailability: Map<string, { starts_at: string; ends_at: string }[]>;
 };
 
-async function loadTenantAgenda(slug: string, from: string, to: string): Promise<TenantAgenda | null> {
+async function loadTenantAgenda(
+  slug: string,
+  from: string,
+  to: string,
+): Promise<TenantAgenda | null> {
   const supabase = createSupabaseAdminClient();
   const { data: tenant } = await supabase
     .from("tenants")
@@ -45,7 +49,10 @@ async function loadTenantAgenda(slug: string, from: string, to: string): Promise
 }
 
 /** Keeps only the slots each professional can actually take, individually. */
-export async function filterSlotsByProfessionalAgenda(slug: string, slots: Slot[]): Promise<Slot[]> {
+export async function filterSlotsByProfessionalAgenda(
+  slug: string,
+  slots: Slot[],
+): Promise<Slot[]> {
   if (slots.length === 0) return slots;
   const from = slots[0]!.startsAt;
   const to = slots[slots.length - 1]!.endsAt;

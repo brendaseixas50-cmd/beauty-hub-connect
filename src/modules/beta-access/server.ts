@@ -70,7 +70,9 @@ export const listTenantPlans = createServerFn({ method: "GET" })
     const admin = createSupabaseAdminClient();
     const query = admin
       .from("tenants")
-      .select("id, name, slug, product_type, subscription:tenant_subscriptions(status, plan:subscription_plans(code, name))")
+      .select(
+        "id, name, slug, product_type, subscription:tenant_subscriptions(status, plan:subscription_plans(code, name))",
+      )
       .order("name")
       .limit(40);
     const { data: rows, error } = data.email
@@ -78,7 +80,14 @@ export const listTenantPlans = createServerFn({ method: "GET" })
       : await query;
     if (error) throw new Error("Não foi possível listar as empresas.");
     return (rows ?? []).map((row) => {
-      const active = (row.subscription ?? []).find((item) =>
+      const subscriptions = (
+        Array.isArray(row.subscription)
+          ? row.subscription
+          : row.subscription
+            ? [row.subscription]
+            : []
+      ) as { status: string; plan: { code: string; name: string } | null }[];
+      const active = subscriptions.find((item) =>
         ["beta", "trial", "active"].includes(item.status),
       );
       const code = active?.plan?.code === "team" ? "team" : "solo";
@@ -119,7 +128,12 @@ export const setTenantPlan = createServerFn({ method: "POST" })
           .eq("id", current.id)
       : await admin
           .from("tenant_subscriptions")
-          .insert({ tenant_id: data.tenantId, plan_id: plan.id, status: "beta", provider: "manual" });
+          .insert({
+            tenant_id: data.tenantId,
+            plan_id: plan.id,
+            status: "beta",
+            provider: "manual",
+          });
     if (error) throw new Error("Não foi possível alterar o plano desta empresa.");
     return { ok: true };
   });

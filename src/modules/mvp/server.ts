@@ -142,7 +142,6 @@ export async function professionalAvailabilityIssue({
   });
 }
 
-
 type CompanyUpdateResult = { company: Company; locationWarning: string | null };
 
 type CompanyLocation = {
@@ -713,11 +712,7 @@ export const saveProfessional = createServerFn({ method: "POST" })
     if (data.active) {
       const [plan, activeProfessionals] = await Promise.all([
         planCapacity(supabase, tenantId),
-        supabase
-          .from("professionals")
-          .select("id")
-          .eq("tenant_id", tenantId)
-          .eq("active", true),
+        supabase.from("professionals").select("id").eq("tenant_id", tenantId).eq("active", true),
       ]);
       const others = (activeProfessionals.data ?? []).filter(
         (professional) => professional.id !== data.id,
@@ -836,17 +831,19 @@ export const saveProfessionalSchedule = createServerFn({ method: "POST" })
     return { success: true } as const;
   });
 
-export const listProfessionalUnavailability = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabase, tenantId } = await tenantContext();
-  const { data, error } = await supabase
-    .from("professional_unavailability")
-    .select("id, professional_id, starts_at, ends_at, reason")
-    .eq("tenant_id", tenantId)
-    .gte("ends_at", new Date(Date.now() - 86_400_000).toISOString())
-    .order("starts_at");
-  if (error) databaseError(error, "Não foi possível carregar os bloqueios.");
-  return data ?? [];
-});
+export const listProfessionalUnavailability = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const { supabase, tenantId } = await tenantContext();
+    const { data, error } = await supabase
+      .from("professional_unavailability")
+      .select("id, professional_id, starts_at, ends_at, reason")
+      .eq("tenant_id", tenantId)
+      .gte("ends_at", new Date(Date.now() - 86_400_000).toISOString())
+      .order("starts_at");
+    if (error) databaseError(error, "Não foi possível carregar os bloqueios.");
+    return data ?? [];
+  },
+);
 
 export const saveProfessionalUnavailability = createServerFn({ method: "POST" })
   .validator(
@@ -907,7 +904,6 @@ export const getProfessionalCapacity = createServerFn({ method: "GET" }).handler
     canAddMore: used < plan.limit,
   };
 });
-
 
 const clientSchema = z.object({
   id: z.string().uuid().optional(),

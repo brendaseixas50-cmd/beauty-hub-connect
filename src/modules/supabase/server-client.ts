@@ -34,7 +34,6 @@ export function createSupabaseServerClient() {
 }
 
 function buildSupabaseServerClient() {
-
   const requestCookies = new Map(Object.entries(getCookies()));
 
   return createServerClient<Database>(

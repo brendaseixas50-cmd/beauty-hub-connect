@@ -222,11 +222,7 @@
 
 /* Campos sempre legíveis no tema escuro (texto escuro sobre o campo claro). */
 .tema-barbearia
-  :is(
-    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
-    textarea,
-    select
-  ) {
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select) {
   color: var(--color-card-foreground);
   caret-color: var(--color-card-foreground);
 }
@@ -506,8 +502,6 @@
 .tema-barbearia main [data-slot="card"] .text-primary {
   color: #806413;
 }
-
-
 
 .luvi-theme-beauty,
 .luvi-theme-default {
