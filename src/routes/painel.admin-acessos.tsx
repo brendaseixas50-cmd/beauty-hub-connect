@@ -18,8 +18,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   listPlatformAccess,
+  listTenantPlans,
   removePlatformAccess,
   savePlatformAccess,
+  setTenantPlan,
 } from "@/modules/beta-access/server";
 
 export const Route = createFileRoute("/painel/admin-acessos")({
@@ -30,19 +32,26 @@ export const Route = createFileRoute("/painel/admin-acessos")({
       context.session.user.betaAccessType === "administrator";
     if (!administrator) throw redirect({ to: "/painel" });
   },
-  loader: () => listPlatformAccess({ data: { email: "" } }),
+  loader: async () => ({
+    rows: await listPlatformAccess({ data: { email: "" } }),
+    tenants: await listTenantPlans({ data: { email: "" } }),
+  }),
   head: () => ({ meta: [{ title: "Acessos do Beta — Lu IA Studio" }] }),
   component: BetaAccessAdmin,
 });
 
 type AccessRow = Awaited<ReturnType<typeof listPlatformAccess>>[number];
+type TenantPlanRow = Awaited<ReturnType<typeof listTenantPlans>>[number];
 
 function BetaAccessAdmin() {
-  const initialRows = Route.useLoaderData();
+  const { rows: initialRows, tenants: initialTenants } = Route.useLoaderData();
   const listFn = useServerFn(listPlatformAccess);
   const saveFn = useServerFn(savePlatformAccess);
   const removeFn = useServerFn(removePlatformAccess);
+  const tenantsFn = useServerFn(listTenantPlans);
+  const planFn = useServerFn(setTenantPlan);
   const [rows, setRows] = useState(initialRows);
+  const [tenants, setTenants] = useState(initialTenants);
   const [message, setMessage] = useState<string>();
   const [pending, setPending] = useState(false);
 
@@ -132,6 +141,72 @@ function BetaAccessAdmin() {
             {message}
           </p>
         ) : null}
+      </Card>
+
+      <Card className="mt-6 grid gap-4 p-5 sm:p-6">
+        <div>
+          <h2 className="text-xl">Plano de cada empresa</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Solo libera 1 profissional e Equipe libera até 8 profissionais.
+          </p>
+        </div>
+        <form
+          className="flex gap-2"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            const form = new FormData(event.currentTarget);
+            setTenants(await tenantsFn({ data: { email: String(form.get("empresa")) } }));
+          }}
+        >
+          <Input name="empresa" type="search" placeholder="Localizar por nome ou link" />
+          <Button type="submit" size="icon" aria-label="Buscar empresa">
+            <Search />
+          </Button>
+        </form>
+        <div className="grid gap-3">
+          {tenants.map((tenant: TenantPlanRow) => (
+            <div
+              key={tenant.id}
+              className="grid gap-3 rounded-2xl border p-4 sm:grid-cols-[1fr_auto] sm:items-center"
+            >
+              <div>
+                <strong className="block break-all">{tenant.name}</strong>
+                <p className="text-sm text-muted-foreground">
+                  {tenant.productType === "barber" ? "LuBarber Pro" : "LuBeauty Pro"} ·{" "}
+                  {tenant.planName}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                {(["solo", "team"] as const).map((code) => (
+                  <Button
+                    key={code}
+                    type="button"
+                    size="sm"
+                    variant={tenant.planCode === code ? "default" : "outline"}
+                    disabled={pending}
+                    onClick={async () => {
+                      setPending(true);
+                      setMessage(undefined);
+                      try {
+                        await planFn({ data: { tenantId: tenant.id, planCode: code } });
+                        setTenants(await tenantsFn({ data: { email: "" } }));
+                        setMessage("Plano atualizado com sucesso.");
+                      } catch (cause) {
+                        setMessage(
+                          cause instanceof Error ? cause.message : "Não foi possível alterar.",
+                        );
+                      } finally {
+                        setPending(false);
+                      }
+                    }}
+                  >
+                    {code === "solo" ? "Solo" : "Equipe"}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </Card>
 
       <Card className="mt-6 gap-4 p-5 sm:p-6">

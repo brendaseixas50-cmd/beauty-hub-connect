@@ -67,22 +67,26 @@ function requireManager(role: string) {
 
 type SupabaseServerClient = ReturnType<typeof createSupabaseServerClient>;
 
+/** Planos comerciais: Solo = 1 profissional, Equipe = 8 profissionais. */
+const planLimits: Record<string, { name: string; limit: number }> = {
+  solo: { name: "Solo", limit: 1 },
+  team: { name: "Equipe", limit: 8 },
+};
+
 async function planCapacity(
   supabase: SupabaseServerClient,
   tenantId: string,
 ): Promise<{ name: string; limit: number }> {
   const { data } = await supabase
     .from("tenant_subscriptions")
-    .select("status, plan:subscription_plans(code, name, professional_limit)")
+    .select("status, plan:subscription_plans(code, name)")
     .eq("tenant_id", tenantId)
     .in("status", ["beta", "trial", "active"])
+    .limit(1)
     .maybeSingle();
-  const plan = data?.plan;
-  if (!plan) return { name: "Solo", limit: 1 };
-  // Contracted limits: Solo = 1 profissional, Equipe = 8 profissionais.
-  const contracted: Record<string, number> = { solo: 1, team: 8 };
-  const limit = contracted[plan.code] ?? plan.professional_limit;
-  return { name: plan.name, limit: Math.max(limit, 1) };
+  const code = data?.plan?.code ?? "solo";
+  // Qualquer plano legado/desconhecido cai no Solo para nunca exibir limites inválidos.
+  return planLimits[code] ?? planLimits["solo"]!;
 }
 
 export async function professionalAvailabilityIssue({
@@ -91,14 +95,25 @@ export async function professionalAvailabilityIssue({
   professionalId,
   startsAt,
   endsAt,
+  ignoreAppointmentId,
 }: {
   supabase: SupabaseServerClient;
   tenantId: string;
   professionalId: string;
   startsAt: string;
   endsAt: string;
+  ignoreAppointmentId?: string | undefined;
 }): Promise<string | null> {
-  const [professional, tenant, unavailability] = await Promise.all([
+  const conflictQuery = supabase
+    .from("appointments")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .eq("professional_id", professionalId)
+    .in("status", ["scheduled", "confirmed"])
+    .lt("starts_at", endsAt)
+    .gt("ends_at", startsAt)
+    .limit(1);
+  const [professional, tenant, unavailability, conflicts] = await Promise.all([
     supabase
       .from("professionals")
       .select("working_hours")
@@ -113,8 +128,11 @@ export async function professionalAvailabilityIssue({
       .eq("professional_id", professionalId)
       .lt("starts_at", endsAt)
       .gt("ends_at", startsAt),
+    ignoreAppointmentId ? conflictQuery.neq("id", ignoreAppointmentId) : conflictQuery,
   ]);
   if (!professional.data) return "Profissional indisponível.";
+  if ((conflicts.data ?? []).length > 0)
+    return "Este profissional já possui um atendimento nesse horário.";
   return professionalSlotBlockReason({
     workingHours: parseWorkingHours(professional.data.working_hours),
     timeZone: tenant.data?.timezone ?? "America/Sao_Paulo",
@@ -694,11 +712,7 @@ export const saveProfessional = createServerFn({ method: "POST" })
     if (data.active) {
       const [plan, activeProfessionals] = await Promise.all([
         planCapacity(supabase, tenantId),
-        supabase
-          .from("professionals")
-          .select("id")
-          .eq("tenant_id", tenantId)
-          .eq("active", true),
+        supabase.from("professionals").select("id").eq("tenant_id", tenantId).eq("active", true),
       ]);
       const others = (activeProfessionals.data ?? []).filter(
         (professional) => professional.id !== data.id,
@@ -817,17 +831,19 @@ export const saveProfessionalSchedule = createServerFn({ method: "POST" })
     return { success: true } as const;
   });
 
-export const listProfessionalUnavailability = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabase, tenantId } = await tenantContext();
-  const { data, error } = await supabase
-    .from("professional_unavailability")
-    .select("id, professional_id, starts_at, ends_at, reason")
-    .eq("tenant_id", tenantId)
-    .gte("ends_at", new Date(Date.now() - 86_400_000).toISOString())
-    .order("starts_at");
-  if (error) databaseError(error, "Não foi possível carregar os bloqueios.");
-  return data ?? [];
-});
+export const listProfessionalUnavailability = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const { supabase, tenantId } = await tenantContext();
+    const { data, error } = await supabase
+      .from("professional_unavailability")
+      .select("id, professional_id, starts_at, ends_at, reason")
+      .eq("tenant_id", tenantId)
+      .gte("ends_at", new Date(Date.now() - 86_400_000).toISOString())
+      .order("starts_at");
+    if (error) databaseError(error, "Não foi possível carregar os bloqueios.");
+    return data ?? [];
+  },
+);
 
 export const saveProfessionalUnavailability = createServerFn({ method: "POST" })
   .validator(
@@ -888,7 +904,6 @@ export const getProfessionalCapacity = createServerFn({ method: "GET" }).handler
     canAddMore: used < plan.limit,
   };
 });
-
 
 const clientSchema = z.object({
   id: z.string().uuid().optional(),
@@ -1454,7 +1469,9 @@ export const saveAppointment = createServerFn({ method: "POST" })
         professionalId: data.professionalId,
         startsAt: startsAt.toISOString(),
         endsAt: endsAt.toISOString(),
+        ignoreAppointmentId: data.id,
       });
+
       if (blocked) throw new Error(blocked);
     }
     const values = {

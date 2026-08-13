@@ -1,3 +1,4 @@
+import { whatsappDigits } from "@/lib/telefone";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -794,7 +795,7 @@ function StoreCatalog({ page }: { page: PageData }) {
           "Forma de pagamento: Pagamento no local.",
         ].join("\n");
         window.open(
-          `https://wa.me/${digits(page.company.whatsapp)}?text=${encodeURIComponent(message)}`,
+          `https://wa.me/${whatsappDigits(page.company.whatsapp)}?text=${encodeURIComponent(message)}`,
           "_blank",
           "noopener,noreferrer",
         );
@@ -1049,7 +1050,7 @@ function CompanyInformation({ page }: { page: PageData }) {
       {company.whatsapp ? (
         <a
           className="flex gap-2"
-          href={`https://wa.me/${digits(company.whatsapp)}`}
+          href={`https://wa.me/${whatsappDigits(company.whatsapp)}`}
           target="_blank"
           rel="noreferrer"
         >
@@ -1255,5 +1256,5 @@ function bookingWhatsappUrl(
 
     "Gostaria de combinar a confirmação do meu agendamento.",
   ].filter(Boolean);
-  return `https://wa.me/${digits(phone)}?text=${encodeURIComponent(lines.join("\n"))}`;
+  return `https://wa.me/${whatsappDigits(phone)}?text=${encodeURIComponent(lines.join("\n"))}`;
 }

@@ -1,5 +1,5 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { getCookies, setCookie } from "@tanstack/react-start/server";
+import { getCookies, getRequest, setCookie } from "@tanstack/react-start/server";
 
 import { publicEnv } from "@/lib/env";
 import type { Database } from "./database.types";
@@ -12,7 +12,28 @@ function normalizeSameSite(
   return sameSite;
 }
 
+/**
+ * Um cliente por requisição: assim a sessão trocada no callback do Google já fica
+ * visível para as validações seguintes da mesma requisição (sem exigir 2º clique).
+ */
+const perRequest = new WeakMap<Request, ReturnType<typeof buildSupabaseServerClient>>();
+
 export function createSupabaseServerClient() {
+  let request: Request | undefined;
+  try {
+    request = getRequest();
+  } catch {
+    request = undefined;
+  }
+  if (!request) return buildSupabaseServerClient();
+  const existing = perRequest.get(request);
+  if (existing) return existing;
+  const client = buildSupabaseServerClient();
+  perRequest.set(request, client);
+  return client;
+}
+
+function buildSupabaseServerClient() {
   const requestCookies = new Map(Object.entries(getCookies()));
 
   return createServerClient<Database>(

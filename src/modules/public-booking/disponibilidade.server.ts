@@ -14,7 +14,11 @@ type TenantAgenda = {
   unavailability: Map<string, { starts_at: string; ends_at: string }[]>;
 };
 
-async function loadTenantAgenda(slug: string, from: string, to: string): Promise<TenantAgenda | null> {
+async function loadTenantAgenda(
+  slug: string,
+  from: string,
+  to: string,
+): Promise<TenantAgenda | null> {
   const supabase = createSupabaseAdminClient();
   const { data: tenant } = await supabase
     .from("tenants")
@@ -45,7 +49,10 @@ async function loadTenantAgenda(slug: string, from: string, to: string): Promise
 }
 
 /** Keeps only the slots each professional can actually take, individually. */
-export async function filterSlotsByProfessionalAgenda(slug: string, slots: Slot[]): Promise<Slot[]> {
+export async function filterSlotsByProfessionalAgenda(
+  slug: string,
+  slots: Slot[],
+): Promise<Slot[]> {
   if (slots.length === 0) return slots;
   const from = slots[0]!.startsAt;
   const to = slots[slots.length - 1]!.endsAt;
@@ -98,7 +105,7 @@ export async function publicBookingBlockReason({
   );
   if (!totalMinutes) return null;
   const endsAt = new Date(new Date(startsAt).getTime() + totalMinutes * 60_000).toISOString();
-  const [professional, blocks] = await Promise.all([
+  const [professional, blocks, conflicts] = await Promise.all([
     supabase
       .from("professionals")
       .select("working_hours")
@@ -112,8 +119,20 @@ export async function publicBookingBlockReason({
       .eq("professional_id", professionalId)
       .lt("starts_at", endsAt)
       .gt("ends_at", startsAt),
+    supabase
+      .from("appointments")
+      .select("id")
+      .eq("tenant_id", tenant.id)
+      .eq("professional_id", professionalId)
+      .in("status", ["scheduled", "confirmed"])
+      .lt("starts_at", endsAt)
+      .gt("ends_at", startsAt)
+      .limit(1),
   ]);
   if (!professional.data) return "Profissional indisponível.";
+  if ((conflicts.data ?? []).length > 0)
+    return "Este horário acabou de ser reservado. Escolha outro horário disponível.";
+
   return professionalSlotBlockReason({
     workingHours: parseWorkingHours(professional.data.working_hours),
     timeZone: tenant.timezone,
