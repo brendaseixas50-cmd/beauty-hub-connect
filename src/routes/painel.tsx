@@ -217,7 +217,7 @@ function CompanySwitcher({ session }: { session: Session }) {
       >
         {session.user.companies.map((company) => (
           <option key={company.tenantId} value={company.tenantId}>
-            {company.tenantName} · {company.productType === "barber" ? "LuBarber" : "LuBeauty"}
+            {company.tenantName}
           </option>
         ))}
       </select>

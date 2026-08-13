@@ -226,9 +226,6 @@ function MarketingPage() {
             />{" "}
             Aceitou contato
           </label>
-          <span className="text-muted-foreground">
-            Produto: {data.company.product_type === "barber" ? "LuBarber" : "LuBeauty"}
-          </span>
         </div>
       </Card>
 
