@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { ExternalLink, Link2, ShieldCheck, Unlink } from "lucide-react";
 import { toast } from "sonner";
 
@@ -53,6 +53,16 @@ const days = [
   ["saturday", "Sábado"],
   ["sunday", "Domingo"],
 ] as const;
+
+function ehFechado(valor: string | undefined) {
+  const texto = (valor ?? "").trim().toLowerCase();
+  return !texto || texto === "closed" || texto === "fechado";
+}
+
+function intervalo(valor: string | undefined): [string, string] {
+  const [abre, fecha] = (valor ?? "").split("-");
+  return [(abre ?? "").trim() || "09:00", (fecha ?? "").trim() || "18:00"];
+}
 
 function SettingsPage() {
   const { company, mercadoPago } = Route.useLoaderData();
