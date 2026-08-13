@@ -32,13 +32,27 @@ export const Route = createFileRoute("/painel/admin-acessos")({
       context.session.user.betaAccessType === "administrator";
     if (!administrator) throw redirect({ to: "/painel" });
   },
-  loader: async () => ({
-    rows: await listPlatformAccess({ data: { email: "" } }),
-    tenants: await listTenantPlans({ data: { email: "" } }),
-  }),
+  loader: async () => {
+    // Cada card carrega de forma independente: uma consulta com problema não derruba o painel.
+    const [access, plans] = await Promise.allSettled([
+      listPlatformAccess({ data: { email: "" } }),
+      listTenantPlans({ data: { email: "" } }),
+    ]);
+    return {
+      rows: access.status === "fulfilled" ? access.value : [],
+      tenants: plans.status === "fulfilled" ? plans.value : [],
+      loadError:
+        access.status === "rejected"
+          ? "Não foi possível carregar os acessos agora."
+          : plans.status === "rejected"
+            ? "Não foi possível carregar as empresas agora."
+            : null,
+    };
+  },
   head: () => ({ meta: [{ title: "Acessos do Beta — Lu IA Studio" }] }),
   component: BetaAccessAdmin,
 });
+
 
 type AccessRow = Awaited<ReturnType<typeof listPlatformAccess>>[number];
 type TenantPlanRow = Awaited<ReturnType<typeof listTenantPlans>>[number];
