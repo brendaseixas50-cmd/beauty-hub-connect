@@ -5,6 +5,7 @@ import { resolveOperationalContext } from "@/modules/auth/session.server";
 import { resolveAddressWithGoogleMaps } from "@/modules/maps/google-maps.server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 import type { Json } from "@/modules/supabase/database.types";
+import { parseWorkingHours, professionalSlotBlockReason } from "./agenda-disponibilidade";
 import type {
   Appointment,
   Client,
@@ -49,6 +50,7 @@ async function tenantContext() {
 }
 
 function databaseError(error: { code?: string; message: string } | null, fallback: string): never {
+  if (error?.code === "P0001" && error.message) throw new Error(error.message);
   if (error?.code === "23P01")
     throw new Error("Este profissional já possui um atendimento nesse horário.");
   if (error?.code === "23503")
@@ -78,6 +80,45 @@ async function planCapacity(
   const plan = data?.plan;
   if (!plan) return { name: "Solo", limit: 1 };
   return { name: plan.name, limit: Math.max(plan.professional_limit, 1) };
+}
+
+export async function professionalAvailabilityIssue({
+  supabase,
+  tenantId,
+  professionalId,
+  startsAt,
+  endsAt,
+}: {
+  supabase: SupabaseServerClient;
+  tenantId: string;
+  professionalId: string;
+  startsAt: string;
+  endsAt: string;
+}): Promise<string | null> {
+  const [professional, tenant, unavailability] = await Promise.all([
+    supabase
+      .from("professionals")
+      .select("working_hours")
+      .eq("id", professionalId)
+      .eq("tenant_id", tenantId)
+      .maybeSingle(),
+    supabase.from("tenants").select("timezone").eq("id", tenantId).maybeSingle(),
+    supabase
+      .from("professional_unavailability")
+      .select("starts_at, ends_at")
+      .eq("tenant_id", tenantId)
+      .eq("professional_id", professionalId)
+      .lt("starts_at", endsAt)
+      .gt("ends_at", startsAt),
+  ]);
+  if (!professional.data) return "Profissional indisponível.";
+  return professionalSlotBlockReason({
+    workingHours: parseWorkingHours(professional.data.working_hours),
+    timeZone: tenant.data?.timezone ?? "America/Sao_Paulo",
+    startsAt,
+    endsAt,
+    unavailability: unavailability.data ?? [],
+  });
 }
 
 type CompanyUpdateResult = { company: Company; locationWarning: string | null };
@@ -647,6 +688,24 @@ export const saveProfessional = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<Professional> => {
     const { supabase, tenantId, role } = await tenantContext();
     requireManager(role);
+    if (data.active) {
+      const [plan, activeProfessionals] = await Promise.all([
+        planCapacity(supabase, tenantId),
+        supabase
+          .from("professionals")
+          .select("id")
+          .eq("tenant_id", tenantId)
+          .eq("active", true),
+      ]);
+      const others = (activeProfessionals.data ?? []).filter(
+        (professional) => professional.id !== data.id,
+      ).length;
+      if (others >= plan.limit) {
+        throw new Error(
+          `Seu plano ${plan.name} permite ${plan.limit} profissional${plan.limit > 1 ? "is" : ""} ativo${plan.limit > 1 ? "s" : ""}. Faça upgrade do plano para cadastrar mais.`,
+        );
+      }
+    }
     const values = {
       tenant_id: tenantId,
       name: data.name,
@@ -1385,6 +1444,16 @@ export const saveAppointment = createServerFn({ method: "POST" })
     if (serviceError || !service) databaseError(serviceError, "Serviço inválido.");
     const startsAt = new Date(data.startsAt);
     const endsAt = new Date(startsAt.getTime() + service.duration_minutes * 60_000);
+    if (data.status === "scheduled" || data.status === "confirmed") {
+      const blocked = await professionalAvailabilityIssue({
+        supabase,
+        tenantId,
+        professionalId: data.professionalId,
+        startsAt: startsAt.toISOString(),
+        endsAt: endsAt.toISOString(),
+      });
+      if (blocked) throw new Error(blocked);
+    }
     const values = {
       tenant_id: tenantId,
       client_id: data.clientId,
