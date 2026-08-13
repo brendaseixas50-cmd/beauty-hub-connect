@@ -30,8 +30,9 @@ export const listPlatformAccess = createServerFn({ method: "GET" })
       search_email: data.email,
     });
     if (error) throw new Error("Não foi possível consultar os acessos.");
-    return rows;
+    return (Array.isArray(rows) ? rows : []) as NonNullable<typeof rows>;
   });
+
 
 export const savePlatformAccess = createServerFn({ method: "POST" })
   .validator(accessSchema)
@@ -68,39 +69,45 @@ export const listTenantPlans = createServerFn({ method: "GET" })
     await requirePlatformAdministrator();
     const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
     const admin = createSupabaseAdminClient();
-    const query = admin
-      .from("tenants")
-      .select(
-        "id, name, slug, product_type, subscription:tenant_subscriptions(status, plan:subscription_plans(code, name))",
-      )
-      .order("name")
-      .limit(40);
+    const base = admin.from("tenants").select("id, name, slug, product_type").order("name").limit(40);
     const { data: rows, error } = data.email
-      ? await query.or(`name.ilike.%${data.email}%,slug.ilike.%${data.email}%`)
-      : await query;
+      ? await base.or(`name.ilike.%${data.email}%,slug.ilike.%${data.email}%`)
+      : await base;
     if (error) throw new Error("Não foi possível listar as empresas.");
-    return (rows ?? []).map((row) => {
-      const subscriptions = (
-        Array.isArray(row.subscription)
-          ? row.subscription
-          : row.subscription
-            ? [row.subscription]
-            : []
-      ) as { status: string; plan: { code: string; name: string } | null }[];
-      const active = subscriptions.find((item) =>
-        ["beta", "trial", "active"].includes(item.status),
-      );
-      const code = active?.plan?.code === "team" ? "team" : "solo";
+    const tenants = rows ?? [];
+    if (!tenants.length) return [];
+
+    // Consulta separada: assim uma assinatura/plano legado ou ausente não derruba a listagem.
+    const planByTenant = new Map<string, string>();
+    const { data: subscriptions } = await admin
+      .from("tenant_subscriptions")
+      .select("tenant_id, status, plan:subscription_plans(code)")
+      .in(
+        "tenant_id",
+        tenants.map((tenant) => tenant.id),
+      )
+      .in("status", ["beta", "trial", "active"]);
+    for (const item of subscriptions ?? []) {
+      const plan = (Array.isArray(item.plan) ? item.plan[0] : item.plan) as
+        | { code: string | null }
+        | null
+        | undefined;
+      if (item.tenant_id && plan?.code) planByTenant.set(item.tenant_id, plan.code);
+    }
+
+    return tenants.map((tenant) => {
+      const code = planByTenant.get(tenant.id) === "team" ? "team" : "solo";
       return {
-        id: row.id,
-        name: row.name,
-        slug: row.slug,
-        productType: row.product_type,
+        id: tenant.id,
+        name: tenant.name ?? tenant.slug ?? "Empresa sem nome",
+        slug: tenant.slug ?? "",
+        productType: tenant.product_type,
         planCode: code as "solo" | "team",
         planName: code === "team" ? "Equipe (até 8)" : "Solo (1 profissional)",
       };
     });
   });
+
 
 export const setTenantPlan = createServerFn({ method: "POST" })
   .validator(tenantPlanSchema)

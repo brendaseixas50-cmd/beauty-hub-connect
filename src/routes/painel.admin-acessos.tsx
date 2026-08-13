@@ -32,40 +32,65 @@ export const Route = createFileRoute("/painel/admin-acessos")({
       context.session.user.betaAccessType === "administrator";
     if (!administrator) throw redirect({ to: "/painel" });
   },
-  loader: async () => ({
-    rows: await listPlatformAccess({ data: { email: "" } }),
-    tenants: await listTenantPlans({ data: { email: "" } }),
-  }),
+  loader: async () => {
+    // Cada card carrega de forma independente: uma consulta com problema não derruba o painel.
+    const [access, plans] = await Promise.allSettled([
+      listPlatformAccess({ data: { email: "" } }),
+      listTenantPlans({ data: { email: "" } }),
+    ]);
+    return {
+      rows: access.status === "fulfilled" ? access.value : [],
+      tenants: plans.status === "fulfilled" ? plans.value : [],
+      loadError:
+        access.status === "rejected"
+          ? "Não foi possível carregar os acessos agora."
+          : plans.status === "rejected"
+            ? "Não foi possível carregar as empresas agora."
+            : null,
+    };
+  },
   head: () => ({ meta: [{ title: "Acessos do Beta — Lu IA Studio" }] }),
   component: BetaAccessAdmin,
+  errorComponent: () => (
+    <div className="max-w-5xl">
+      <PageHeader
+        eyebrow="Lu IA Studio"
+        title="Acessos do Beta"
+        description="Não foi possível carregar os dados administrativos agora. Atualize a página em alguns instantes."
+      />
+    </div>
+  ),
 });
+
+
 
 type AccessRow = Awaited<ReturnType<typeof listPlatformAccess>>[number];
 type TenantPlanRow = Awaited<ReturnType<typeof listTenantPlans>>[number];
 
 function BetaAccessAdmin() {
-  const { rows: initialRows, tenants: initialTenants } = Route.useLoaderData();
+  const { rows: initialRows, tenants: initialTenants, loadError } = Route.useLoaderData();
   const listFn = useServerFn(listPlatformAccess);
   const saveFn = useServerFn(savePlatformAccess);
   const removeFn = useServerFn(removePlatformAccess);
   const tenantsFn = useServerFn(listTenantPlans);
   const planFn = useServerFn(setTenantPlan);
-  const [rows, setRows] = useState(initialRows);
-  const [tenants, setTenants] = useState(initialTenants);
-  const [message, setMessage] = useState<string>();
+  const [rows, setRows] = useState<AccessRow[]>(initialRows ?? []);
+  const [tenants, setTenants] = useState<TenantPlanRow[]>(initialTenants ?? []);
+  const [message, setMessage] = useState<string | undefined>(loadError ?? undefined);
   const [pending, setPending] = useState(false);
 
   async function refresh(email = "") {
-    setRows(await listFn({ data: { email } }));
+    setRows((await listFn({ data: { email } })) ?? []);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
     setPending(true);
     setMessage(undefined);
-    const form = new FormData(event.currentTarget);
     try {
-      const expires = String(form.get("expiresAt"));
+      const expires = String(form.get("expiresAt") ?? "");
       await saveFn({
         data: {
           email: String(form.get("email")),
@@ -74,10 +99,10 @@ function BetaAccessAdmin() {
             "administrator" | "courtesy" | "beta_tester",
           status: String(form.get("status")) as "active" | "suspended" | "revoked" | "expired",
           expiresAt: expires ? new Date(`${expires}T23:59:59-03:00`).toISOString() : null,
-          notes: String(form.get("notes")),
+          notes: String(form.get("notes") ?? ""),
         },
       });
-      event.currentTarget.reset();
+      formElement.reset();
       await refresh();
       setMessage("Acesso atualizado com sucesso.");
     } catch (cause) {
@@ -86,6 +111,7 @@ function BetaAccessAdmin() {
       setPending(false);
     }
   }
+
 
   return (
     <div className="max-w-5xl">
@@ -155,7 +181,7 @@ function BetaAccessAdmin() {
           onSubmit={async (event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
-            setTenants(await tenantsFn({ data: { email: String(form.get("empresa")) } }));
+            setTenants((await tenantsFn({ data: { email: String(form.get("empresa") ?? "") } })) ?? []);
           }}
         >
           <Input name="empresa" type="search" placeholder="Localizar por nome ou link" />
@@ -189,7 +215,7 @@ function BetaAccessAdmin() {
                       setMessage(undefined);
                       try {
                         await planFn({ data: { tenantId: tenant.id, planCode: code } });
-                        setTenants(await tenantsFn({ data: { email: "" } }));
+                        setTenants((await tenantsFn({ data: { email: "" } })) ?? []);
                         setMessage("Plano atualizado com sucesso.");
                       } catch (cause) {
                         setMessage(
