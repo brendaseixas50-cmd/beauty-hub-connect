@@ -73,13 +73,16 @@ async function planCapacity(
 ): Promise<{ name: string; limit: number }> {
   const { data } = await supabase
     .from("tenant_subscriptions")
-    .select("status, plan:subscription_plans(name, professional_limit)")
+    .select("status, plan:subscription_plans(code, name, professional_limit)")
     .eq("tenant_id", tenantId)
     .in("status", ["beta", "trial", "active"])
     .maybeSingle();
   const plan = data?.plan;
   if (!plan) return { name: "Solo", limit: 1 };
-  return { name: plan.name, limit: Math.max(plan.professional_limit, 1) };
+  // Contracted limits: Solo = 1 profissional, Equipe = 5 profissionais.
+  const contracted: Record<string, number> = { solo: 1, team: 5 };
+  const limit = contracted[plan.code] ?? plan.professional_limit;
+  return { name: plan.name, limit: Math.max(limit, 1) };
 }
 
 export async function professionalAvailabilityIssue({
