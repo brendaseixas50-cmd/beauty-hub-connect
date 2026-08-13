@@ -411,12 +411,6 @@ function MarketingPage() {
         )}
       </Card>
 
-      <Card className="mt-6 bg-secondary/40 p-5 text-sm text-muted-foreground">
-        <ExternalLink className="mb-2 h-4 w-4" />
-        <strong className="text-foreground">Envio automático não está ativo.</strong> Disparos em
-        massa dependerão da WhatsApp Business Platform/API oficial, provedor autorizado, templates
-        aprovados, consentimento e custos/regras do serviço.
-      </Card>
     </div>
   );
 }

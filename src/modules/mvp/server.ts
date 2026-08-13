@@ -262,9 +262,10 @@ export const updateCompany = createServerFn({ method: "POST" })
       if (!professionals)
         throw new Error("Cadastre ao menos um profissional ativo antes de publicar a página.");
       if (
-        !Object.values(data.businessHours).some(
-          (hours) => hours && hours.toLowerCase() !== "closed",
-        )
+        !Object.values(data.businessHours).some((hours) => {
+          const texto = (hours ?? "").trim().toLowerCase();
+          return texto && texto !== "closed" && texto !== "fechado";
+        })
       ) {
         throw new Error("Configure ao menos um dia de funcionamento antes de publicar a página.");
       }
