@@ -161,7 +161,41 @@ function ProductsPage() {
 
 function ProductDialog({ product, onClose }: { product: Product | null; onClose: () => void }) {
   const save = useServerFn(saveProduct);
+  const upload = useServerFn(uploadPublicMedia);
   const action = useMvpAction();
+  const [imageUrl, setImageUrl] = useState(product?.image_url ?? "");
+  const [mediaKey] = useState(() => product?.id ?? crypto.randomUUID());
+  const [uploading, setUploading] = useState(false);
+
+  async function onImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
+    if (
+      !(["image/jpeg", "image/png", "image/webp"] as string[]).includes(file.type) ||
+      file.size > 3 * 1024 * 1024
+    ) {
+      await action.run(
+        () => Promise.reject(new Error("Use JPG, PNG ou WebP com no máximo 3 MB.")),
+        "",
+      );
+      return;
+    }
+    setUploading(true);
+    try {
+      const result = await upload({
+        data: {
+          kind: "gallery",
+          key: mediaKey,
+          mimeType: file.type as "image/jpeg" | "image/png" | "image/webp",
+          base64: await fileToBase64(file),
+        },
+      });
+      setImageUrl(result.url);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
