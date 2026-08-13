@@ -30,8 +30,9 @@ export const listPlatformAccess = createServerFn({ method: "GET" })
       search_email: data.email,
     });
     if (error) throw new Error("Não foi possível consultar os acessos.");
-    return rows;
+    return (Array.isArray(rows) ? rows : []) as NonNullable<typeof rows>;
   });
+
 
 export const savePlatformAccess = createServerFn({ method: "POST" })
   .validator(accessSchema)
