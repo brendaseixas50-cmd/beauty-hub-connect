@@ -20,6 +20,7 @@ import {
 import { useMvpAction } from "@/modules/mvp/use-action";
 
 export const Route = createFileRoute("/painel/marketing")({
+  staleTime: 60_000,
   loader: () => getMarketing(),
   head: () => ({ meta: [{ title: "Marketing — Lu IA Studio" }] }),
   component: MarketingPage,

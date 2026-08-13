@@ -24,6 +24,7 @@ import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/estoque")({
+  staleTime: 60_000,
   loader: () => getInventory(),
   head: () => ({ meta: [{ title: "Estoque — Beauty Hub Connect" }] }),
   component: InventoryPage,

@@ -38,6 +38,7 @@ import { AuthProvider } from "@/modules/auth/context";
 import type { Session } from "@/modules/auth/domain";
 import { LuviAssistant, LuviOnboardingProgress } from "@/modules/luvi-core/components";
 import { LuviContextProvider } from "@/modules/luvi-core/context";
+import { lembrarProduto, produtoLembrado } from "@/lib/produto-preferido";
 
 export const Route = createFileRoute("/painel")({
   staleTime: 5 * 60_000,
@@ -46,7 +47,7 @@ export const Route = createFileRoute("/painel")({
     if (!session) {
       throw redirect({
         to: "/login",
-        search: { redirect: location.href },
+        search: { redirect: location.href, produto: produtoLembrado() },
       });
     }
     if (!session.user.betaAccessActive) {
@@ -55,6 +56,7 @@ export const Route = createFileRoute("/painel")({
     if (session.user.productType === "beauty" && !session.user.onboardingCompleted) {
       throw redirect({ to: "/onboarding", search: { retorno: "/painel" } });
     }
+    lembrarProduto(session.user.productType);
     return { session };
   },
   component: PainelLayout,

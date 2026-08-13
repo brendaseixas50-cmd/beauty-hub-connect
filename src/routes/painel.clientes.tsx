@@ -24,6 +24,7 @@ import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/clientes")({
+  staleTime: 60_000,
   loader: () => listClients(),
   head: () => ({ meta: [{ title: "Clientes — Beauty Hub Connect" }] }),
   component: ClientsPage,

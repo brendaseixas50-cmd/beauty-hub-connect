@@ -186,16 +186,16 @@
   --card-foreground: #161616;
   --popover: #ffffff;
   --popover-foreground: #161616;
-  --primary: #161616;
-  --primary-foreground: #ffffff;
+  --primary: #c9a227;
+  --primary-foreground: #161616;
   --secondary: #2f2f2f;
   --secondary-foreground: #ffffff;
   --muted: #242424;
   --muted-foreground: #d8d8d8;
   --accent: #1b4d63;
   --accent-foreground: #ffffff;
-  --destructive: #c9a227;
-  --destructive-foreground: #161616;
+  --destructive: #b3261e;
+  --destructive-foreground: #ffffff;
   --success: #1b4d63;
   --success-foreground: #ffffff;
   --warning: #c9a227;
@@ -469,6 +469,29 @@
 .tema-barbearia main [data-slot="card"] textarea::placeholder {
   color: #595959;
 }
+/* Superfícies suaves dentro dos cards claros do LuBarber: evita bloco escuro com texto escuro. */
+.tema-barbearia main [data-slot="card"] .bg-muted,
+.tema-barbearia main [data-slot="card"] .bg-secondary,
+.tema-barbearia main [data-slot="card"] .hover\:bg-muted:hover {
+  background-color: #f2f2f2;
+  color: #161616;
+}
+.tema-barbearia main [data-slot="card"] .bg-muted .text-muted-foreground,
+.tema-barbearia main [data-slot="card"] .bg-secondary .text-muted-foreground {
+  color: #4a4a4a;
+}
+/* Campos e botões auxiliares com bg-background dentro de card claro ficariam preto no preto. */
+.tema-barbearia main [data-slot="card"] .bg-background,
+.tema-barbearia main [data-slot="card"] .bg-card {
+  background-color: #ffffff;
+  color: #161616;
+}
+/* Dourado puro perde contraste como texto sobre branco. */
+.tema-barbearia main [data-slot="card"] .text-primary {
+  color: #806413;
+}
+
+
 
 .luvi-theme-beauty,
 .luvi-theme-default {

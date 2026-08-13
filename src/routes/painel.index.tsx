@@ -20,6 +20,7 @@ import { LuviInlineSuggestion } from "@/modules/luvi-core/components";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/")({
+  staleTime: 60_000,
   loader: () => getDashboard(),
   head: () => ({ meta: [{ title: "Dashboard — Beauty Hub Connect" }] }),
   component: Dashboard,

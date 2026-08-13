@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { linkUpgradeEquipe } from "@/lib/upgrade";
 import type { ProfessionalWithServices } from "@/modules/mvp/domain";
 import {
   deleteProfessional,
@@ -42,6 +43,7 @@ import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/profissionais")({
+  staleTime: 60_000,
   loader: async () => {
     const [professionals, services, capacity, blocks] = await Promise.all([
       listProfessionals(),
@@ -107,9 +109,18 @@ function ProfessionalsPage() {
           </p>
         </div>
         {!capacity.canAddMore ? (
-          <Badge variant="destructive" className="w-fit">
-            Limite atingido
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="destructive" className="w-fit">
+              Limite atingido
+            </Badge>
+            {capacity.limit === 1 && linkUpgradeEquipe() ? (
+              <Button asChild size="sm" className="rounded-full">
+                <a href={linkUpgradeEquipe()} target="_blank" rel="noreferrer">
+                  Fazer upgrade para Equipe
+                </a>
+              </Button>
+            ) : null}
+          </div>
         ) : null}
       </Card>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
