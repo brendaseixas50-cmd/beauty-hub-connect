@@ -684,6 +684,132 @@ export const deleteProfessional = createServerFn({ method: "POST" })
     return { success: true } as const;
   });
 
+const scheduleDaySchema = z.object({
+  weekday: z.number().int().min(0).max(6),
+  dayOff: z.boolean(),
+  startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  endsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  breakStartsAt: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .or(z.literal(""))
+    .transform((value) => value || null),
+  breakEndsAt: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .or(z.literal(""))
+    .transform((value) => value || null),
+});
+
+export const saveProfessionalSchedule = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      professionalId: z.string().uuid(),
+      followCompanyHours: z.boolean(),
+      days: z.array(scheduleDaySchema).max(7),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const workingHours: Record<string, unknown> = {};
+    if (!data.followCompanyHours) {
+      for (const day of data.days) {
+        if (!day.dayOff && day.endsAt <= day.startsAt)
+          throw new Error("O horário final deve ser maior que o inicial.");
+        if (day.breakStartsAt && day.breakEndsAt && day.breakEndsAt <= day.breakStartsAt)
+          throw new Error("O intervalo informado é inválido.");
+        workingHours[String(day.weekday)] = {
+          dayOff: day.dayOff,
+          startsAt: day.startsAt,
+          endsAt: day.endsAt,
+          breakStartsAt: day.breakStartsAt,
+          breakEndsAt: day.breakEndsAt,
+        };
+      }
+    }
+    const { error } = await supabase
+      .from("professionals")
+      .update({ working_hours: workingHours })
+      .eq("id", data.professionalId)
+      .eq("tenant_id", tenantId);
+    if (error) databaseError(error, "Não foi possível salvar a agenda do profissional.");
+    return { success: true } as const;
+  });
+
+export const listProfessionalUnavailability = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabase, tenantId } = await tenantContext();
+  const { data, error } = await supabase
+    .from("professional_unavailability")
+    .select("id, professional_id, starts_at, ends_at, reason")
+    .eq("tenant_id", tenantId)
+    .gte("ends_at", new Date(Date.now() - 86_400_000).toISOString())
+    .order("starts_at");
+  if (error) databaseError(error, "Não foi possível carregar os bloqueios.");
+  return data ?? [];
+});
+
+export const saveProfessionalUnavailability = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      professionalId: z.string().uuid(),
+      startsAt: z.string().datetime({ offset: true }),
+      endsAt: z.string().datetime({ offset: true }),
+      reason: optionalShortText,
+    }),
+  )
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role, user } = await tenantContext();
+    requireManager(role);
+    if (new Date(data.endsAt) <= new Date(data.startsAt))
+      throw new Error("O fim do bloqueio deve ser depois do início.");
+    const { error } = await supabase.from("professional_unavailability").insert({
+      tenant_id: tenantId,
+      professional_id: data.professionalId,
+      starts_at: data.startsAt,
+      ends_at: data.endsAt,
+      reason: data.reason,
+      created_by: user.id,
+    });
+    if (error) databaseError(error, "Não foi possível salvar o bloqueio.");
+    return { success: true } as const;
+  });
+
+export const deleteProfessionalUnavailability = createServerFn({ method: "POST" })
+  .validator(idSchema)
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const { error } = await supabase
+      .from("professional_unavailability")
+      .delete()
+      .eq("id", data.id)
+      .eq("tenant_id", tenantId);
+    if (error) databaseError(error, "Não foi possível remover o bloqueio.");
+    return { success: true } as const;
+  });
+
+export const getProfessionalCapacity = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabase, tenantId } = await tenantContext();
+  const [plan, professionals] = await Promise.all([
+    planCapacity(supabase, tenantId),
+    supabase
+      .from("professionals")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("active", true),
+  ]);
+  const used = professionals.count ?? 0;
+  return {
+    planName: plan.name,
+    limit: plan.limit,
+    used,
+    remaining: Math.max(plan.limit - used, 0),
+    canAddMore: used < plan.limit,
+  };
+});
+
+
 const clientSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().trim().min(2).max(120),
