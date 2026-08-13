@@ -51,7 +51,17 @@ export const Route = createFileRoute("/painel/admin-acessos")({
   },
   head: () => ({ meta: [{ title: "Acessos do Beta — Lu IA Studio" }] }),
   component: BetaAccessAdmin,
+  errorComponent: () => (
+    <div className="max-w-5xl">
+      <PageHeader
+        eyebrow="Lu IA Studio"
+        title="Acessos do Beta"
+        description="Não foi possível carregar os dados administrativos agora. Atualize a página em alguns instantes."
+      />
+    </div>
+  ),
 });
+
 
 
 type AccessRow = Awaited<ReturnType<typeof listPlatformAccess>>[number];
