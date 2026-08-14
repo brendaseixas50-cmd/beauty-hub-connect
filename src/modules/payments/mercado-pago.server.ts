@@ -193,9 +193,20 @@ async function connectionAccessToken(tenantId: string) {
   const expiresSoon =
     connection.token_expires_at &&
     new Date(connection.token_expires_at).getTime() <= Date.now() + 5 * 60_000;
+  const safeDecrypt = (value: string, label: string) => {
+    try {
+      return decrypt(value, env.encryptionKey);
+    } catch (cause) {
+      console.error(`[mercado-pago] falha ao decifrar ${label}`, { tenantId, cause });
+      throw new Error(
+        "As credenciais salvas do Mercado Pago não puderam ser lidas com a chave de criptografia atual do servidor. Conecte a conta novamente.",
+      );
+    }
+  };
+
   if (!expiresSoon) {
     return {
-      token: decrypt(connection.access_token_ciphertext, env.encryptionKey),
+      token: safeDecrypt(connection.access_token_ciphertext, "access_token"),
       providerUserId: connection.provider_user_id,
     };
   }
@@ -209,12 +220,28 @@ async function connectionAccessToken(tenantId: string) {
       client_id: env.clientId,
       client_secret: env.clientSecret,
       grant_type: "refresh_token",
-      refresh_token: decrypt(connection.refresh_token_ciphertext, env.encryptionKey),
+      refresh_token: safeDecrypt(connection.refresh_token_ciphertext, "refresh_token"),
     }),
   });
-  const refreshed = (await response.json()) as MercadoPagoToken;
-  if (!response.ok || !refreshed.access_token)
+  const refreshed = (await response.json().catch(() => ({}))) as MercadoPagoToken & {
+    message?: string;
+    error?: string;
+  };
+  if (!response.ok || !refreshed.access_token) {
+    console.error("[mercado-pago] falha ao renovar token", {
+      tenantId,
+      status: response.status,
+      message: refreshed.message ?? refreshed.error ?? null,
+    });
+    await admin
+      .from("payment_provider_connections")
+      .update({
+        last_error: `Renovação do token falhou (${response.status}): ${refreshed.message ?? refreshed.error ?? "erro desconhecido"}`,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", connection.id);
     throw new Error("A conexão do Mercado Pago expirou. Conecte a conta novamente.");
+  }
   await admin
     .from("payment_provider_connections")
     .update({
