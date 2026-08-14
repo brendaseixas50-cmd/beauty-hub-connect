@@ -158,13 +158,16 @@ function Cadastro() {
                     setPending(true);
                     setError(undefined);
                     try {
+                      const callback = new URL("/auth/google", window.location.origin);
+                      callback.searchParams.set("produto", produto);
+                      callback.searchParams.set("redirect", "/painel");
                       const result = await lovable.auth.signInWithOAuth("google", {
-                        redirect_uri: window.location.origin,
+                        redirect_uri: callback.toString(),
                         extraParams: { prompt: "select_account" },
                       });
                       if (result.error) throw result.error;
                       if (result.redirected) return;
-                      window.location.assign(produto === "beauty" ? "/onboarding" : "/painel");
+                      window.location.assign(callback.toString());
                     } catch (cause) {
                       setError(
                         cause instanceof Error
