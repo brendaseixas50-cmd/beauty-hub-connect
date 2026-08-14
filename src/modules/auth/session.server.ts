@@ -162,35 +162,6 @@ export async function resolveSession(
   };
 }
 
-/**
- * Beta fechado: autenticar não é autorizar. Traduz as concessões da administradora
- * no estado real de autorização do produto (sem registro = pendente de aprovação).
- */
-type GrantList = z.infer<typeof platformAccessSchema>["grants"];
-
-export function resolveBetaAccess(
-  grants: GrantList,
-  productType: "beauty" | "barber",
-  now = Date.now(),
-): { status: BetaAccessStatus; accessType: CompanyAccess["betaAccessType"] } {
-  const productGrants = grants.filter((grant) => grant.productType === productType);
-  if (!productGrants.length) return { status: "pending", accessType: null };
-
-  const active = productGrants.find(
-    (grant) =>
-      grant.status === "active" &&
-      new Date(grant.startsAt).getTime() <= now &&
-      (!grant.expiresAt || new Date(grant.expiresAt).getTime() > now),
-  );
-  if (active) return { status: "approved", accessType: active.accessType };
-
-  const grant = productGrants[0]!;
-  if (grant.status === "active") {
-    const expired = Boolean(grant.expiresAt && new Date(grant.expiresAt).getTime() <= now);
-    return { status: expired ? "expired" : "pending", accessType: null };
-  }
-  return { status: grant.status, accessType: null };
-}
 
 /** Sessão autorizada no beta fechado — usada por toda leitura/escrita protegida. */
 export async function requireApprovedSession(
