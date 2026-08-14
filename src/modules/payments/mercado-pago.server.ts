@@ -159,7 +159,20 @@ function decrypt(value: string, secret: string) {
 
 async function connectionAccessToken(tenantId: string) {
   const env = environment();
-  if (!env) throw new Error("Configuração do Mercado Pago indisponível.");
+  if (!env) {
+    console.error(
+      "[mercado-pago] credenciais do servidor ausentes",
+      JSON.stringify({
+        tenantId,
+        hasClientId: Boolean(process.env["MERCADO_PAGO_CLIENT_ID"]),
+        hasClientSecret: Boolean(process.env["MERCADO_PAGO_CLIENT_SECRET"]),
+        hasEncryptionKey: Boolean(process.env["MERCADO_PAGO_TOKEN_ENCRYPTION_KEY"]),
+      }),
+    );
+    throw new Error(
+      "As credenciais da aplicação do Mercado Pago não estão configuradas neste ambiente do servidor.",
+    );
+  }
   const admin = createSupabaseAdminClient();
   const { data: connection, error } = await admin
     .from("payment_provider_connections")
