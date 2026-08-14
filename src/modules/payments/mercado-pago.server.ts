@@ -84,6 +84,34 @@ async function context() {
   return { supabase, session };
 }
 
+/** Confirma junto à API do Mercado Pago que o token salvo realmente funciona. */
+async function verifyAccessToken(token: string) {
+  try {
+    const response = await fetch("https://api.mercadopago.com/users/me", {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const body = (await response.json().catch(() => ({}))) as {
+      email?: string;
+      message?: string;
+      error?: string;
+    };
+    if (!response.ok)
+      return {
+        ok: false as const,
+        email: null,
+        message: `A API do Mercado Pago recusou a autorização salva (${response.status}): ${body.message ?? body.error ?? "token inválido"}`,
+      };
+    return { ok: true as const, email: body.email ?? null, message: null };
+  } catch (cause) {
+    console.error("[mercado-pago] falha ao validar token", cause);
+    return {
+      ok: false as const,
+      email: null,
+      message: "Não foi possível validar a autorização com o Mercado Pago agora.",
+    };
+  }
+}
+
 export const getMercadoPagoConnection = createServerFn({ method: "GET" }).handler(
   async (): Promise<ConnectionStatus> => {
     const { supabase, session } = await context();
@@ -103,18 +131,40 @@ export const getMercadoPagoConnection = createServerFn({ method: "GET" }).handle
       !data?.refresh_token_ciphertext;
     const stored =
       data?.status === "connected" && Boolean(data?.access_token_ciphertext) && !expired;
-    // O token só é utilizável se a chave de criptografia atual conseguir lê-lo.
+    // O token só é utilizável se a chave atual conseguir lê-lo E a API aceitá-lo.
     let readable = stored;
+    let liveEmail: string | null = null;
+    let liveError: string | null = null;
     if (stored && env) {
+      let plainToken: string | null = null;
       try {
-        decrypt(data!.access_token_ciphertext as string, env.encryptionKey);
+        plainToken = decrypt(data!.access_token_ciphertext as string, env.encryptionKey);
       } catch {
         readable = false;
+        liveError =
+          "A autorização salva foi criptografada com outra chave e não pode mais ser lida. Reconecte a conta.";
+      }
+      if (plainToken) {
+        const verified = await verifyAccessToken(plainToken);
+        if (verified.ok) {
+          liveEmail = verified.email;
+        } else {
+          readable = false;
+          liveError = verified.message;
+        }
+      }
+      if (!readable) {
+        const admin = createSupabaseAdminClient();
+        await admin
+          .from("payment_provider_connections")
+          .update({ last_error: liveError, updated_at: new Date().toISOString() })
+          .eq("tenant_id", session.user.tenantId)
+          .eq("provider", "mercado_pago");
       }
     }
     const connected = stored && configured && readable;
 
-    const lastError = data?.last_error ?? null;
+    const lastError = liveError ?? data?.last_error ?? null;
     const authorizationError =
       !connected && Boolean(lastError) && !(stored && !configured) && !(stored && !readable);
     const state: ConnectionState = !configured
@@ -132,8 +182,9 @@ export const getMercadoPagoConnection = createServerFn({ method: "GET" }).handle
     const messages: Record<ConnectionState, string | null> = {
       not_configured:
         "Os recebimentos online ainda não estão liberados neste ambiente. Fale com o suporte.",
-      connected: lastError,
+      connected: null,
       token_invalid:
+        liveError ??
         "A autorização salva não é mais válida. Reconecte a conta do Mercado Pago para voltar a receber pagamentos.",
       authorization_error:
         lastError ?? "O Mercado Pago recusou a autorização. Reconecte a conta para tentar de novo.",
@@ -145,11 +196,10 @@ export const getMercadoPagoConnection = createServerFn({ method: "GET" }).handle
       webhookConfigured: Boolean(getMercadoPagoWebhookSecret()),
       connected,
       state,
-      accountEmail: data?.account_email ?? null,
+      accountEmail: liveEmail ?? data?.account_email ?? null,
       connectedAt: data?.connected_at ?? null,
       error: messages[state],
     };
-
   },
 );
 
