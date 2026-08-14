@@ -387,16 +387,21 @@ function BookingSettings({
               <input
                 name="mercadoPago"
                 type="checkbox"
-                defaultChecked={
-                  mercadoPago.connected && mercadoPago.webhookConfigured && payments["mercadoPago"]
-                }
-                disabled={!mercadoPago.connected || !mercadoPago.webhookConfigured}
+                defaultChecked={mercadoPago.connected && payments["mercadoPago"]}
+                disabled={!mercadoPago.connected}
               />
               Mercado Pago
-              {mercadoPago.connected && mercadoPago.webhookConfigured ? "" : " (indisponível)"}
+              {mercadoPago.connected ? "" : " (conecte a conta abaixo)"}
             </label>
           </div>
+          {mercadoPago.connected && !mercadoPago.webhookConfigured ? (
+            <p className="mt-3 text-sm text-muted-foreground">
+              A confirmação automática de pagamentos ainda está sendo finalizada. Você já pode
+              receber pelo Mercado Pago e confirmar manualmente na agenda.
+            </p>
+          ) : null}
         </div>
+
         <label className="flex items-center gap-3 text-sm">
           <input
             name="publicStoreEnabled"
