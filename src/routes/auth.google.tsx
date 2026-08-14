@@ -27,7 +27,11 @@ export const Route = createFileRoute("/auth/google")({
 });
 
 /** Tokens do broker podem voltar no hash ou na query; aceitamos as duas formas. */
-function readTokens(): { accessToken?: string; refreshToken?: string; error?: string } {
+function readTokens(): {
+  accessToken: string | undefined;
+  refreshToken: string | undefined;
+  error: string | undefined;
+} {
   const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const query = new URLSearchParams(window.location.search);
   const pick = (key: string) => hash.get(key) ?? query.get(key) ?? undefined;
