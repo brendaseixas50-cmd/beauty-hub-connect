@@ -15,8 +15,6 @@ export type Database = {
           ends_at: string;
           id: string;
           notes: string | null;
-           plan_code: string;
-           active_professionals: number;
           price_cents: number;
           professional_id: string;
           public_code: string | null;
@@ -1519,11 +1517,13 @@ export type Database = {
           expires_at: string | null;
           id: string;
           notes: string | null;
+           plan_code: string;
           product_type: string;
           starts_at: string;
           status: string;
           updated_at: string;
           user_id: string | null;
+           active_professionals: number;
         }[];
       };
       admin_remove_platform_access: {
