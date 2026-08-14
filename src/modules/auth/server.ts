@@ -117,29 +117,6 @@ export const startGoogleSignIn = createServerFn({ method: "POST" })
     return { url: oauth.url };
   });
 
-export const ensureOAuthProductCompany = createServerFn({ method: "POST" })
-  .validator(productSchema)
-  .handler(async ({ data }) => {
-    const supabase = createSupabaseServerClient();
-    const session = await resolveSession(supabase);
-    if (!session) throw new Error("Não foi possível concluir o acesso com Google.");
-    const existing = session.user.companies.find(
-      (company) => company.productType === data.productType,
-    );
-    if (existing) {
-      if (existing.tenantId !== session.user.tenantId) {
-        await supabase.rpc("switch_active_tenant", { target_tenant_id: existing.tenantId });
-      }
-      return { ok: true };
-    }
-    const { error } = await supabase.rpc("create_company_for_current_user", {
-      company_name: data.productType === "barber" ? "Minha barbearia" : "Meu negócio de beleza",
-      selected_product: data.productType,
-    });
-    if (error) throw new Error("Não foi possível preparar o produto escolhido.");
-    return { ok: true };
-  });
-
 export const signup = createServerFn({ method: "POST" })
   .validator(signupSchema)
   .handler(async ({ data }) => {
