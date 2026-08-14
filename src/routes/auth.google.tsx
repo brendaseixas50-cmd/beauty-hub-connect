@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { getBrowserSupabase } from "@/modules/supabase/browser-client";
 import { establishOAuthSession } from "@/modules/auth/server";
 import { cacheSession } from "@/modules/auth/session-query";
 
@@ -26,10 +26,11 @@ export const Route = createFileRoute("/auth/google")({
   component: GoogleCallbackPage,
 });
 
-/** Tokens do broker podem voltar no hash ou na query; aceitamos as duas formas. */
-function readTokens(): {
+/** Tokens podem voltar no hash, na query (implicit) ou como código PKCE. */
+function readCallbackParams(): {
   accessToken: string | undefined;
   refreshToken: string | undefined;
+  code: string | undefined;
   error: string | undefined;
 } {
   const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
@@ -38,6 +39,7 @@ function readTokens(): {
   return {
     accessToken: pick("access_token"),
     refreshToken: pick("refresh_token"),
+    code: pick("code"),
     error: pick("error_description") ?? pick("error") ?? undefined,
   };
 }
@@ -55,7 +57,8 @@ function GoogleCallbackPage() {
     started.current = true;
 
     void (async () => {
-      const fromUrl = readTokens();
+      const supabase = getBrowserSupabase();
+      const fromUrl = readCallbackParams();
       if (fromUrl.error) {
         setError("O acesso com Google não foi concluído. Tente novamente.");
         return;
@@ -64,15 +67,22 @@ function GoogleCallbackPage() {
       let accessToken = fromUrl.accessToken;
       let refreshToken = fromUrl.refreshToken;
 
-      if (accessToken && refreshToken) {
-        // Mantém o cliente do navegador em sincronia com a sessão recém-criada.
+      if (fromUrl.code) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(fromUrl.code);
+        if (error || !data.session) {
+          setError("Não recebemos a autorização do Google. Tente entrar novamente.");
+          return;
+        }
+        accessToken = data.session.access_token;
+        refreshToken = data.session.refresh_token;
+      } else if (accessToken && refreshToken) {
         await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
       } else {
         const { data } = await supabase.auth.getSession();
         accessToken = data.session?.access_token;
         refreshToken = data.session?.refresh_token;
       }
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
 
       if (!accessToken || !refreshToken) {
         setError("Não recebemos a autorização do Google. Tente entrar novamente.");
