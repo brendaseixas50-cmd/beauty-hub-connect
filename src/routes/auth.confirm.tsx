@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { BrandCredit } from "@/components/brand-experience";
 
-import { confirmAuth, ensureOAuthProductCompany } from "@/modules/auth/server";
+import { confirmAuth } from "@/modules/auth/server";
 import { clearSessionCache } from "@/modules/auth/session-query";
 
 const otpTypes = new Set(["signup", "invite", "magiclink", "recovery", "email_change", "email"]);
@@ -56,11 +56,9 @@ export const Route = createFileRoute("/auth/confirm")({
           code: search.code,
           tokenHash: search.tokenHash,
           type: search.type,
+          productType: search.produto,
         },
       });
-      if (search.produto) {
-        await ensureOAuthProductCompany({ data: { productType: search.produto } });
-      }
       clearSessionCache(context.queryClient);
     } catch (cause) {
       throw redirect({

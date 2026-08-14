@@ -69,7 +69,11 @@ export const listTenantPlans = createServerFn({ method: "GET" })
     await requirePlatformAdministrator();
     const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
     const admin = createSupabaseAdminClient();
-    const base = admin.from("tenants").select("id, name, slug, product_type").order("name").limit(40);
+    const base = admin
+      .from("tenants")
+      .select("id, name, slug, product_type, owner_id")
+      .order("name")
+      .limit(40);
     const { data: rows, error } = data.email
       ? await base.or(`name.ilike.%${data.email}%,slug.ilike.%${data.email}%`)
       : await base;
@@ -95,6 +99,28 @@ export const listTenantPlans = createServerFn({ method: "GET" })
       if (item.tenant_id && plan?.code) planByTenant.set(item.tenant_id, plan.code);
     }
 
+    const ownerIds = new Set(tenants.map((tenant) => tenant.owner_id));
+    const ownerEmailById = new Map<string, string>();
+    const { data: authUsers } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    for (const user of authUsers?.users ?? []) {
+      if (ownerIds.has(user.id) && user.email) ownerEmailById.set(user.id, user.email);
+    }
+    const { data: professionalCounts } = await admin
+      .from("professionals")
+      .select("tenant_id")
+      .in(
+        "tenant_id",
+        tenants.map((tenant) => tenant.id),
+      )
+      .eq("active", true);
+    const activeByTenant = new Map<string, number>();
+    for (const professional of professionalCounts ?? []) {
+      activeByTenant.set(
+        professional.tenant_id,
+        (activeByTenant.get(professional.tenant_id) ?? 0) + 1,
+      );
+    }
+
     return tenants.map((tenant) => {
       const code = planByTenant.get(tenant.id) === "team" ? "team" : "solo";
       return {
@@ -102,6 +128,8 @@ export const listTenantPlans = createServerFn({ method: "GET" })
         name: tenant.name ?? tenant.slug ?? "Empresa sem nome",
         slug: tenant.slug ?? "",
         productType: tenant.product_type,
+        ownerEmail: ownerEmailById.get(tenant.owner_id) ?? "E-mail não disponível",
+        activeProfessionals: activeByTenant.get(tenant.id) ?? 0,
         planCode: code as "solo" | "team",
         planName: code === "team" ? "Equipe (até 8)" : "Solo (1 profissional)",
       };
@@ -142,5 +170,17 @@ export const setTenantPlan = createServerFn({ method: "POST" })
             provider: "manual",
           });
     if (error) throw new Error("Não foi possível alterar o plano desta empresa.");
-    return { ok: true };
+    const { count } = await admin
+      .from("professionals")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", data.tenantId)
+      .eq("active", true);
+    const limit = data.planCode === "team" ? 8 : 1;
+    return {
+      ok: true,
+      planCode: data.planCode,
+      limit,
+      activeProfessionals: count ?? 0,
+      overLimit: (count ?? 0) > limit,
+    };
   });
