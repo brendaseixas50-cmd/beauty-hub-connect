@@ -38,17 +38,21 @@ export const Route = createFileRoute("/painel/admin-acessos")({
       listPlatformAccess({ data: { email: "" } }),
       listTenantPlans({ data: { email: "" } }),
     ]);
+    const planResult = plans.status === "fulfilled" ? plans.value : null;
     return {
       rows: access.status === "fulfilled" ? access.value : [],
-      tenants: plans.status === "fulfilled" ? plans.value : [],
+      tenants: planResult?.tenants ?? [],
       loadError:
         access.status === "rejected"
           ? "Não foi possível carregar os acessos agora."
           : plans.status === "rejected"
-            ? "Não foi possível carregar as empresas agora."
-            : null,
+            ? `Não foi possível carregar as empresas agora. ${
+                plans.reason instanceof Error ? plans.reason.message : ""
+              }`.trim()
+            : (planResult?.warning ?? null),
     };
   },
+
   head: () => ({ meta: [{ title: "Acessos do Beta — Lu IA Studio" }] }),
   component: BetaAccessAdmin,
   errorComponent: () => (
@@ -65,7 +69,7 @@ export const Route = createFileRoute("/painel/admin-acessos")({
 
 
 type AccessRow = Awaited<ReturnType<typeof listPlatformAccess>>[number];
-type TenantPlanRow = Awaited<ReturnType<typeof listTenantPlans>>[number];
+type TenantPlanRow = Awaited<ReturnType<typeof listTenantPlans>>["tenants"][number];
 
 function BetaAccessAdmin() {
   const { rows: initialRows, tenants: initialTenants, loadError } = Route.useLoaderData();
@@ -181,8 +185,13 @@ function BetaAccessAdmin() {
           onSubmit={async (event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
-            setTenants((await tenantsFn({ data: { email: String(form.get("empresa") ?? "") } })) ?? []);
+            const result = await tenantsFn({
+              data: { email: String(form.get("empresa") ?? "") },
+            });
+            setTenants(result.tenants ?? []);
+            setMessage(result.warning ?? undefined);
           }}
+
         >
           <Input name="empresa" type="search" placeholder="Localizar por nome ou link" />
           <Button type="submit" size="icon" aria-label="Buscar empresa">
@@ -211,7 +220,7 @@ function BetaAccessAdmin() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
                 <p className="text-sm">
                   <span className="text-muted-foreground">Plano atual: </span>
-                  <strong>{tenant.planCode === "team" ? "Equipe" : "Solo"}</strong>
+                  <strong>{tenant.planName}</strong>
                 </p>
                 <div className="flex flex-wrap gap-2">
                 {(["solo", "team"] as const).map((code) => (
