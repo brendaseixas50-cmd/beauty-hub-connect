@@ -1,4 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["gru1"]
+  "regions": ["gru1"],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "hub-connect.vercel.app" }],
+      "destination": "https://luatendimento.lovable.app/:path*",
+      "permanent": true
+    }
+  ]
 }

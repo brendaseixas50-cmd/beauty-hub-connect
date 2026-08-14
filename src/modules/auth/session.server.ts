@@ -52,16 +52,26 @@ export const sessionBootstrapSchema = z.object({
 });
 
 export function callbackUrl(next: "/painel" | "/onboarding" | "/redefinir-senha"): string {
-  const url = new URL("/auth/confirm", getRequestUrl().origin);
+  const url = new URL("/auth/confirm", canonicalOrigin());
   url.searchParams.set("next", next);
   return url.toString();
 }
 
 export function oauthCallbackUrl(productType: "beauty" | "barber"): string {
-  const url = new URL("/auth/confirm", getRequestUrl().origin);
+  const url = new URL("/auth/confirm", canonicalOrigin());
   url.searchParams.set("next", "/painel");
   url.searchParams.set("produto", productType);
   return url.toString();
+}
+
+function canonicalOrigin(): string {
+  const configured = process.env["PUBLIC_SITE_URL"]?.trim();
+  if (!configured) return getRequestUrl().origin;
+  try {
+    return new URL(configured).origin;
+  } catch {
+    return getRequestUrl().origin;
+  }
 }
 
 export function authErrorMessage(error: AuthError, fallback: string): string {

@@ -1517,11 +1517,13 @@ export type Database = {
           expires_at: string | null;
           id: string;
           notes: string | null;
+           plan_code: string;
           product_type: string;
           starts_at: string;
           status: string;
           updated_at: string;
           user_id: string | null;
+           active_professionals: number;
         }[];
       };
       admin_remove_platform_access: {
@@ -1534,6 +1536,7 @@ export type Database = {
           target_email: string;
           target_expires_at?: string | null;
           target_notes?: string | null;
+           target_plan: string;
           target_product: string;
           target_status: string;
         };
