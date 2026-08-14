@@ -65,6 +65,7 @@ const confirmSchema = z
     code: z.string().min(1).optional(),
     tokenHash: z.string().min(1).optional(),
     type: z.enum(otpTypes).optional(),
+    productType: z.enum(["beauty", "barber"]).optional(),
   })
   .refine((data) => Boolean(data.code || (data.tokenHash && data.type)), {
     message: "Link de confirmação inválido.",
@@ -272,6 +273,38 @@ export const confirmAuth = createServerFn({ method: "POST" })
 
     if (result.error) {
       throw new Error(authErrorMessage(result.error, "O link expirou ou já foi utilizado."));
+    }
+
+    // OAuth must finish in this same request. Starting another server function before this
+    // response commits its cookies races the newly-created session and causes a second login.
+    if (data.productType && result.data.user && result.data.session) {
+      let session = await resolveSession(supabase, {
+        user: result.data.user,
+        session: result.data.session,
+      });
+      const company = session?.user.companies.find(
+        (item) => item.productType === data.productType,
+      );
+      if (company) {
+        if (company.tenantId !== session?.user.tenantId) {
+          const { error } = await supabase.rpc("switch_active_tenant", {
+            target_tenant_id: company.tenantId,
+          });
+          if (error) throw new Error("Não foi possível abrir o produto escolhido.");
+        }
+      } else {
+        const { error } = await supabase.rpc("create_company_for_current_user", {
+          company_name:
+            data.productType === "barber" ? "Minha barbearia" : "Meu negócio de beleza",
+          selected_product: data.productType,
+        });
+        if (error) throw new Error("Não foi possível preparar o produto escolhido.");
+        session = await resolveSession(supabase, {
+          user: result.data.user,
+          session: result.data.session,
+        });
+        if (!session) throw new Error("Não foi possível abrir o painel após o acesso com Google.");
+      }
     }
 
     return { success: true } as const;

@@ -193,16 +193,27 @@ function BetaAccessAdmin() {
           {tenants.map((tenant: TenantPlanRow) => (
             <div
               key={tenant.id}
-              className="grid gap-3 rounded-2xl border p-4 sm:grid-cols-[1fr_auto] sm:items-center"
+              className="grid gap-4 rounded-lg border p-4"
             >
-              <div>
-                <strong className="block break-all">{tenant.name}</strong>
-                <p className="text-sm text-muted-foreground">
-                  {tenant.productType === "barber" ? "LuBarber Pro" : "LuBeauty Pro"} ·{" "}
-                  {tenant.planName}
-                </p>
+              <div className="grid gap-1 sm:grid-cols-2 sm:gap-x-6">
+                <div>
+                  <strong className="block break-all">{tenant.name}</strong>
+                  <p className="text-sm text-muted-foreground">{tenant.ownerEmail}</p>
+                </div>
+                <div className="text-sm sm:text-right">
+                  <p>{tenant.productType === "barber" ? "LuBarber Pro" : "LuBeauty Pro"}</p>
+                  <p className="text-muted-foreground">
+                    {tenant.activeProfessionals} profissional
+                    {tenant.activeProfessionals === 1 ? " ativo" : "is ativos"}
+                  </p>
+                </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+                <p className="text-sm">
+                  <span className="text-muted-foreground">Plano atual: </span>
+                  <strong>{tenant.planCode === "team" ? "Equipe" : "Solo"}</strong>
+                </p>
+                <div className="flex flex-wrap gap-2">
                 {(["solo", "team"] as const).map((code) => (
                   <Button
                     key={code}
@@ -214,9 +225,31 @@ function BetaAccessAdmin() {
                       setPending(true);
                       setMessage(undefined);
                       try {
-                        await planFn({ data: { tenantId: tenant.id, planCode: code } });
-                        setTenants((await tenantsFn({ data: { email: "" } })) ?? []);
-                        setMessage("Plano atualizado com sucesso.");
+                        const result = await planFn({
+                          data: { tenantId: tenant.id, planCode: code },
+                        });
+                        setTenants((current) =>
+                          current.map((item) =>
+                            item.id === tenant.id
+                              ? {
+                                  ...item,
+                                  planCode: code,
+                                  planName:
+                                    code === "team"
+                                      ? "Equipe (até 8)"
+                                      : "Solo (1 profissional)",
+                                }
+                              : item,
+                          ),
+                        );
+                        const planLabel = code === "team" ? "Equipe" : "Solo";
+                        const capacityLabel =
+                          code === "team" ? "até 8 profissionais" : "1 profissional";
+                        setMessage(
+                          result.overLimit
+                            ? `Plano alterado para ${planLabel} — ${capacityLabel}. Existem ${result.activeProfessionals} profissionais ativos; nenhum dado foi excluído e novas ativações ficam bloqueadas até a quantidade ser compatível.`
+                            : `Plano alterado para ${planLabel} — ${capacityLabel}.`,
+                        );
                       } catch (cause) {
                         setMessage(
                           cause instanceof Error ? cause.message : "Não foi possível alterar.",
@@ -226,9 +259,10 @@ function BetaAccessAdmin() {
                       }
                     }}
                   >
-                    {code === "solo" ? "Solo" : "Equipe"}
+                    {code === "solo" ? "Definir como Solo" : "Definir como Equipe"}
                   </Button>
                 ))}
+                </div>
               </div>
             </div>
           ))}
