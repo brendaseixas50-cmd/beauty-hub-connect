@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { resendSignupConfirmation, signup, startGoogleSignIn } from "@/modules/auth/server";
+import { lovable } from "@/integrations/lovable";
+import { resendSignupConfirmation, signup } from "@/modules/auth/server";
 import { cacheSession } from "@/modules/auth/session-query";
 
 export const Route = createFileRoute("/cadastro")({
@@ -35,7 +36,6 @@ function Cadastro() {
   const queryClient = useQueryClient();
   const signupFn = useServerFn(signup);
   const resendFn = useServerFn(resendSignupConfirmation);
-  const googleFn = useServerFn(startGoogleSignIn);
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
   const [emailEnviado, setEmailEnviado] = useState<string>();
@@ -158,8 +158,13 @@ function Cadastro() {
                     setPending(true);
                     setError(undefined);
                     try {
-                      const result = await googleFn({ data: { productType: produto } });
-                      window.location.assign(result.url);
+                      const result = await lovable.auth.signInWithOAuth("google", {
+                        redirect_uri: window.location.origin,
+                        extraParams: { prompt: "select_account" },
+                      });
+                      if (result.error) throw result.error;
+                      if (result.redirected) return;
+                      window.location.assign(produto === "beauty" ? "/onboarding" : "/painel");
                     } catch (cause) {
                       setError(
                         cause instanceof Error
