@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { resolveBetaAccess, type PlatformGrant } from "./beta-access";
+import { resolveBetaAccess, type PlatformGrant } from "./beta-access.ts";
 
 const now = Date.parse("2026-08-14T12:00:00.000Z");
 
