@@ -119,13 +119,7 @@ export async function resolveSession(
   const now = Date.now();
   const companies = bootstrap.companies.flatMap((company): CompanyAccess[] => {
     const productType = company.productType;
-    const betaGrant = platformAccess.grants.find(
-      (grant) =>
-        grant.productType === productType &&
-        grant.status === "active" &&
-        new Date(grant.startsAt).getTime() <= now &&
-        (!grant.expiresAt || new Date(grant.expiresAt).getTime() > now),
-    );
+    const access = resolveBetaAccess(platformAccess.grants, productType, now);
     return [
       {
         tenantId: company.tenantId,
@@ -137,8 +131,9 @@ export async function resolveSession(
         licenseStatus: company.licenseStatus,
         role: company.role as Role,
         permissions: getPermissionsForRole(company.role as Role),
-        betaAccessActive: Boolean(betaGrant),
-        betaAccessType: betaGrant?.accessType ?? null,
+        betaAccessActive: access.status === "approved",
+        betaAccessStatus: access.status,
+        betaAccessType: access.accessType,
       },
     ];
   });
