@@ -15,6 +15,8 @@ export type Database = {
           ends_at: string;
           id: string;
           notes: string | null;
+           plan_code: string;
+           active_professionals: number;
           price_cents: number;
           professional_id: string;
           public_code: string | null;
@@ -1534,6 +1536,7 @@ export type Database = {
           target_email: string;
           target_expires_at?: string | null;
           target_notes?: string | null;
+           target_plan: string;
           target_product: string;
           target_status: string;
         };
