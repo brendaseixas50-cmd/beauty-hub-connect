@@ -86,22 +86,28 @@ export const getMercadoPagoConnection = createServerFn({ method: "GET" }).handle
       .eq("tenant_id", session.user.tenantId)
       .eq("provider", "mercado_pago")
       .maybeSingle();
+    const configured = Boolean(environment());
     const expired =
       Boolean(data?.token_expires_at) &&
       new Date(data!.token_expires_at as string).getTime() <= Date.now() &&
       !data?.refresh_token_ciphertext;
-    const connected =
+    const stored =
       data?.status === "connected" && Boolean(data?.access_token_ciphertext) && !expired;
+    // Sem as credenciais da aplicação no servidor não há conexão utilizável,
+    // mesmo que exista um registro salvo no banco.
+    const connected = stored && configured;
     return {
-      configured: Boolean(environment()),
+      configured,
       webhookConfigured: Boolean(getMercadoPagoWebhookSecret()),
       connected,
       accountEmail: data?.account_email ?? null,
       connectedAt: data?.connected_at ?? null,
       error: connected
         ? (data?.last_error ?? null)
-        : (data?.last_error ??
-          (data ? "A conexão do Mercado Pago expirou. Conecte a conta novamente." : null)),
+        : stored && !configured
+          ? "As credenciais da aplicação do Mercado Pago não estão configuradas neste ambiente. Cadastre MERCADO_PAGO_CLIENT_ID, MERCADO_PAGO_CLIENT_SECRET e MERCADO_PAGO_TOKEN_ENCRYPTION_KEY no servidor."
+          : (data?.last_error ??
+            (data ? "A conexão do Mercado Pago expirou. Conecte a conta novamente." : null)),
     };
   },
 );
@@ -153,7 +159,20 @@ function decrypt(value: string, secret: string) {
 
 async function connectionAccessToken(tenantId: string) {
   const env = environment();
-  if (!env) throw new Error("Configuração do Mercado Pago indisponível.");
+  if (!env) {
+    console.error(
+      "[mercado-pago] credenciais do servidor ausentes",
+      JSON.stringify({
+        tenantId,
+        hasClientId: Boolean(process.env["MERCADO_PAGO_CLIENT_ID"]),
+        hasClientSecret: Boolean(process.env["MERCADO_PAGO_CLIENT_SECRET"]),
+        hasEncryptionKey: Boolean(process.env["MERCADO_PAGO_TOKEN_ENCRYPTION_KEY"]),
+      }),
+    );
+    throw new Error(
+      "As credenciais da aplicação do Mercado Pago não estão configuradas neste ambiente do servidor.",
+    );
+  }
   const admin = createSupabaseAdminClient();
   const { data: connection, error } = await admin
     .from("payment_provider_connections")
@@ -174,9 +193,20 @@ async function connectionAccessToken(tenantId: string) {
   const expiresSoon =
     connection.token_expires_at &&
     new Date(connection.token_expires_at).getTime() <= Date.now() + 5 * 60_000;
+  const safeDecrypt = (value: string, label: string) => {
+    try {
+      return decrypt(value, env.encryptionKey);
+    } catch (cause) {
+      console.error(`[mercado-pago] falha ao decifrar ${label}`, { tenantId, cause });
+      throw new Error(
+        "As credenciais salvas do Mercado Pago não puderam ser lidas com a chave de criptografia atual do servidor. Conecte a conta novamente.",
+      );
+    }
+  };
+
   if (!expiresSoon) {
     return {
-      token: decrypt(connection.access_token_ciphertext, env.encryptionKey),
+      token: safeDecrypt(connection.access_token_ciphertext, "access_token"),
       providerUserId: connection.provider_user_id,
     };
   }
@@ -190,12 +220,28 @@ async function connectionAccessToken(tenantId: string) {
       client_id: env.clientId,
       client_secret: env.clientSecret,
       grant_type: "refresh_token",
-      refresh_token: decrypt(connection.refresh_token_ciphertext, env.encryptionKey),
+      refresh_token: safeDecrypt(connection.refresh_token_ciphertext, "refresh_token"),
     }),
   });
-  const refreshed = (await response.json()) as MercadoPagoToken;
-  if (!response.ok || !refreshed.access_token)
+  const refreshed = (await response.json().catch(() => ({}))) as MercadoPagoToken & {
+    message?: string;
+    error?: string;
+  };
+  if (!response.ok || !refreshed.access_token) {
+    console.error("[mercado-pago] falha ao renovar token", {
+      tenantId,
+      status: response.status,
+      message: refreshed.message ?? refreshed.error ?? null,
+    });
+    await admin
+      .from("payment_provider_connections")
+      .update({
+        last_error: `Renovação do token falhou (${response.status}): ${refreshed.message ?? refreshed.error ?? "erro desconhecido"}`,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", connection.id);
     throw new Error("A conexão do Mercado Pago expirou. Conecte a conta novamente.");
+  }
   await admin
     .from("payment_provider_connections")
     .update({
@@ -270,14 +316,25 @@ export const createMercadoPagoCheckout = createServerOnlyFn(async (input: Checko
       statement_descriptor: "LU IA STUDIO",
     }),
   });
-  const preference = (await response.json()) as {
+  const preference = (await response.json().catch(() => ({}))) as {
     id?: string;
     init_point?: string;
     sandbox_init_point?: string;
     message?: string;
+    error?: string;
+    cause?: unknown;
   };
-  if (!response.ok || !preference.id || !preference.init_point)
-    throw new Error("Não foi possível abrir o pagamento no Mercado Pago.");
+  if (!response.ok || !preference.id || !preference.init_point) {
+    console.error("[mercado-pago] falha ao criar preferência", {
+      tenantId: tenant.id,
+      status: response.status,
+      message: preference.message ?? preference.error ?? null,
+      cause: preference.cause ?? null,
+    });
+    throw new Error(
+      `Não foi possível abrir o pagamento no Mercado Pago (${response.status}): ${preference.message ?? preference.error ?? "resposta inesperada da API"}`,
+    );
+  }
   const { error } = await admin.from("payment_provider_transactions").upsert(
     {
       tenant_id: tenant.id,
