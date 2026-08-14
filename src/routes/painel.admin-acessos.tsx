@@ -69,7 +69,7 @@ export const Route = createFileRoute("/painel/admin-acessos")({
 
 
 type AccessRow = Awaited<ReturnType<typeof listPlatformAccess>>[number];
-type TenantPlanRow = Awaited<ReturnType<typeof listTenantPlans>>[number];
+type TenantPlanRow = Awaited<ReturnType<typeof listTenantPlans>>["tenants"][number];
 
 function BetaAccessAdmin() {
   const { rows: initialRows, tenants: initialTenants, loadError } = Route.useLoaderData();
