@@ -15,14 +15,23 @@ import { requireApprovedSession } from "@/modules/auth/session.server";
 import { createSupabaseAdminClient } from "@/modules/supabase/admin-client";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 
+type ConnectionState =
+  | "not_configured"
+  | "disconnected"
+  | "connected"
+  | "token_invalid"
+  | "authorization_error";
+
 type ConnectionStatus = {
   configured: boolean;
   webhookConfigured: boolean;
   connected: boolean;
+  state: ConnectionState;
   accountEmail: string | null;
   connectedAt: string | null;
   error: string | null;
 };
+
 
 type CheckoutInput = {
   slug: string;
@@ -86,29 +95,61 @@ export const getMercadoPagoConnection = createServerFn({ method: "GET" }).handle
       .eq("tenant_id", session.user.tenantId)
       .eq("provider", "mercado_pago")
       .maybeSingle();
-    const configured = Boolean(environment());
+    const env = environment();
+    const configured = Boolean(env);
     const expired =
       Boolean(data?.token_expires_at) &&
       new Date(data!.token_expires_at as string).getTime() <= Date.now() &&
       !data?.refresh_token_ciphertext;
     const stored =
       data?.status === "connected" && Boolean(data?.access_token_ciphertext) && !expired;
-    // Sem as credenciais da aplicação no servidor não há conexão utilizável,
-    // mesmo que exista um registro salvo no banco.
-    const connected = stored && configured;
+    // O token só é utilizável se a chave de criptografia atual conseguir lê-lo.
+    let readable = stored;
+    if (stored && env) {
+      try {
+        decrypt(data!.access_token_ciphertext as string, env.encryptionKey);
+      } catch {
+        readable = false;
+      }
+    }
+    const connected = stored && configured && readable;
+
+    const lastError = data?.last_error ?? null;
+    const authorizationError =
+      !connected && Boolean(lastError) && !(stored && !configured) && !(stored && !readable);
+    const state: ConnectionState = !configured
+      ? "not_configured"
+      : connected
+        ? "connected"
+        : stored && !readable
+          ? "token_invalid"
+          : authorizationError
+            ? "authorization_error"
+            : expired
+              ? "token_invalid"
+              : "disconnected";
+
+    const messages: Record<ConnectionState, string | null> = {
+      not_configured:
+        "Os recebimentos online ainda não estão liberados neste ambiente. Fale com o suporte.",
+      connected: lastError,
+      token_invalid:
+        "A autorização salva não é mais válida. Reconecte a conta do Mercado Pago para voltar a receber pagamentos.",
+      authorization_error:
+        lastError ?? "O Mercado Pago recusou a autorização. Reconecte a conta para tentar de novo.",
+      disconnected: null,
+    };
+
     return {
       configured,
       webhookConfigured: Boolean(getMercadoPagoWebhookSecret()),
       connected,
+      state,
       accountEmail: data?.account_email ?? null,
       connectedAt: data?.connected_at ?? null,
-      error: connected
-        ? (data?.last_error ?? null)
-        : stored && !configured
-          ? "As credenciais da aplicação do Mercado Pago não estão configuradas neste ambiente. Cadastre MERCADO_PAGO_CLIENT_ID, MERCADO_PAGO_CLIENT_SECRET e MERCADO_PAGO_TOKEN_ENCRYPTION_KEY no servidor."
-          : (data?.last_error ??
-            (data ? "A conexão do Mercado Pago expirou. Conecte a conta novamente." : null)),
+      error: messages[state],
     };
+
   },
 );
 

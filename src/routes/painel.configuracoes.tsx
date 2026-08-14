@@ -420,47 +420,85 @@ function BookingSettings({
               </p>
             </div>
           </div>
-          {mercadoPago.connected ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-emerald-50 p-4 text-emerald-950">
-              <div>
-                <strong className="block">Conta conectada</strong>
-                <span className="text-sm">Pronta para receber pagamentos.</span>
+          {(() => {
+            const tone =
+              mercadoPago.state === "connected"
+                ? "bg-emerald-50 text-emerald-950"
+                : mercadoPago.state === "disconnected"
+                  ? "bg-muted text-foreground"
+                  : "bg-amber-50 text-amber-950";
+            const titles = {
+              connected: "Conta conectada",
+              disconnected: "Nenhuma conta conectada",
+              token_invalid: "Autorização inválida",
+              authorization_error: "Erro de autorização",
+              not_configured: "Recebimentos indisponíveis",
+            } as const;
+            const descriptions = {
+              connected: "Pronta para receber pagamentos.",
+              disconnected: "Conecte sua conta para receber pagamentos online.",
+              token_invalid:
+                "A autorização salva não é mais válida. Reconecte a conta para voltar a receber.",
+              authorization_error:
+                mercadoPago.error ??
+                "O Mercado Pago recusou a autorização. Tente conectar novamente.",
+              not_configured: "Esta funcionalidade será liberada para a sua conta em breve.",
+            } as const;
+            const canConnect = mercadoPago.configured;
+            const reconnect =
+              mercadoPago.state === "token_invalid" || mercadoPago.state === "authorization_error";
+            return (
+              <div className={`grid gap-3 rounded-xl p-4 ${tone}`}>
+                <div>
+                  <strong className="block">{titles[mercadoPago.state]}</strong>
+                  <span className="text-sm">{descriptions[mercadoPago.state]}</span>
+                  {mercadoPago.accountEmail && mercadoPago.state !== "not_configured" ? (
+                    <span className="mt-1 block text-sm opacity-80">
+                      Conta: {mercadoPago.accountEmail}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {canConnect ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={action.pending}
+                      onClick={() =>
+                        void action.run(async () => {
+                          const result = await connect();
+                          window.location.assign(result.url);
+                        }, "Abrindo a autorização…")
+                      }
+                    >
+                      <Link2 />
+                      {mercadoPago.state === "connected"
+                        ? "Reconectar conta"
+                        : reconnect
+                          ? "Reconectar conta"
+                          : "Conectar conta de recebimento"}
+                    </Button>
+                  ) : null}
+                  {mercadoPago.state !== "disconnected" && mercadoPago.state !== "not_configured" ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() =>
+                        void action.run(async () => {
+                          await disconnect();
+                          window.location.reload();
+                        }, "Conta desconectada.")
+                      }
+                      disabled={action.pending}
+                    >
+                      <Unlink /> Desconectar
+                    </Button>
+                  ) : null}
+                </div>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() =>
-                  void action.run(async () => {
-                    await disconnect();
-                    window.location.reload();
-                  }, "Conta desconectada.")
-                }
-                disabled={action.pending}
-              >
-                <Unlink /> Desconectar
-              </Button>
-            </div>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full sm:w-fit"
-              disabled={!mercadoPago.configured || action.pending}
-              onClick={() =>
-                void action.run(async () => {
-                  const result = await connect();
-                  window.location.assign(result.url);
-                }, "Abrindo a autorização…")
-              }
-            >
-              <Link2 /> Conectar conta de recebimento
-            </Button>
-          )}
-          {!mercadoPago.configured ? (
-            <p className="text-sm text-muted-foreground">
-              Os recebimentos online serão liberados em breve para a sua conta.
-            </p>
-          ) : null}
+            );
+          })()}
+
         </div>
         <Button
           type="submit"
