@@ -15,14 +15,23 @@ import { requireApprovedSession } from "@/modules/auth/session.server";
 import { createSupabaseAdminClient } from "@/modules/supabase/admin-client";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 
+type ConnectionState =
+  | "not_configured"
+  | "disconnected"
+  | "connected"
+  | "token_invalid"
+  | "authorization_error";
+
 type ConnectionStatus = {
   configured: boolean;
   webhookConfigured: boolean;
   connected: boolean;
+  state: ConnectionState;
   accountEmail: string | null;
   connectedAt: string | null;
   error: string | null;
 };
+
 
 type CheckoutInput = {
   slug: string;
