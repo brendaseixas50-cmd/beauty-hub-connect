@@ -81,20 +81,32 @@ export const getMercadoPagoConnection = createServerFn({ method: "GET" }).handle
     const { supabase, session } = await context();
     const { data } = await supabase
       .from("payment_provider_connections")
-      .select("status, account_email, connected_at, last_error")
+      .select(
+        "status, account_email, connected_at, last_error, access_token_ciphertext, refresh_token_ciphertext, token_expires_at",
+      )
       .eq("tenant_id", session.user.tenantId)
       .eq("provider", "mercado_pago")
       .maybeSingle();
+    const expired =
+      Boolean(data?.token_expires_at) &&
+      new Date(data!.token_expires_at as string).getTime() <= Date.now() &&
+      !data?.refresh_token_ciphertext;
+    const connected =
+      data?.status === "connected" && Boolean(data?.access_token_ciphertext) && !expired;
     return {
       configured: Boolean(environment()),
       webhookConfigured: Boolean(getMercadoPagoWebhookSecret()),
-      connected: data?.status === "connected",
+      connected,
       accountEmail: data?.account_email ?? null,
       connectedAt: data?.connected_at ?? null,
-      error: data?.last_error ?? null,
+      error: connected
+        ? (data?.last_error ?? null)
+        : (data?.last_error ??
+          (data ? "A conexão do Mercado Pago expirou. Conecte a conta novamente." : null)),
     };
   },
 );
+
 
 export const startMercadoPagoConnection = createServerFn({ method: "POST" }).handler(async () => {
   const env = environment();
