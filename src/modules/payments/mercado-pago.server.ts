@@ -316,14 +316,25 @@ export const createMercadoPagoCheckout = createServerOnlyFn(async (input: Checko
       statement_descriptor: "LU IA STUDIO",
     }),
   });
-  const preference = (await response.json()) as {
+  const preference = (await response.json().catch(() => ({}))) as {
     id?: string;
     init_point?: string;
     sandbox_init_point?: string;
     message?: string;
+    error?: string;
+    cause?: unknown;
   };
-  if (!response.ok || !preference.id || !preference.init_point)
-    throw new Error("Não foi possível abrir o pagamento no Mercado Pago.");
+  if (!response.ok || !preference.id || !preference.init_point) {
+    console.error("[mercado-pago] falha ao criar preferência", {
+      tenantId: tenant.id,
+      status: response.status,
+      message: preference.message ?? preference.error ?? null,
+      cause: preference.cause ?? null,
+    });
+    throw new Error(
+      `Não foi possível abrir o pagamento no Mercado Pago (${response.status}): ${preference.message ?? preference.error ?? "resposta inesperada da API"}`,
+    );
+  }
   const { error } = await admin.from("payment_provider_transactions").upsert(
     {
       tenant_id: tenant.id,
