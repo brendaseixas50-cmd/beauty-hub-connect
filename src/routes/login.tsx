@@ -127,13 +127,17 @@ function LoginPage() {
                 setPending(true);
                 setError(undefined);
                 try {
+                  const callback = new URL("/auth/google", window.location.origin);
+                  if (search.produto) callback.searchParams.set("produto", search.produto);
+                  callback.searchParams.set("redirect", search.redirect);
                   const result = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: window.location.origin,
+                    redirect_uri: callback.toString(),
                     extraParams: { prompt: "select_account" },
                   });
                   if (result.error) throw result.error;
                   if (result.redirected) return;
-                  window.location.assign(search.redirect);
+                  // Fluxo em iframe: os tokens já vieram, o callback conclui a sessão no servidor.
+                  window.location.assign(callback.toString());
                 } catch (cause) {
                   setError(
                     cause instanceof Error

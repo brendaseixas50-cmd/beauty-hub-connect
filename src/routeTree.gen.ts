@@ -18,6 +18,7 @@ import { Route as PainelRouteImport } from './routes/painel'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
+import { Route as AuthGoogleRouteImport } from './routes/auth.google'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as PainelIndexRouteImport } from './routes/painel.index'
 import { Route as PainelAdminAcessosRouteImport } from './routes/painel.admin-acessos'
@@ -79,6 +80,11 @@ const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
 const AuthConfirmRoute = AuthConfirmRouteImport.update({
   id: '/auth/confirm',
   path: '/auth/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthGoogleRoute = AuthGoogleRouteImport.update({
+  id: '/auth/google',
+  path: '/auth/google',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PSlugRoute = PSlugRouteImport.update({
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/auth/google': typeof AuthGoogleRoute
   '/p/$slug': typeof PSlugRoute
   '/painel/admin-acessos': typeof PainelAdminAcessosRoute
   '/painel/agenda': typeof PainelAgendaRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/auth/google': typeof AuthGoogleRoute
   '/p/$slug': typeof PSlugRoute
   '/painel/admin-acessos': typeof PainelAdminAcessosRoute
   '/painel/agenda': typeof PainelAgendaRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/auth/google': typeof AuthGoogleRoute
   '/p/$slug': typeof PSlugRoute
   '/painel/admin-acessos': typeof PainelAdminAcessosRoute
   '/painel/agenda': typeof PainelAgendaRoute
@@ -264,6 +273,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/auth/confirm'
+    | '/auth/google'
     | '/p/$slug'
     | '/painel/admin-acessos'
     | '/painel/agenda'
@@ -291,6 +301,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/auth/confirm'
+    | '/auth/google'
     | '/p/$slug'
     | '/painel/admin-acessos'
     | '/painel/agenda'
@@ -319,6 +330,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/auth/confirm'
+    | '/auth/google'
     | '/p/$slug'
     | '/painel/admin-acessos'
     | '/painel/agenda'
@@ -348,6 +360,7 @@ export interface RootRouteChildren {
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
+  AuthGoogleRoute: typeof AuthGoogleRoute
   PSlugRoute: typeof PSlugRoute
   ApiMercadoPagoWebhookRoute: typeof ApiMercadoPagoWebhookRoute
   IntegracoesMercadoPagoRetornoRoute: typeof IntegracoesMercadoPagoRetornoRoute
@@ -416,6 +429,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/confirm'
       fullPath: '/auth/confirm'
       preLoaderRoute: typeof AuthConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/google': {
+      id: '/auth/google'
+      path: '/auth/google'
+      fullPath: '/auth/google'
+      preLoaderRoute: typeof AuthGoogleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/p/$slug': {
@@ -587,6 +607,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   AuthConfirmRoute: AuthConfirmRoute,
+  AuthGoogleRoute: AuthGoogleRoute,
   PSlugRoute: PSlugRoute,
   ApiMercadoPagoWebhookRoute: ApiMercadoPagoWebhookRoute,
   IntegracoesMercadoPagoRetornoRoute: IntegracoesMercadoPagoRetornoRoute,
