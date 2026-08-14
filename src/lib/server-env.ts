@@ -1,17 +1,26 @@
 import { z } from "zod";
 
-const serverEnvSchema = z.object({
+const supabaseSecretSchema = z.object({
   SUPABASE_SECRET_KEY: z.string().min(1),
+});
+
+const signupRateLimitSchema = z.object({
   SIGNUP_RATE_LIMIT_SECRET: z.string().min(32),
 });
 
+/** Chave secreta do projeto de produção (o mesmo usado pela Vercel). */
 export function getServerEnv() {
-  return serverEnvSchema.parse({
-    // Chave secreta do projeto de produção (o mesmo usado pela Vercel).
+  return supabaseSecretSchema.parse({
     SUPABASE_SECRET_KEY:
       process.env["PROD_SUPABASE_SECRET_KEY"] ?? process.env["SUPABASE_SECRET_KEY"],
-    SIGNUP_RATE_LIMIT_SECRET: process.env["SIGNUP_RATE_LIMIT_SECRET"],
   });
+}
+
+/** Segredo usado apenas para o rate limit de cadastro/agendamento. */
+export function getSignupRateLimitSecret() {
+  return signupRateLimitSchema.parse({
+    SIGNUP_RATE_LIMIT_SECRET: process.env["SIGNUP_RATE_LIMIT_SECRET"],
+  }).SIGNUP_RATE_LIMIT_SECRET;
 }
 
 const mercadoPagoEnvSchema = z.object({
