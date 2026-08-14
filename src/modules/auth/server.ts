@@ -49,6 +49,12 @@ const resendSchema = emailSchema.extend({ productType: z.enum(["beauty", "barber
 const switchCompanySchema = z.object({ tenantId: z.string().uuid() });
 const productSchema = z.object({ productType: z.enum(["beauty", "barber"]) });
 
+const oauthSessionSchema = z.object({
+  accessToken: z.string().min(10),
+  refreshToken: z.string().min(10),
+  productType: z.enum(["beauty", "barber"]).optional(),
+});
+
 const updatePasswordSchema = z
   .object({
     password: passwordSchema,
@@ -115,6 +121,52 @@ export const startGoogleSignIn = createServerFn({ method: "POST" })
     });
     if (error || !oauth.url) throw new Error("Não foi possível iniciar o acesso com Google.");
     return { url: oauth.url };
+  });
+
+/**
+ * Conclui o acesso com Google: os tokens devolvidos pelo broker existem apenas no
+ * navegador, então precisam ser gravados nos cookies httpOnly do servidor — que são a
+ * única fonte de sessão do app. Sem esta troca o painel continuava mostrando "Entrar".
+ */
+export const establishOAuthSession = createServerFn({ method: "POST" })
+  .validator(oauthSessionSchema)
+  .handler(async ({ data }): Promise<Session> => {
+    const supabase = createSupabaseServerClient();
+    const { data: authData, error } = await supabase.auth.setSession({
+      access_token: data.accessToken,
+      refresh_token: data.refreshToken,
+    });
+    if (error || !authData.user || !authData.session) {
+      throw new Error("Não foi possível concluir o acesso com Google.");
+    }
+
+    const known = { user: authData.user, session: authData.session };
+    let session = await resolveSession(supabase, known);
+
+    if (data.productType) {
+      const company = session?.user.companies.find(
+        (item) => item.productType === data.productType,
+      );
+      if (company) {
+        if (company.tenantId !== session?.user.tenantId) {
+          const { error: switchError } = await supabase.rpc("switch_active_tenant", {
+            target_tenant_id: company.tenantId,
+          });
+          if (switchError) throw new Error("Não foi possível abrir o produto escolhido.");
+        }
+      } else {
+        const { error: createError } = await supabase.rpc("create_company_for_current_user", {
+          company_name:
+            data.productType === "barber" ? "Minha barbearia" : "Meu negócio de beleza",
+          selected_product: data.productType,
+        });
+        if (createError) throw new Error("Não foi possível preparar o produto escolhido.");
+      }
+      session = await resolveSession(supabase, known);
+    }
+
+    if (!session) throw new Error("Sua conta não possui acesso ativo a uma empresa.");
+    return session;
   });
 
 export const signup = createServerFn({ method: "POST" })
