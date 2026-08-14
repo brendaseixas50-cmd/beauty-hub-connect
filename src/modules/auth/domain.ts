@@ -18,6 +18,8 @@ export const permissions = [
 
 export type Permission = (typeof permissions)[number];
 
+export type BetaAccessStatus = "approved" | "pending" | "suspended" | "revoked" | "expired";
+
 export interface CompanyAccess {
   tenantId: string;
   tenantName: string;
@@ -29,6 +31,7 @@ export interface CompanyAccess {
   role: Role;
   permissions: readonly Permission[];
   betaAccessActive: boolean;
+  betaAccessStatus: BetaAccessStatus;
   betaAccessType: "administrator" | "courtesy" | "beta_tester" | null;
 }
 
