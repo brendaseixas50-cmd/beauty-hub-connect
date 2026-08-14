@@ -67,8 +67,18 @@ export const listTenantPlans = createServerFn({ method: "GET" })
   .validator(searchSchema)
   .handler(async ({ data }) => {
     await requirePlatformAdministrator();
-    const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
-    const admin = createSupabaseAdminClient();
+    let admin: Awaited<ReturnType<typeof import("@/modules/supabase/admin-client")["createSupabaseAdminClient"]>>;
+    try {
+      const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
+      admin = createSupabaseAdminClient();
+    } catch {
+      return {
+        tenants: [],
+        warning:
+          "A chave administrativa do servidor (SUPABASE_SECRET_KEY) não está configurada neste ambiente.",
+      };
+    }
+
     const base = admin
       .from("tenants")
       .select("id, name, slug, product_type, owner_id")
@@ -77,64 +87,93 @@ export const listTenantPlans = createServerFn({ method: "GET" })
     const { data: rows, error } = data.email
       ? await base.or(`name.ilike.%${data.email}%,slug.ilike.%${data.email}%`)
       : await base;
-    if (error) throw new Error("Não foi possível listar as empresas.");
+    if (error) {
+      return { tenants: [], warning: `Não foi possível listar as empresas: ${error.message}` };
+    }
     const tenants = rows ?? [];
-    if (!tenants.length) return [];
+    if (!tenants.length) return { tenants: [], warning: null as string | null };
 
-    // Consulta separada: assim uma assinatura/plano legado ou ausente não derruba a listagem.
+    const ids = tenants.map((tenant) => tenant.id);
+    const warnings: string[] = [];
+
+    // Cada consulta complementar é isolada: um dado ausente nunca derruba a listagem.
     const planByTenant = new Map<string, string>();
-    const { data: subscriptions } = await admin
-      .from("tenant_subscriptions")
-      .select("tenant_id, status, plan:subscription_plans(code)")
-      .in(
-        "tenant_id",
-        tenants.map((tenant) => tenant.id),
-      )
-      .in("status", ["beta", "trial", "active"]);
-    for (const item of subscriptions ?? []) {
-      const plan = (Array.isArray(item.plan) ? item.plan[0] : item.plan) as
-        | { code: string | null }
-        | null
-        | undefined;
-      if (item.tenant_id && plan?.code) planByTenant.set(item.tenant_id, plan.code);
+    try {
+      const { data: subscriptions, error: subscriptionError } = await admin
+        .from("tenant_subscriptions")
+        .select("tenant_id, status, plan:subscription_plans(code)")
+        .in("tenant_id", ids)
+        .in("status", ["beta", "trial", "active"]);
+      if (subscriptionError) warnings.push("planos atuais");
+      for (const item of subscriptions ?? []) {
+        const plan = (Array.isArray(item.plan) ? item.plan[0] : item.plan) as
+          | { code: string | null }
+          | null
+          | undefined;
+        if (item.tenant_id && plan?.code) planByTenant.set(item.tenant_id, plan.code);
+      }
+    } catch {
+      warnings.push("planos atuais");
     }
 
-    const ownerIds = new Set(tenants.map((tenant) => tenant.owner_id));
     const ownerEmailById = new Map<string, string>();
-    const { data: authUsers } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    for (const user of authUsers?.users ?? []) {
-      if (ownerIds.has(user.id) && user.email) ownerEmailById.set(user.id, user.email);
-    }
-    const { data: professionalCounts } = await admin
-      .from("professionals")
-      .select("tenant_id")
-      .in(
-        "tenant_id",
-        tenants.map((tenant) => tenant.id),
-      )
-      .eq("active", true);
-    const activeByTenant = new Map<string, number>();
-    for (const professional of professionalCounts ?? []) {
-      activeByTenant.set(
-        professional.tenant_id,
-        (activeByTenant.get(professional.tenant_id) ?? 0) + 1,
-      );
+    try {
+      const { data: authUsers, error: usersError } = await admin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      });
+      if (usersError) throw usersError;
+      const ownerIds = new Set(tenants.map((tenant) => tenant.owner_id));
+      for (const user of authUsers?.users ?? []) {
+        if (ownerIds.has(user.id) && user.email) ownerEmailById.set(user.id, user.email);
+      }
+    } catch {
+      warnings.push("e-mails dos responsáveis");
     }
 
-    return tenants.map((tenant) => {
-      const code = planByTenant.get(tenant.id) === "team" ? "team" : "solo";
-      return {
-        id: tenant.id,
-        name: tenant.name ?? tenant.slug ?? "Empresa sem nome",
-        slug: tenant.slug ?? "",
-        productType: tenant.product_type,
-        ownerEmail: ownerEmailById.get(tenant.owner_id) ?? "E-mail não disponível",
-        activeProfessionals: activeByTenant.get(tenant.id) ?? 0,
-        planCode: code as "solo" | "team",
-        planName: code === "team" ? "Equipe (até 8)" : "Solo (1 profissional)",
-      };
-    });
+    const activeByTenant = new Map<string, number>();
+    try {
+      const { data: professionals, error: professionalsError } = await admin
+        .from("professionals")
+        .select("tenant_id")
+        .in("tenant_id", ids)
+        .eq("active", true);
+      if (professionalsError) throw professionalsError;
+      for (const professional of professionals ?? []) {
+        activeByTenant.set(
+          professional.tenant_id,
+          (activeByTenant.get(professional.tenant_id) ?? 0) + 1,
+        );
+      }
+    } catch {
+      warnings.push("profissionais ativos");
+    }
+
+    return {
+      warning: warnings.length ? `Não foi possível carregar: ${warnings.join(", ")}.` : null,
+      tenants: tenants.map((tenant) => {
+        const code = planByTenant.get(tenant.id) ?? "solo";
+        const planCode: "solo" | "team" | "legacy" =
+          code === "team" ? "team" : code === "solo" ? "solo" : "legacy";
+        return {
+          id: tenant.id,
+          name: tenant.name ?? tenant.slug ?? "Empresa sem nome",
+          slug: tenant.slug ?? "",
+          productType: tenant.product_type,
+          ownerEmail: ownerEmailById.get(tenant.owner_id) ?? "E-mail não disponível",
+          activeProfessionals: activeByTenant.get(tenant.id) ?? 0,
+          planCode,
+          planName:
+            planCode === "team"
+              ? "Equipe (até 8)"
+              : planCode === "solo"
+                ? "Solo (1 profissional)"
+                : "Plano antigo (sem limite comercial)",
+        };
+      }),
+    };
   });
+
 
 
 export const setTenantPlan = createServerFn({ method: "POST" })
