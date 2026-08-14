@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login, startGoogleSignIn, switchCompany } from "@/modules/auth/server";
+import { lovable } from "@/integrations/lovable";
+import { login, switchCompany } from "@/modules/auth/server";
 import { cacheSession, clearSessionCache, peekSession } from "@/modules/auth/session-query";
 
 const safeRedirect = z
@@ -37,7 +38,6 @@ function LoginPage() {
   const queryClient = useQueryClient();
   const search = Route.useSearch();
   const loginFn = useServerFn(login);
-  const googleFn = useServerFn(startGoogleSignIn);
   const switchFn = useServerFn(switchCompany);
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
@@ -127,10 +127,13 @@ function LoginPage() {
                 setPending(true);
                 setError(undefined);
                 try {
-                  const result = await googleFn({
-                    data: { productType: search.produto ?? "beauty" },
+                  const result = await lovable.auth.signInWithOAuth("google", {
+                    redirect_uri: window.location.origin,
+                    extraParams: { prompt: "select_account" },
                   });
-                  window.location.assign(result.url);
+                  if (result.error) throw result.error;
+                  if (result.redirected) return;
+                  window.location.assign(search.redirect);
                 } catch (cause) {
                   setError(
                     cause instanceof Error
