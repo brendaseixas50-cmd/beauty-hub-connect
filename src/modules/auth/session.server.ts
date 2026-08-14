@@ -66,7 +66,7 @@ export function oauthCallbackUrl(productType: "beauty" | "barber"): string {
   return url.toString();
 }
 
-function canonicalOrigin(): string {
+export function canonicalOrigin(): string {
   const configured = process.env["PUBLIC_SITE_URL"]?.trim();
   if (!configured) return getRequestUrl().origin;
   try {
