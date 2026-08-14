@@ -185,8 +185,13 @@ function BetaAccessAdmin() {
           onSubmit={async (event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
-            setTenants((await tenantsFn({ data: { email: String(form.get("empresa") ?? "") } })) ?? []);
+            const result = await tenantsFn({
+              data: { email: String(form.get("empresa") ?? "") },
+            });
+            setTenants(result.tenants ?? []);
+            setMessage(result.warning ?? undefined);
           }}
+
         >
           <Input name="empresa" type="search" placeholder="Localizar por nome ou link" />
           <Button type="submit" size="icon" aria-label="Buscar empresa">
