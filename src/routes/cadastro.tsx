@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { lovable } from "@/integrations/lovable";
+import { startGoogleSignIn } from "@/modules/auth/google-sign-in";
 import { resendSignupConfirmation, signup } from "@/modules/auth/server";
 import { cacheSession } from "@/modules/auth/session-query";
 
@@ -158,16 +158,7 @@ function Cadastro() {
                     setPending(true);
                     setError(undefined);
                     try {
-                      const callback = new URL("/auth/google", window.location.origin);
-                      callback.searchParams.set("produto", produto);
-                      callback.searchParams.set("redirect", "/painel");
-                      const result = await lovable.auth.signInWithOAuth("google", {
-                        redirect_uri: callback.toString(),
-                        extraParams: { prompt: "select_account" },
-                      });
-                      if (result.error) throw result.error;
-                      if (result.redirected) return;
-                      window.location.assign(callback.toString());
+                      await startGoogleSignIn({ productType: produto, redirect: "/painel" });
                     } catch (cause) {
                       setError(
                         cause instanceof Error

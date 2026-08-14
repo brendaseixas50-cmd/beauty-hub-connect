@@ -7,7 +7,9 @@ const serverEnvSchema = z.object({
 
 export function getServerEnv() {
   return serverEnvSchema.parse({
-    SUPABASE_SECRET_KEY: process.env["SUPABASE_SECRET_KEY"],
+    // Chave secreta do projeto de produção (o mesmo usado pela Vercel).
+    SUPABASE_SECRET_KEY:
+      process.env["PROD_SUPABASE_SECRET_KEY"] ?? process.env["SUPABASE_SECRET_KEY"],
     SIGNUP_RATE_LIMIT_SECRET: process.env["SIGNUP_RATE_LIMIT_SECRET"],
   });
 }

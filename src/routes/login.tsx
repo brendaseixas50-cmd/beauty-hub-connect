@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { lovable } from "@/integrations/lovable";
+import { startGoogleSignIn } from "@/modules/auth/google-sign-in";
 import { login, switchCompany } from "@/modules/auth/server";
 import { cacheSession, clearSessionCache, peekSession } from "@/modules/auth/session-query";
 
@@ -127,17 +127,10 @@ function LoginPage() {
                 setPending(true);
                 setError(undefined);
                 try {
-                  const callback = new URL("/auth/google", window.location.origin);
-                  if (search.produto) callback.searchParams.set("produto", search.produto);
-                  callback.searchParams.set("redirect", search.redirect);
-                  const result = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: callback.toString(),
-                    extraParams: { prompt: "select_account" },
+                  await startGoogleSignIn({
+                    ...(search.produto ? { productType: search.produto } : {}),
+                    redirect: search.redirect,
                   });
-                  if (result.error) throw result.error;
-                  if (result.redirected) return;
-                  // Fluxo em iframe: os tokens já vieram, o callback conclui a sessão no servidor.
-                  window.location.assign(callback.toString());
                 } catch (cause) {
                   setError(
                     cause instanceof Error
