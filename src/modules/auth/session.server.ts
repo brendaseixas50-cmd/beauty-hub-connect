@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 import type { Database } from "@/modules/supabase/database.types";
+import { resolveBetaAccess } from "./beta-access";
 import {
   getPermissionsForRole,
   roles,
