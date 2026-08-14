@@ -19,6 +19,7 @@ const beauty: CompanyAccess = {
   role: "owner",
   permissions: getPermissionsForRole("owner"),
   betaAccessActive: true,
+  betaAccessStatus: "approved",
   betaAccessType: "administrator",
 };
 
@@ -33,6 +34,7 @@ const barber: CompanyAccess = {
   role: "receptionist",
   permissions: getPermissionsForRole("receptionist"),
   betaAccessActive: true,
+  betaAccessStatus: "approved",
   betaAccessType: "beta_tester",
 };
 
