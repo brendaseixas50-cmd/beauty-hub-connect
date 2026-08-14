@@ -150,7 +150,6 @@ export const getMercadoPagoConnection = createServerFn({ method: "GET" }).handle
       error: messages[state],
     };
 
-    };
   },
 );
 
