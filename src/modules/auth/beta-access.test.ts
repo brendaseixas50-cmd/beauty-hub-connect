@@ -1,14 +1,15 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 
-import { resolveBetaAccess } from "./session.server";
+import { resolveBetaAccess, type PlatformGrant } from "./beta-access";
 
 const now = Date.parse("2026-08-14T12:00:00.000Z");
 
-function grant(overrides: Partial<Parameters<typeof resolveBetaAccess>[0][number]> = {}) {
+function grant(overrides: Partial<PlatformGrant> = {}): PlatformGrant {
   return {
-    productType: "beauty" as const,
-    accessType: "beta_tester" as const,
-    status: "active" as const,
+    productType: "beauty",
+    accessType: "beta_tester",
+    status: "active",
     startsAt: "2026-01-01T00:00:00.000Z",
     expiresAt: null,
     ...overrides,
@@ -17,35 +18,45 @@ function grant(overrides: Partial<Parameters<typeof resolveBetaAccess>[0][number
 
 describe("resolveBetaAccess", () => {
   it("mantém usuário sem concessão como pendente de aprovação", () => {
-    expect(resolveBetaAccess([], "beauty", now)).toEqual({ status: "pending", accessType: null });
+    assert.deepEqual(resolveBetaAccess([], "beauty", now), {
+      status: "pending",
+      accessType: null,
+    });
   });
 
   it("não libera acesso concedido a outro produto", () => {
-    expect(resolveBetaAccess([grant({ productType: "barber" })], "beauty", now).status).toBe(
+    assert.equal(
+      resolveBetaAccess([grant({ productType: "barber" })], "beauty", now).status,
       "pending",
     );
   });
 
   it("libera apenas concessão ativa dentro da vigência", () => {
-    expect(resolveBetaAccess([grant()], "beauty", now)).toEqual({
+    assert.deepEqual(resolveBetaAccess([grant()], "beauty", now), {
       status: "approved",
       accessType: "beta_tester",
     });
   });
 
   it("bloqueia concessões suspensas ou revogadas", () => {
-    expect(resolveBetaAccess([grant({ status: "suspended" })], "beauty", now).status).toBe(
+    assert.equal(
+      resolveBetaAccess([grant({ status: "suspended" })], "beauty", now).status,
       "suspended",
     );
-    expect(resolveBetaAccess([grant({ status: "revoked" })], "beauty", now).status).toBe("revoked");
+    assert.equal(
+      resolveBetaAccess([grant({ status: "revoked" })], "beauty", now).status,
+      "revoked",
+    );
   });
 
   it("bloqueia concessão vencida ou com início futuro", () => {
-    expect(
+    assert.equal(
       resolveBetaAccess([grant({ expiresAt: "2026-08-01T00:00:00.000Z" })], "beauty", now).status,
-    ).toBe("expired");
-    expect(
+      "expired",
+    );
+    assert.equal(
       resolveBetaAccess([grant({ startsAt: "2026-12-01T00:00:00.000Z" })], "beauty", now).status,
-    ).toBe("pending");
+      "pending",
+    );
   });
 });
