@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { lovable } from "@/integrations/lovable";
+import { startGoogleSignIn } from "@/modules/auth/google-sign-in";
 import { login, switchCompany } from "@/modules/auth/server";
 import { cacheSession, clearSessionCache, peekSession } from "@/modules/auth/session-query";
 
