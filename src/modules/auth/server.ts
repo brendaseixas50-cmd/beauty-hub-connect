@@ -143,26 +143,24 @@ export const establishOAuthSession = createServerFn({ method: "POST" })
     const known = { user: authData.user, session: authData.session };
     let session = await resolveSession(supabase, known);
 
-    if (data.productType) {
-      const company = session?.user.companies.find(
-        (item) => item.productType === data.productType,
-      );
-      if (company) {
-        if (company.tenantId !== session?.user.tenantId) {
-          const { error: switchError } = await supabase.rpc("switch_active_tenant", {
-            target_tenant_id: company.tenantId,
-          });
-          if (switchError) throw new Error("Não foi possível abrir o produto escolhido.");
-        }
-      } else {
-        const { error: createError } = await supabase.rpc("create_company_for_current_user", {
-          company_name:
-            data.productType === "barber" ? "Minha barbearia" : "Meu negócio de beleza",
-          selected_product: data.productType,
-        });
-        if (createError) throw new Error("Não foi possível preparar o produto escolhido.");
-      }
+    if (!session) {
+      // Primeiro acesso com Google: ainda não existe empresa para este usuário.
+      const { error: createError } = await supabase.rpc("create_company_for_current_user", {
+        company_name:
+          data.productType === "barber" ? "Minha barbearia" : "Meu negócio de beleza",
+        selected_product: data.productType ?? "beauty",
+      });
+      if (createError) throw new Error("Não foi possível preparar o produto escolhido.");
       session = await resolveSession(supabase, known);
+    } else if (data.productType) {
+      const preferred = selectCompanyForProduct(session.user.companies, data.productType);
+      if (preferred && preferred.tenantId !== session.user.tenantId) {
+        const { error: switchError } = await supabase.rpc("switch_active_tenant", {
+          target_tenant_id: preferred.tenantId,
+        });
+        if (switchError) throw new Error("Não foi possível abrir o produto escolhido.");
+        session = { ...session, user: { ...session.user, ...preferred } };
+      }
     }
 
     if (!session) throw new Error("Sua conta não possui acesso ativo a uma empresa.");
