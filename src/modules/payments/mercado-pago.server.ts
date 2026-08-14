@@ -86,22 +86,28 @@ export const getMercadoPagoConnection = createServerFn({ method: "GET" }).handle
       .eq("tenant_id", session.user.tenantId)
       .eq("provider", "mercado_pago")
       .maybeSingle();
+    const configured = Boolean(environment());
     const expired =
       Boolean(data?.token_expires_at) &&
       new Date(data!.token_expires_at as string).getTime() <= Date.now() &&
       !data?.refresh_token_ciphertext;
-    const connected =
+    const stored =
       data?.status === "connected" && Boolean(data?.access_token_ciphertext) && !expired;
+    // Sem as credenciais da aplicação no servidor não há conexão utilizável,
+    // mesmo que exista um registro salvo no banco.
+    const connected = stored && configured;
     return {
-      configured: Boolean(environment()),
+      configured,
       webhookConfigured: Boolean(getMercadoPagoWebhookSecret()),
       connected,
       accountEmail: data?.account_email ?? null,
       connectedAt: data?.connected_at ?? null,
       error: connected
         ? (data?.last_error ?? null)
-        : (data?.last_error ??
-          (data ? "A conexão do Mercado Pago expirou. Conecte a conta novamente." : null)),
+        : stored && !configured
+          ? "As credenciais da aplicação do Mercado Pago não estão configuradas neste ambiente. Cadastre MERCADO_PAGO_CLIENT_ID, MERCADO_PAGO_CLIENT_SECRET e MERCADO_PAGO_TOKEN_ENCRYPTION_KEY no servidor."
+          : (data?.last_error ??
+            (data ? "A conexão do Mercado Pago expirou. Conecte a conta novamente." : null)),
     };
   },
 );
