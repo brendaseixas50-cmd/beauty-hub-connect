@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { resolveSession } from "@/modules/auth/session.server";
+import { requireApprovedSession } from "@/modules/auth/session.server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 
 export interface SpecialtyOption {
@@ -31,8 +31,7 @@ export interface OnboardingData {
 
 async function context() {
   const supabase = createSupabaseServerClient();
-  const session = await resolveSession(supabase);
-  if (!session) throw new Error("Sua sessão expirou. Entre novamente.");
+  const session = await requireApprovedSession(supabase);
   if (session.user.role !== "owner" && session.user.role !== "admin") {
     throw new Error("Você não possui permissão para alterar estas configurações.");
   }

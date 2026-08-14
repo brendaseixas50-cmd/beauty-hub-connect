@@ -11,7 +11,7 @@ import { getRequestUrl } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 import { getMercadoPagoEnv, getMercadoPagoWebhookSecret } from "@/lib/server-env";
-import { resolveSession } from "@/modules/auth/session.server";
+import { requireApprovedSession } from "@/modules/auth/session.server";
 import { createSupabaseAdminClient } from "@/modules/supabase/admin-client";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 
@@ -70,8 +70,7 @@ function manager(role: string) {
 
 async function context() {
   const supabase = createSupabaseServerClient();
-  const session = await resolveSession(supabase);
-  if (!session) throw new Error("Entre novamente para continuar.");
+  const session = await requireApprovedSession(supabase);
   manager(session.user.role);
   return { supabase, session };
 }
