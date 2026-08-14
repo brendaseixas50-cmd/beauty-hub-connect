@@ -13,6 +13,7 @@ import {
   getPermissionsForRole,
   roles,
   selectActiveCompany,
+  type BetaAccessStatus,
   type CompanyAccess,
   type Role,
   type Session,
