@@ -161,6 +161,52 @@ export async function resolveSession(
   };
 }
 
+/**
+ * Beta fechado: autenticar não é autorizar. Traduz as concessões da administradora
+ * no estado real de autorização do produto (sem registro = pendente de aprovação).
+ */
+type GrantList = z.infer<typeof platformAccessSchema>["grants"];
+
+export function resolveBetaAccess(
+  grants: GrantList,
+  productType: "beauty" | "barber",
+  now = Date.now(),
+): { status: BetaAccessStatus; accessType: CompanyAccess["betaAccessType"] } {
+  const productGrants = grants.filter((grant) => grant.productType === productType);
+  if (!productGrants.length) return { status: "pending", accessType: null };
+
+  const active = productGrants.find(
+    (grant) =>
+      grant.status === "active" &&
+      new Date(grant.startsAt).getTime() <= now &&
+      (!grant.expiresAt || new Date(grant.expiresAt).getTime() > now),
+  );
+  if (active) return { status: "approved", accessType: active.accessType };
+
+  const grant = productGrants[0]!;
+  if (grant.status === "active") {
+    const expired = Boolean(grant.expiresAt && new Date(grant.expiresAt).getTime() <= now);
+    return { status: expired ? "expired" : "pending", accessType: null };
+  }
+  return { status: grant.status, accessType: null };
+}
+
+/** Sessão autorizada no beta fechado — usada por toda leitura/escrita protegida. */
+export async function requireApprovedSession(
+  supabase: SupabaseClient<Database> = createSupabaseServerClient(),
+): Promise<Session> {
+  const session = await resolveSession(supabase);
+  if (!session) throw new Error("Sua sessão expirou. Entre novamente.");
+  if (!session.user.betaAccessActive) {
+    throw new Error(
+      session.user.betaAccessStatus === "pending"
+        ? "Seu acesso está aguardando aprovação da administração do beta fechado."
+        : "Seu acesso ao beta fechado não está ativo. Fale com a administração.",
+    );
+  }
+  return session;
+}
+
 export async function resolveOperationalContext(
   supabase: SupabaseClient<Database>,
 ): Promise<{ userId: string; tenantId: string; role: Role } | null> {
@@ -175,19 +221,13 @@ export async function resolveOperationalContext(
       ...item,
       permissions: getPermissionsForRole(item.role),
       betaAccessActive: false,
+      betaAccessStatus: "pending" as BetaAccessStatus,
       betaAccessType: null,
     })),
     parsed.data.activeTenantId,
   );
   if (!company) return null;
-  const now = Date.now();
-  const grant = parsed.data.platformAccess.grants.find(
-    (item) =>
-      item.productType === company.productType &&
-      item.status === "active" &&
-      new Date(item.startsAt).getTime() <= now &&
-      (!item.expiresAt || new Date(item.expiresAt).getTime() > now),
-  );
-  if (!grant) return null;
+  const access = resolveBetaAccess(parsed.data.platformAccess.grants, company.productType);
+  if (access.status !== "approved") return null;
   return { userId: authSession.session.user.id, tenantId: company.tenantId, role: company.role };
 }
