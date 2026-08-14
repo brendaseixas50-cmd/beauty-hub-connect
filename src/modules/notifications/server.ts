@@ -1,12 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 
-import { resolveSession } from "@/modules/auth/session.server";
+import { requireApprovedSession } from "@/modules/auth/session.server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 
 export const listNotifications = createServerFn({ method: "GET" }).handler(async () => {
   const supabase = createSupabaseServerClient();
-  const session = await resolveSession(supabase);
-  if (!session) throw new Error("Sessão inválida.");
+  const session = await requireApprovedSession(supabase);
   const { data, error } = await supabase
     .from("notification_outbox")
     .select("*")

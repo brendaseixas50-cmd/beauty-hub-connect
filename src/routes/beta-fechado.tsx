@@ -29,6 +29,29 @@ function ClosedBetaPage() {
   const queryClient = useQueryClient();
   const isBarber = session.user.productType === "barber";
   const tipo = isBarber ? "barbearia" : "beleza";
+  const status = session.user.betaAccessStatus;
+  const produto = isBarber ? "LuBarber Pro" : "LuBeauty Pro";
+  const copy =
+    status === "pending"
+      ? {
+          eyebrow: "Aguardando aprovação",
+          title: "Acesso em análise",
+          text: `Seu cadastro no ${produto} foi realizado com sucesso e agora aguarda a aprovação da administração do beta fechado. Você receberá acesso assim que for liberado.`,
+          nota: "Em breve abriremos novas vagas.",
+        }
+      : status === "expired"
+        ? {
+            eyebrow: "Acesso expirado",
+            title: "Seu período de acesso terminou",
+            text: `Seu acesso ao ${produto} expirou. Fale com a administração para renovar a participação no beta fechado.`,
+            nota: "Seus dados continuam preservados.",
+          }
+        : {
+            eyebrow: "Acesso indisponível",
+            title: status === "suspended" ? "Acesso suspenso" : "Acesso encerrado",
+            text: `Seu acesso ao ${produto} não está ativo neste momento. Entre em contato com a administração do beta fechado para mais informações.`,
+            nota: "Seus dados continuam preservados.",
+          };
 
   return (
     <main
@@ -41,18 +64,15 @@ function ClosedBetaPage() {
         </div>
         <div className="grid gap-3">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-            Testes privados
+            {copy.eyebrow}
           </p>
-          <h1 className="font-display text-3xl font-semibold">Beta fechado</h1>
-          <p className="leading-relaxed text-muted-foreground">
-            O {isBarber ? "LuBarber Pro" : "LuBeauty Pro"} está disponível somente para
-            participantes autorizados. Seu cadastro foi realizado com sucesso e agora aguarda
-            liberação da administração.
-          </p>
+          <h1 className="font-display text-3xl font-semibold">{copy.title}</h1>
+          <p className="leading-relaxed text-muted-foreground">{copy.text}</p>
         </div>
         <div className="flex items-center gap-2 rounded-2xl bg-secondary/60 px-4 py-3 text-sm">
-          <Clock3 className="h-4 w-4 shrink-0" /> Em breve abriremos novas vagas.
+          <Clock3 className="h-4 w-4 shrink-0" /> {copy.nota}
         </div>
+
         <Button
           type="button"
           variant="outline"

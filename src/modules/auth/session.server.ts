@@ -9,10 +9,12 @@ import { z } from "zod";
 
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 import type { Database } from "@/modules/supabase/database.types";
+import { resolveBetaAccess } from "./beta-access";
 import {
   getPermissionsForRole,
   roles,
   selectActiveCompany,
+  type BetaAccessStatus,
   type CompanyAccess,
   type Role,
   type Session,
@@ -119,13 +121,7 @@ export async function resolveSession(
   const now = Date.now();
   const companies = bootstrap.companies.flatMap((company): CompanyAccess[] => {
     const productType = company.productType;
-    const betaGrant = platformAccess.grants.find(
-      (grant) =>
-        grant.productType === productType &&
-        grant.status === "active" &&
-        new Date(grant.startsAt).getTime() <= now &&
-        (!grant.expiresAt || new Date(grant.expiresAt).getTime() > now),
-    );
+    const access = resolveBetaAccess(platformAccess.grants, productType, now);
     return [
       {
         tenantId: company.tenantId,
@@ -137,8 +133,9 @@ export async function resolveSession(
         licenseStatus: company.licenseStatus,
         role: company.role as Role,
         permissions: getPermissionsForRole(company.role as Role),
-        betaAccessActive: Boolean(betaGrant),
-        betaAccessType: betaGrant?.accessType ?? null,
+        betaAccessActive: access.status === "approved",
+        betaAccessStatus: access.status,
+        betaAccessType: access.accessType,
       },
     ];
   });
@@ -166,6 +163,23 @@ export async function resolveSession(
   };
 }
 
+
+/** Sessão autorizada no beta fechado — usada por toda leitura/escrita protegida. */
+export async function requireApprovedSession(
+  supabase: SupabaseClient<Database> = createSupabaseServerClient(),
+): Promise<Session> {
+  const session = await resolveSession(supabase);
+  if (!session) throw new Error("Sua sessão expirou. Entre novamente.");
+  if (!session.user.betaAccessActive) {
+    throw new Error(
+      session.user.betaAccessStatus === "pending"
+        ? "Seu acesso está aguardando aprovação da administração do beta fechado."
+        : "Seu acesso ao beta fechado não está ativo. Fale com a administração.",
+    );
+  }
+  return session;
+}
+
 export async function resolveOperationalContext(
   supabase: SupabaseClient<Database>,
 ): Promise<{ userId: string; tenantId: string; role: Role } | null> {
@@ -180,19 +194,13 @@ export async function resolveOperationalContext(
       ...item,
       permissions: getPermissionsForRole(item.role),
       betaAccessActive: false,
+      betaAccessStatus: "pending" as BetaAccessStatus,
       betaAccessType: null,
     })),
     parsed.data.activeTenantId,
   );
   if (!company) return null;
-  const now = Date.now();
-  const grant = parsed.data.platformAccess.grants.find(
-    (item) =>
-      item.productType === company.productType &&
-      item.status === "active" &&
-      new Date(item.startsAt).getTime() <= now &&
-      (!item.expiresAt || new Date(item.expiresAt).getTime() > now),
-  );
-  if (!grant) return null;
+  const access = resolveBetaAccess(parsed.data.platformAccess.grants, company.productType);
+  if (access.status !== "approved") return null;
   return { userId: authSession.session.user.id, tenantId: company.tenantId, role: company.role };
 }
