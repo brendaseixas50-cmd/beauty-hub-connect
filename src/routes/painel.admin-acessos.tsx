@@ -38,17 +38,21 @@ export const Route = createFileRoute("/painel/admin-acessos")({
       listPlatformAccess({ data: { email: "" } }),
       listTenantPlans({ data: { email: "" } }),
     ]);
+    const planResult = plans.status === "fulfilled" ? plans.value : null;
     return {
       rows: access.status === "fulfilled" ? access.value : [],
-      tenants: plans.status === "fulfilled" ? plans.value : [],
+      tenants: planResult?.tenants ?? [],
       loadError:
         access.status === "rejected"
           ? "Não foi possível carregar os acessos agora."
           : plans.status === "rejected"
-            ? "Não foi possível carregar as empresas agora."
-            : null,
+            ? `Não foi possível carregar as empresas agora. ${
+                plans.reason instanceof Error ? plans.reason.message : ""
+              }`.trim()
+            : (planResult?.warning ?? null),
     };
   },
+
   head: () => ({ meta: [{ title: "Acessos do Beta — Lu IA Studio" }] }),
   component: BetaAccessAdmin,
   errorComponent: () => (
