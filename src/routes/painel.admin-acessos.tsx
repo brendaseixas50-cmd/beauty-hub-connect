@@ -220,7 +220,7 @@ function BetaAccessAdmin() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
                 <p className="text-sm">
                   <span className="text-muted-foreground">Plano atual: </span>
-                  <strong>{tenant.planCode === "team" ? "Equipe" : "Solo"}</strong>
+                  <strong>{tenant.planName}</strong>
                 </p>
                 <div className="flex flex-wrap gap-2">
                 {(["solo", "team"] as const).map((code) => (
