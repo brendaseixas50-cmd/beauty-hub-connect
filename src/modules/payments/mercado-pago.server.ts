@@ -562,8 +562,18 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
       scope?: string;
       message?: string;
     };
-    if (!response.ok || !token.access_token)
-      throw new Error("O Mercado Pago não autorizou a conexão. Tente novamente.");
+    if (!response.ok || !token.access_token) {
+      console.error("[mercado-pago] troca do código OAuth falhou", {
+        status: response.status,
+        message: token.message ?? null,
+      });
+      throw new Error(
+        `O Mercado Pago não autorizou a conexão (${response.status}): ${token.message ?? "tente novamente"}`,
+      );
+    }
+    // Só marcamos como conectada depois de a API aceitar o token recém-emitido.
+    const verified = await verifyAccessToken(token.access_token);
+    if (!verified.ok) throw new Error(verified.message);
     const now = new Date().toISOString();
     const { error } = await admin.from("payment_provider_connections").upsert(
       {
@@ -571,6 +581,7 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
         provider: "mercado_pago",
         status: "connected",
         provider_user_id: token.user_id ? String(token.user_id) : null,
+        account_email: verified.email,
         access_token_ciphertext: encrypt(token.access_token, env.encryptionKey),
         refresh_token_ciphertext: token.refresh_token
           ? encrypt(token.refresh_token, env.encryptionKey)
