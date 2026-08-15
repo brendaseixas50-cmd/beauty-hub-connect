@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { CheckCircle2, CircleAlert } from "lucide-react";
 import { z } from "zod";
 
@@ -16,13 +16,13 @@ export const Route = createFileRoute("/integracoes/mercado-pago/retorno")({
       return { ok: false, message: "Autorização cancelada ou incompleta." };
     try {
       await finishMercadoPagoConnection({ data: { code: deps.code, state: deps.state } });
-      return { ok: true, message: "Mercado Pago conectado com segurança." };
     } catch (error) {
       return {
         ok: false,
         message: error instanceof Error ? error.message : "Não foi possível concluir a conexão.",
       };
     }
+    throw redirect({ to: "/painel/configuracoes", replace: true });
   },
   component: MercadoPagoReturn,
 });

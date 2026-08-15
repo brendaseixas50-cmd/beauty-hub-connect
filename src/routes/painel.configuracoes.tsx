@@ -20,7 +20,7 @@ import {
 } from "@/modules/payments/mercado-pago.server";
 
 export const Route = createFileRoute("/painel/configuracoes")({
-  staleTime: 60_000,
+  staleTime: 0,
   loader: async () => {
     const [company, mercadoPago] = await Promise.all([getCompany(), getMercadoPagoConnection()]);
     return { company, mercadoPago };
