@@ -525,22 +525,56 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const env = environment();
     if (!env) throw new Error("Configuração do servidor incompleta.");
-    const { session } = await context();
     const admin = createSupabaseAdminClient();
     const stateHash = createHash("sha256").update(data.state).digest("hex");
+    const callbackId = stateHash.slice(0, 12);
+    console.info("[mercado-pago] callback recebido", { callbackId });
     const { data: oauth, error: oauthError } = await admin
       .from("payment_provider_oauth_states")
       .select("id, tenant_id, code_verifier_ciphertext, redirect_uri, expires_at, used_at")
       .eq("state_hash", stateHash)
+      .eq("provider", "mercado_pago")
       .maybeSingle();
-    if (
-      oauthError ||
-      !oauth ||
-      oauth.tenant_id !== session.user.tenantId ||
-      oauth.used_at ||
-      new Date(oauth.expires_at).getTime() < Date.now()
-    ) {
-      throw new Error("Esta autorização expirou ou não pertence à empresa ativa.");
+    if (oauthError || !oauth) {
+      console.error("[mercado-pago] state não encontrado", {
+        callbackId,
+        databaseError: oauthError?.message ?? null,
+      });
+      throw new Error("Esta autorização não foi encontrada. Inicie a conexão novamente.");
+    }
+    if (oauth.used_at) {
+      const { data: existing } = await admin
+        .from("payment_provider_connections")
+        .select("status, access_token_ciphertext")
+        .eq("tenant_id", oauth.tenant_id)
+        .eq("provider", "mercado_pago")
+        .maybeSingle();
+      if (existing?.status === "connected" && existing.access_token_ciphertext) {
+        console.info("[mercado-pago] callback repetido já concluído", {
+          callbackId,
+          tenantId: oauth.tenant_id,
+        });
+        return { ok: true };
+      }
+      throw new Error("Esta autorização já foi utilizada e não gerou uma conexão válida.");
+    }
+    if (new Date(oauth.expires_at).getTime() < Date.now()) {
+      console.error("[mercado-pago] state expirado", {
+        callbackId,
+        tenantId: oauth.tenant_id,
+      });
+      throw new Error("Esta autorização expirou. Inicie a conexão novamente.");
+    }
+    let codeVerifier: string;
+    try {
+      codeVerifier = decrypt(oauth.code_verifier_ciphertext, env.encryptionKey);
+    } catch (cause) {
+      console.error("[mercado-pago] code verifier ilegível", {
+        callbackId,
+        tenantId: oauth.tenant_id,
+        cause,
+      });
+      throw new Error("A conexão foi iniciada com outra chave segura. Inicie uma nova conexão.");
     }
     const response = await fetch("https://api.mercadopago.com/oauth/token", {
       method: "POST",
@@ -551,33 +585,45 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
         grant_type: "authorization_code",
         code: data.code,
         redirect_uri: oauth.redirect_uri,
-        code_verifier: decrypt(oauth.code_verifier_ciphertext, env.encryptionKey),
+        code_verifier: codeVerifier,
       }),
     });
-    const token = (await response.json()) as {
+    const token = (await response.json().catch(() => ({}))) as {
       access_token?: string;
       refresh_token?: string;
       expires_in?: number;
       user_id?: number;
       scope?: string;
       message?: string;
+      error?: string;
+      error_description?: string;
     };
     if (!response.ok || !token.access_token) {
       console.error("[mercado-pago] troca do código OAuth falhou", {
+        callbackId,
+        tenantId: oauth.tenant_id,
         status: response.status,
-        message: token.message ?? null,
+        message: token.message ?? token.error_description ?? token.error ?? null,
+        redirectUri: oauth.redirect_uri,
       });
       throw new Error(
-        `O Mercado Pago não autorizou a conexão (${response.status}): ${token.message ?? "tente novamente"}`,
+        `O Mercado Pago não autorizou a conexão (${response.status}): ${token.message ?? token.error_description ?? token.error ?? "tente novamente"}`,
       );
     }
     // Só marcamos como conectada depois de a API aceitar o token recém-emitido.
     const verified = await verifyAccessToken(token.access_token);
-    if (!verified.ok) throw new Error(verified.message);
+    if (!verified.ok) {
+      console.error("[mercado-pago] token emitido não foi validado", {
+        callbackId,
+        tenantId: oauth.tenant_id,
+        message: verified.message,
+      });
+      throw new Error(verified.message);
+    }
     const now = new Date().toISOString();
     const { error } = await admin.from("payment_provider_connections").upsert(
       {
-        tenant_id: session.user.tenantId,
+        tenant_id: oauth.tenant_id,
         provider: "mercado_pago",
         status: "connected",
         provider_user_id: token.user_id ? String(token.user_id) : null,
@@ -596,8 +642,30 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
       },
       { onConflict: "tenant_id,provider" },
     );
-    if (error) throw new Error("A conta foi autorizada, mas não foi possível salvar a conexão.");
-    await admin.from("payment_provider_oauth_states").update({ used_at: now }).eq("id", oauth.id);
+    if (error) {
+      console.error("[mercado-pago] persistência da conexão falhou", {
+        callbackId,
+        tenantId: oauth.tenant_id,
+        databaseError: error.message,
+      });
+      throw new Error("A conta foi autorizada, mas não foi possível salvar a conexão.");
+    }
+    const { error: stateUpdateError } = await admin
+      .from("payment_provider_oauth_states")
+      .update({ used_at: now })
+      .eq("id", oauth.id);
+    if (stateUpdateError) {
+      console.error("[mercado-pago] conexão salva, mas state não foi finalizado", {
+        callbackId,
+        tenantId: oauth.tenant_id,
+        databaseError: stateUpdateError.message,
+      });
+    }
+    console.info("[mercado-pago] conexão persistida e validada", {
+      callbackId,
+      tenantId: oauth.tenant_id,
+      providerUserId: token.user_id ? String(token.user_id) : null,
+    });
     return { ok: true };
   });
 
