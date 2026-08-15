@@ -430,7 +430,7 @@ function BookingSettings({
             const titles = {
               connected: "Conta conectada",
               disconnected: "Nenhuma conta conectada",
-              token_invalid: "Autorização inválida",
+              token_invalid: "Reconexão necessária",
               authorization_error: "Erro de autorização",
               not_configured: "Recebimentos indisponíveis",
             } as const;
@@ -438,6 +438,7 @@ function BookingSettings({
               connected: "Pronta para receber pagamentos.",
               disconnected: "Conecte sua conta para receber pagamentos online.",
               token_invalid:
+                mercadoPago.error ??
                 "A autorização salva não é mais válida. Reconecte a conta para voltar a receber.",
               authorization_error:
                 mercadoPago.error ??

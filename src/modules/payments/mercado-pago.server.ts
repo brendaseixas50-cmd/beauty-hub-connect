@@ -7,11 +7,10 @@ import {
   timingSafeEqual,
 } from "node:crypto";
 import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
-import { getRequestUrl } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 import { getMercadoPagoEnv, getMercadoPagoWebhookSecret } from "@/lib/server-env";
-import { requireApprovedSession } from "@/modules/auth/session.server";
+import { canonicalOrigin, requireApprovedSession } from "@/modules/auth/session.server";
 import { createSupabaseAdminClient } from "@/modules/supabase/admin-client";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 
@@ -215,7 +214,7 @@ export const startMercadoPagoConnection = createServerFn({ method: "POST" }).han
   const challenge = createHash("sha256").update(verifier).digest("base64url");
   const redirectUri = new URL(
     "/integracoes/mercado-pago/retorno",
-    getRequestUrl().origin,
+    canonicalOrigin(),
   ).toString();
   const { error } = await admin.from("payment_provider_oauth_states").insert({
     tenant_id: session.user.tenantId,
@@ -373,7 +372,7 @@ export const createMercadoPagoCheckout = createServerOnlyFn(async (input: Checko
   if (existing?.checkout_url) return { checkoutUrl: existing.checkout_url };
 
   const { token } = await connectionAccessToken(tenant.id);
-  const origin = getRequestUrl().origin;
+  const origin = canonicalOrigin();
   const returnUrl = new URL(`/p/${encodeURIComponent(input.slug)}`, origin);
   returnUrl.searchParams.set("pagamento", "retorno");
   const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
@@ -563,8 +562,18 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
       scope?: string;
       message?: string;
     };
-    if (!response.ok || !token.access_token)
-      throw new Error("O Mercado Pago não autorizou a conexão. Tente novamente.");
+    if (!response.ok || !token.access_token) {
+      console.error("[mercado-pago] troca do código OAuth falhou", {
+        status: response.status,
+        message: token.message ?? null,
+      });
+      throw new Error(
+        `O Mercado Pago não autorizou a conexão (${response.status}): ${token.message ?? "tente novamente"}`,
+      );
+    }
+    // Só marcamos como conectada depois de a API aceitar o token recém-emitido.
+    const verified = await verifyAccessToken(token.access_token);
+    if (!verified.ok) throw new Error(verified.message);
     const now = new Date().toISOString();
     const { error } = await admin.from("payment_provider_connections").upsert(
       {
@@ -572,6 +581,7 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
         provider: "mercado_pago",
         status: "connected",
         provider_user_id: token.user_id ? String(token.user_id) : null,
+        account_email: verified.email,
         access_token_ciphertext: encrypt(token.access_token, env.encryptionKey),
         refresh_token_ciphertext: token.refresh_token
           ? encrypt(token.refresh_token, env.encryptionKey)
