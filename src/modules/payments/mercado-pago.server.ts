@@ -542,14 +542,21 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
       });
       throw new Error("Esta autorização não foi encontrada. Inicie a conexão novamente.");
     }
+    const waitForPersistedConnection = async () => {
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const { data: existing } = await admin
+          .from("payment_provider_connections")
+          .select("status, access_token_ciphertext")
+          .eq("tenant_id", oauth.tenant_id)
+          .eq("provider", "mercado_pago")
+          .maybeSingle();
+        if (existing?.status === "connected" && existing.access_token_ciphertext) return true;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      return false;
+    };
     if (oauth.used_at) {
-      const { data: existing } = await admin
-        .from("payment_provider_connections")
-        .select("status, access_token_ciphertext")
-        .eq("tenant_id", oauth.tenant_id)
-        .eq("provider", "mercado_pago")
-        .maybeSingle();
-      if (existing?.status === "connected" && existing.access_token_ciphertext) {
+      if (await waitForPersistedConnection()) {
         console.info("[mercado-pago] callback repetido já concluído", {
           callbackId,
           tenantId: oauth.tenant_id,
@@ -564,6 +571,26 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
         tenantId: oauth.tenant_id,
       });
       throw new Error("Esta autorização expirou. Inicie a conexão novamente.");
+    }
+    const claimedAt = new Date().toISOString();
+    const { data: claimed, error: claimError } = await admin
+      .from("payment_provider_oauth_states")
+      .update({ used_at: claimedAt })
+      .eq("id", oauth.id)
+      .is("used_at", null)
+      .select("id")
+      .maybeSingle();
+    if (claimError) {
+      console.error("[mercado-pago] falha ao reservar state", {
+        callbackId,
+        tenantId: oauth.tenant_id,
+        databaseError: claimError.message,
+      });
+      throw new Error("Não foi possível confirmar esta autorização com segurança.");
+    }
+    if (!claimed) {
+      if (await waitForPersistedConnection()) return { ok: true };
+      throw new Error("Esta autorização já está sendo processada. Volte às configurações.");
     }
     let codeVerifier: string;
     try {
@@ -649,17 +676,6 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
         databaseError: error.message,
       });
       throw new Error("A conta foi autorizada, mas não foi possível salvar a conexão.");
-    }
-    const { error: stateUpdateError } = await admin
-      .from("payment_provider_oauth_states")
-      .update({ used_at: now })
-      .eq("id", oauth.id);
-    if (stateUpdateError) {
-      console.error("[mercado-pago] conexão salva, mas state não foi finalizado", {
-        callbackId,
-        tenantId: oauth.tenant_id,
-        databaseError: stateUpdateError.message,
-      });
     }
     console.info("[mercado-pago] conexão persistida e validada", {
       callbackId,
