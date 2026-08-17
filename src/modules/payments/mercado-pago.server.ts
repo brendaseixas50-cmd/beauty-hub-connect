@@ -113,8 +113,16 @@ async function verifyAccessToken(token: string) {
 
 export const getMercadoPagoConnection = createServerFn({ method: "GET" }).handler(
   async (): Promise<ConnectionStatus> => {
-    const { supabase, session } = await context();
-    const { data } = await supabase
+    const { session } = await context();
+    const admin = createSupabaseAdminClient();
+    const statusTraceId = randomBytes(6).toString("hex");
+    console.info("[mercado-pago] M início da consulta de status", {
+      statusTraceId,
+      tenantId: session.user.tenantId,
+    });
+    // Esta leitura precisa ocorrer no servidor privilegiado: as colunas cifradas
+    // nunca são concedidas ao papel autenticado e não podem ser projetadas via RLS.
+    const { data, error: connectionError } = await admin
       .from("payment_provider_connections")
       .select(
         "status, account_email, connected_at, last_error, access_token_ciphertext, refresh_token_ciphertext, token_expires_at",
@@ -122,6 +130,14 @@ export const getMercadoPagoConnection = createServerFn({ method: "GET" }).handle
       .eq("tenant_id", session.user.tenantId)
       .eq("provider", "mercado_pago")
       .maybeSingle();
+    if (connectionError) {
+      console.error("[mercado-pago] M consulta de status falhou", {
+        statusTraceId,
+        tenantId: session.user.tenantId,
+        databaseError: connectionError.message,
+      });
+      throw new Error("Não foi possível consultar a conexão do Mercado Pago.");
+    }
     const env = environment();
     const configured = Boolean(env);
     const expired =
@@ -153,7 +169,6 @@ export const getMercadoPagoConnection = createServerFn({ method: "GET" }).handle
         }
       }
       if (!readable) {
-        const admin = createSupabaseAdminClient();
         await admin
           .from("payment_provider_connections")
           .update({ last_error: liveError, updated_at: new Date().toISOString() })
@@ -177,6 +192,17 @@ export const getMercadoPagoConnection = createServerFn({ method: "GET" }).handle
             : expired
               ? "token_invalid"
               : "disconnected";
+
+    console.info("[mercado-pago] M status decidido para a tela", {
+      statusTraceId,
+      tenantId: session.user.tenantId,
+      rowFound: Boolean(data),
+      stored,
+      configured,
+      decryptable: readable,
+      connected,
+      state,
+    });
 
     const messages: Record<ConnectionState, string | null> = {
       not_configured:
@@ -216,15 +242,29 @@ export const startMercadoPagoConnection = createServerFn({ method: "POST" }).han
     "/integracoes/mercado-pago/retorno",
     canonicalOrigin(),
   ).toString();
+  const stateHash = createHash("sha256").update(state).digest("hex");
+  const oauthTraceId = stateHash.slice(0, 12);
+  console.info("[mercado-pago] A/B início OAuth e state gerado", {
+    oauthTraceId,
+    tenantId: session.user.tenantId,
+    redirectUri,
+  });
   const { error } = await admin.from("payment_provider_oauth_states").insert({
     tenant_id: session.user.tenantId,
     provider: "mercado_pago",
-    state_hash: createHash("sha256").update(state).digest("hex"),
+    state_hash: stateHash,
     code_verifier_ciphertext: encrypt(verifier, env.encryptionKey),
     redirect_uri: redirectUri,
     expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
   });
-  if (error) throw new Error("Não foi possível iniciar a conexão segura.");
+  if (error) {
+    console.error("[mercado-pago] B persistência do state falhou", {
+      oauthTraceId,
+      tenantId: session.user.tenantId,
+      databaseError: error.message,
+    });
+    throw new Error("Não foi possível iniciar a conexão segura.");
+  }
   const url = new URL("https://auth.mercadopago.com/authorization");
   url.searchParams.set("client_id", env.clientId);
   url.searchParams.set("response_type", "code");
@@ -528,7 +568,11 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
     const admin = createSupabaseAdminClient();
     const stateHash = createHash("sha256").update(data.state).digest("hex");
     const callbackId = stateHash.slice(0, 12);
-    console.info("[mercado-pago] callback recebido", { callbackId });
+    console.info("[mercado-pago] C/D retorno OAuth recebido", {
+      callbackId,
+      codePresent: data.code.length > 0,
+      codeLength: data.code.length,
+    });
     const { data: oauth, error: oauthError } = await admin
       .from("payment_provider_oauth_states")
       .select("id, tenant_id, code_verifier_ciphertext, redirect_uri, expires_at, used_at")
@@ -542,6 +586,12 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
       });
       throw new Error("Esta autorização não foi encontrada. Inicie a conexão novamente.");
     }
+    console.info("[mercado-pago] E/I state validado e tenant identificado", {
+      callbackId,
+      tenantId: oauth.tenant_id,
+      redirectUri: oauth.redirect_uri,
+      alreadyUsed: Boolean(oauth.used_at),
+    });
     const waitForPersistedConnection = async () => {
       for (let attempt = 0; attempt < 8; attempt += 1) {
         const { data: existing } = await admin
@@ -625,6 +675,14 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
       error?: string;
       error_description?: string;
     };
+    console.info("[mercado-pago] F troca do code por token concluída", {
+      callbackId,
+      tenantId: oauth.tenant_id,
+      httpStatus: response.status,
+      accessTokenReceived: Boolean(token.access_token),
+      refreshTokenReceived: Boolean(token.refresh_token),
+      providerUserIdReceived: Boolean(token.user_id),
+    });
     if (!response.ok || !token.access_token) {
       console.error("[mercado-pago] troca do código OAuth falhou", {
         callbackId,
@@ -639,6 +697,11 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
     }
     // Só marcamos como conectada depois de a API aceitar o token recém-emitido.
     const verified = await verifyAccessToken(token.access_token);
+    console.info("[mercado-pago] G validação na API concluída", {
+      callbackId,
+      tenantId: oauth.tenant_id,
+      accepted: verified.ok,
+    });
     if (!verified.ok) {
       console.error("[mercado-pago] token emitido não foi validado", {
         callbackId,
@@ -648,6 +711,16 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
       throw new Error(verified.message);
     }
     const now = new Date().toISOString();
+    const encryptedAccessToken = encrypt(token.access_token, env.encryptionKey);
+    const encryptedRefreshToken = token.refresh_token
+      ? encrypt(token.refresh_token, env.encryptionKey)
+      : null;
+    console.info("[mercado-pago] H tokens criptografados com a chave atual", {
+      callbackId,
+      tenantId: oauth.tenant_id,
+      accessTokenEncrypted: encryptedAccessToken.startsWith("v1."),
+      refreshTokenEncrypted: encryptedRefreshToken?.startsWith("v1.") ?? false,
+    });
     const { error } = await admin.from("payment_provider_connections").upsert(
       {
         tenant_id: oauth.tenant_id,
@@ -655,10 +728,8 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
         status: "connected",
         provider_user_id: token.user_id ? String(token.user_id) : null,
         account_email: verified.email,
-        access_token_ciphertext: encrypt(token.access_token, env.encryptionKey),
-        refresh_token_ciphertext: token.refresh_token
-          ? encrypt(token.refresh_token, env.encryptionKey)
-          : null,
+        access_token_ciphertext: encryptedAccessToken,
+        refresh_token_ciphertext: encryptedRefreshToken,
         token_expires_at: token.expires_in
           ? new Date(Date.now() + token.expires_in * 1000).toISOString()
           : null,
@@ -677,10 +748,46 @@ export const finishMercadoPagoConnection = createServerFn({ method: "POST" })
       });
       throw new Error("A conta foi autorizada, mas não foi possível salvar a conexão.");
     }
-    console.info("[mercado-pago] conexão persistida e validada", {
+    console.info("[mercado-pago] J INSERT/UPDATE concluído", {
       callbackId,
       tenantId: oauth.tenant_id,
       providerUserId: token.user_id ? String(token.user_id) : null,
+    });
+    const { data: persisted, error: persistedError } = await admin
+      .from("payment_provider_connections")
+      .select("id, tenant_id, provider, status, access_token_ciphertext, refresh_token_ciphertext")
+      .eq("tenant_id", oauth.tenant_id)
+      .eq("provider", "mercado_pago")
+      .maybeSingle();
+    let postSaveDecryptable = false;
+    if (persisted?.access_token_ciphertext) {
+      try {
+        postSaveDecryptable =
+          decrypt(persisted.access_token_ciphertext, env.encryptionKey) === token.access_token;
+      } catch {
+        postSaveDecryptable = false;
+      }
+    }
+    console.info("[mercado-pago] K leitura imediata após salvar", {
+      callbackId,
+      tenantId: oauth.tenant_id,
+      rowFound: Boolean(persisted),
+      savedTenantMatches: persisted?.tenant_id === oauth.tenant_id,
+      status: persisted?.status ?? null,
+      postSaveDecryptable,
+      databaseError: persistedError?.message ?? null,
+    });
+    if (
+      persistedError ||
+      !persisted ||
+      persisted.status !== "connected" ||
+      !postSaveDecryptable
+    ) {
+      throw new Error("A conexão foi salva, mas falhou na validação imediata do servidor.");
+    }
+    console.info("[mercado-pago] L resposta de sucesso enviada", {
+      callbackId,
+      tenantId: oauth.tenant_id,
     });
     return { ok: true };
   });
