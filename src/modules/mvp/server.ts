@@ -1194,18 +1194,64 @@ const serviceSchema = z.object({
 });
 
 export const listServices = createServerFn({ method: "GET" }).handler(
-  async (): Promise<Service[]> => {
+  async (): Promise<ServiceWithUsage[]> => {
     const { supabase, tenantId } = await tenantContext();
-    const { data, error } = await supabase
-      .from("services")
-      .select("*")
-      .eq("tenant_id", tenantId)
-      .order("active", { ascending: false })
-      .order("name");
-    if (error) databaseError(error, "Não foi possível carregar os serviços.");
-    return data;
+    const [servicesResult, appointmentsResult, linksResult] = await Promise.all([
+      supabase
+        .from("services")
+        .select("*")
+        .eq("tenant_id", tenantId)
+        .order("active", { ascending: false })
+        .order("name"),
+      supabase.from("appointments").select("service_id, starts_at").eq("tenant_id", tenantId),
+      supabase.from("professional_services").select("service_id").eq("tenant_id", tenantId),
+    ]);
+    if (servicesResult.error)
+      databaseError(servicesResult.error, "Não foi possível carregar os serviços.");
+    const now = Date.now();
+    const history = new Map<string, number>();
+    const upcoming = new Map<string, number>();
+    for (const appointment of appointmentsResult.data ?? []) {
+      if (!appointment.service_id) continue;
+      history.set(appointment.service_id, (history.get(appointment.service_id) ?? 0) + 1);
+      if (new Date(appointment.starts_at).getTime() > now)
+        upcoming.set(appointment.service_id, (upcoming.get(appointment.service_id) ?? 0) + 1);
+    }
+    const linked = new Set((linksResult.data ?? []).map((link) => link.service_id));
+    return servicesResult.data.map((service) => {
+      const appointments = history.get(service.id) ?? 0;
+      const futureAppointments = upcoming.get(service.id) ?? 0;
+      return {
+        ...service,
+        appointments,
+        futureAppointments,
+        linkedToProfessionals: linked.has(service.id),
+        deletable: appointments === 0 && futureAppointments === 0,
+      };
+    });
   },
 );
+
+/** Inativa ou reativa um serviço preservando todo o histórico vinculado. */
+export const setServiceActive = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().uuid(), active: z.boolean() }))
+  .handler(async ({ data }): Promise<Service> => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const { data: saved, error } = await supabase
+      .from("services")
+      .update({ active: data.active })
+      .eq("id", data.id)
+      .eq("tenant_id", tenantId)
+      .select()
+      .single();
+    if (error || !saved)
+      databaseError(
+        error,
+        data.active ? "Não foi possível reativar o serviço." : "Não foi possível inativar o serviço.",
+      );
+    return saved;
+  });
 
 export const saveService = createServerFn({ method: "POST" })
   .validator(serviceSchema)
