@@ -1530,6 +1530,10 @@ export type Database = {
         Args: { target_id: string };
         Returns: undefined;
       };
+      request_platform_access: {
+        Args: { target_product: string };
+        Returns: string;
+      };
       admin_upsert_platform_access: {
         Args: {
           target_access_type: string;
