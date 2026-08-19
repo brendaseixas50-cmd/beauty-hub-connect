@@ -20,6 +20,7 @@ import type {
   Professional,
   ProfessionalWithServices,
   Service,
+  ServiceWithUsage,
 } from "./domain";
 
 const idSchema = z.object({ id: z.string().uuid() });
@@ -1275,11 +1276,27 @@ export const saveService = createServerFn({ method: "POST" })
     return saved;
   });
 
+/** Exclui apenas quando é seguro: sem histórico e sem agendamentos futuros. */
 export const deleteService = createServerFn({ method: "POST" })
   .validator(idSchema)
   .handler(async ({ data }) => {
     const { supabase, tenantId, role } = await tenantContext();
     requireManager(role);
+    const { count, error: usageError } = await supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("service_id", data.id);
+    if (usageError) databaseError(usageError, "Não foi possível verificar os vínculos do serviço.");
+    if ((count ?? 0) > 0)
+      throw new Error(
+        "Este serviço possui histórico de agendamentos e não pode ser excluído. Use “Inativar serviço” para removê-lo da página pública sem perder o histórico.",
+      );
+    await supabase
+      .from("professional_services")
+      .delete()
+      .eq("tenant_id", tenantId)
+      .eq("service_id", data.id);
     const { error } = await supabase
       .from("services")
       .delete()
@@ -1501,11 +1518,13 @@ export const saveAppointment = createServerFn({ method: "POST" })
     const { supabase, tenantId } = await tenantContext();
     const { data: service, error: serviceError } = await supabase
       .from("services")
-      .select("duration_minutes, price_cents")
+      .select("duration_minutes, price_cents, active")
       .eq("id", data.serviceId)
       .eq("tenant_id", tenantId)
       .single();
     if (serviceError || !service) databaseError(serviceError, "Serviço inválido.");
+    if (!service.active && !data.id)
+      throw new Error("Este serviço está inativo e não pode ser usado em novos agendamentos.");
     const startsAt = new Date(data.startsAt);
     const endsAt = new Date(startsAt.getTime() + service.duration_minutes * 60_000);
     if (data.status === "scheduled" || data.status === "confirmed") {

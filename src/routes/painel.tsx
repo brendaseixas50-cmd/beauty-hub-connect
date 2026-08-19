@@ -51,7 +51,7 @@ export const Route = createFileRoute("/painel")({
       });
     }
     if (!session.user.betaAccessActive) {
-      throw redirect({ to: "/beta-fechado" });
+      throw redirect({ to: "/beta-fechado", search: { produto: session.user.productType } });
     }
     if (session.user.productType === "beauty" && !session.user.onboardingCompleted) {
       throw redirect({ to: "/onboarding", search: { retorno: "/painel" } });

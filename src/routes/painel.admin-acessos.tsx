@@ -71,7 +71,7 @@ function BetaAccessAdmin() {
           productType: String(form.get("productType")) as "beauty" | "barber",
           accessType: String(form.get("accessType")) as
             "administrator" | "courtesy" | "beta_tester",
-          status: String(form.get("status")) as "active" | "suspended" | "revoked" | "expired",
+          status: String(form.get("status")) as AccessStatus,
           planCode: String(form.get("planCode")) as "solo" | "team",
           expiresAt: expires ? new Date(`${expires}T23:59:59-03:00`).toISOString() : null,
           notes: String(form.get("notes") ?? ""),
@@ -87,6 +87,30 @@ function BetaAccessAdmin() {
     }
   }
 
+
+  async function changeStatus(row: AccessRow, status: AccessStatus, success: string) {
+    setPending(true);
+    setMessage(undefined);
+    try {
+      await saveFn({
+        data: {
+          email: row.email,
+          productType: row.product_type as "beauty" | "barber",
+          accessType: row.access_type as "administrator" | "courtesy" | "beta_tester",
+          status,
+          planCode: (row.plan_code === "team" ? "team" : "solo") as "solo" | "team",
+          expiresAt: row.expires_at,
+          notes: row.notes ?? "",
+        },
+      });
+      await refresh();
+      setMessage(success);
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : "Não foi possível atualizar o acesso.");
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
     <div className="max-w-5xl">
@@ -122,6 +146,7 @@ function BetaAccessAdmin() {
             label="Status"
             name="status"
             options={[
+              ["pending", "Pendente (aguardando aprovação)"],
               ["active", "Ativo"],
               ["suspended", "Suspenso"],
               ["revoked", "Revogado"],
@@ -172,7 +197,7 @@ function BetaAccessAdmin() {
               <div>
                 <strong className="block break-all">{row.email}</strong>
                 <p className="text-sm text-muted-foreground">
-                  {row.product_type === "barber" ? "LuBarber Pro" : "LuBeauty Pro"} · {row.status} · Plano {row.plan_code === "team" ? "Equipe" : "Solo"}
+                  {row.product_type === "barber" ? "LuBarber Pro" : "LuBeauty Pro"} · {statusLabel(row.status)} · Plano {row.plan_code === "team" ? "Equipe" : "Solo"}
                 </p>
                 <p className="text-xs text-muted-foreground">{row.active_professionals ?? 0} profissionais ativos</p>
               </div>
@@ -182,7 +207,7 @@ function BetaAccessAdmin() {
                     onClick={async () => {
                       setPending(true);
                       try {
-                        await saveFn({ data: { email: row.email, productType: row.product_type as "beauty" | "barber", accessType: row.access_type as "administrator" | "courtesy" | "beta_tester", status: row.status as "active" | "suspended" | "revoked" | "expired", planCode, expiresAt: row.expires_at, notes: row.notes ?? "" } });
+                        await saveFn({ data: { email: row.email, productType: row.product_type as "beauty" | "barber", accessType: row.access_type as "administrator" | "courtesy" | "beta_tester", status: row.status as AccessStatus, planCode, expiresAt: row.expires_at, notes: row.notes ?? "" } });
                         await refresh();
                         const excess = planCode === "solo" && (row.active_professionals ?? 0) > 1;
                         setMessage(excess ? `Plano alterado para Solo. Nenhum dado foi excluído; novas ativações ficam bloqueadas até restar 1 profissional ativo.` : `Plano alterado para ${planCode === "team" ? "Equipe — até 8 profissionais" : "Solo — 1 profissional"}.`);
@@ -192,6 +217,18 @@ function BetaAccessAdmin() {
                     {planCode === "solo" ? "Definir como Solo" : "Definir como Equipe"}
                   </Button>
                 ))}
+                {row.status === "pending" ? (
+                  <>
+                    <Button type="button" size="sm" disabled={pending}
+                      onClick={() => void changeStatus(row, "active", "Acesso aprovado e liberado.")}>
+                      Aprovar acesso
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" disabled={pending}
+                      onClick={() => void changeStatus(row, "revoked", "Solicitação recusada.")}>
+                      Recusar
+                    </Button>
+                  </>
+                ) : null}
                 <Button type="button" variant="outline" size="icon" aria-label="Remover acesso" onClick={async () => { await removeFn({ data: { id: row.id } }); await refresh(); }}><Trash2 /></Button>
               </div>
             </div>
@@ -240,4 +277,23 @@ function SelectField({
       </Select>
     </div>
   );
+}
+
+type AccessStatus = "pending" | "active" | "suspended" | "revoked" | "expired";
+
+function statusLabel(status: string) {
+  switch (status) {
+    case "pending":
+      return "Aguardando aprovação";
+    case "active":
+      return "Ativo";
+    case "suspended":
+      return "Suspenso";
+    case "revoked":
+      return "Recusado/Revogado";
+    case "expired":
+      return "Expirado";
+    default:
+      return status;
+  }
 }

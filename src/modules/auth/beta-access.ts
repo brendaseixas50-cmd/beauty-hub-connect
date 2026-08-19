@@ -3,7 +3,7 @@ import type { BetaAccessStatus, CompanyAccess } from "./domain";
 export interface PlatformGrant {
   productType: "beauty" | "barber";
   accessType: "administrator" | "courtesy" | "beta_tester";
-  status: "active" | "suspended" | "revoked" | "expired";
+  status: "pending" | "active" | "suspended" | "revoked" | "expired";
   startsAt: string;
   expiresAt: string | null;
 }

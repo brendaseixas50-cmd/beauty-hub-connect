@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Clock, Pencil, Plus } from "lucide-react";
+import { Clock, EyeOff, Pencil, Plus, RotateCcw } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 
 import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { brl, centsFromInput, type Service } from "@/modules/mvp/domain";
-import { deleteService, listServices, saveService } from "@/modules/mvp/server";
+import { deleteService, listServices, saveService, setServiceActive } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
@@ -33,9 +33,11 @@ export const Route = createFileRoute("/painel/servicos")({
 function ServicesPage() {
   const services = Route.useLoaderData();
   const remove = useServerFn(deleteService);
+  const toggleActive = useServerFn(setServiceActive);
   const action = useMvpAction();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
+  const [situation, setSituation] = useState<"all" | "active" | "inactive">("all");
   const [editing, setEditing] = useState<Service | null>();
   const categories = useMemo(
     () => [...new Set(services.map((item) => item.category).filter(Boolean))] as string[],
@@ -45,7 +47,9 @@ function ServicesPage() {
   const filtered = services.filter(
     (service) =>
       (!term || service.name.toLowerCase().includes(term)) &&
-      (category === "all" || service.category === category),
+      (category === "all" || service.category === category) &&
+      (situation === "all" ||
+        (situation === "active" ? service.active : !service.active)),
   );
 
   return (
@@ -84,6 +88,32 @@ function ServicesPage() {
         </select>
       </div>
 
+      <div
+        role="group"
+        aria-label="Filtrar situação"
+        className="mt-3 flex flex-wrap gap-2"
+      >
+        {(
+          [
+            ["all", "Todos"],
+            ["active", "Ativos"],
+            ["inactive", "Inativos"],
+          ] as const
+        ).map(([value, label]) => (
+          <Button
+            key={value}
+            type="button"
+            size="sm"
+            variant={situation === value ? "default" : "outline"}
+            className="rounded-full"
+            aria-pressed={situation === value}
+            onClick={() => setSituation(value)}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+
       {filtered.length === 0 ? (
         <EmptyState
           title="Nenhum serviço encontrado"
@@ -113,17 +143,48 @@ function ServicesPage() {
                   <Clock className="h-4 w-4" /> {formatDuration(service.duration_minutes)}
                 </span>
               </div>
+              <p className="text-xs text-muted-foreground">
+                {service.active
+                  ? "Visível na página pública e disponível para novos agendamentos."
+                  : "Fora da página pública. Histórico, pagamentos e relatórios preservados."}
+              </p>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={() => setEditing(service)}>
                   <Pencil className="h-4 w-4" /> Editar
                 </Button>
-                <DeleteButton
-                  label={service.name}
-                  pending={action.pending}
-                  onConfirm={() =>
-                    void action.run(() => remove({ data: { id: service.id } }), "Serviço excluído.")
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={action.pending}
+                  onClick={() =>
+                    void action.run(
+                      () => toggleActive({ data: { id: service.id, active: !service.active } }),
+                      service.active ? "Serviço inativado." : "Serviço reativado.",
+                    )
                   }
-                />
+                >
+                  {service.active ? (
+                    <>
+                      <EyeOff className="h-4 w-4" /> Inativar
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="h-4 w-4" /> Reativar
+                    </>
+                  )}
+                </Button>
+                {service.deletable ? (
+                  <DeleteButton
+                    label={`${service.name} (exclusão definitiva)`}
+                    pending={action.pending}
+                    onConfirm={() =>
+                      void action.run(
+                        () => remove({ data: { id: service.id } }),
+                        "Serviço excluído definitivamente.",
+                      )
+                    }
+                  />
+                ) : null}
               </div>
             </Card>
           ))}

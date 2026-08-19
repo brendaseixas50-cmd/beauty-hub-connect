@@ -9,12 +9,32 @@ const accessSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   productType: z.enum(["beauty", "barber"]),
   accessType: z.enum(["administrator", "courtesy", "beta_tester"]),
-  status: z.enum(["active", "suspended", "revoked", "expired"]),
+  status: z.enum(["pending", "active", "suspended", "revoked", "expired"]),
   planCode: z.enum(["solo", "team"]),
   expiresAt: z.string().datetime({ offset: true }).nullable(),
   notes: z.string().trim().max(1000),
 });
 const removeSchema = z.object({ id: z.string().uuid() });
+
+/**
+ * Beta fechado: registra automaticamente uma solicitação PENDENTE para o e-mail
+ * autenticado. Nunca aprova acesso — apenas cria o registro no Painel Master.
+ */
+export const requestBetaAccess = createServerFn({ method: "POST" })
+  .validator(z.object({ productType: z.enum(["beauty", "barber"]) }))
+  .handler(async ({ data }) => {
+    const supabase = createSupabaseServerClient();
+    const session = await resolveSession(supabase);
+    if (!session) return { requested: false as const };
+    const { data: status, error } = await supabase.rpc("request_platform_access", {
+      target_product: data.productType,
+    });
+    if (error) {
+      console.warn("[beta-fechado] não foi possível registrar a solicitação", error.message);
+      return { requested: false as const };
+    }
+    return { requested: true as const, status: typeof status === "string" ? status : "pending" };
+  });
 
 async function requirePlatformAdministrator() {
   const supabase = createSupabaseServerClient();
