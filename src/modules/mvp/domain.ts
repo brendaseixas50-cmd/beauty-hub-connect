@@ -25,6 +25,13 @@ export type Product = Tables<"products">;
 export type Professional = Tables<"professionals">;
 export type ProfessionalWithServices = Professional & { serviceIds: string[] };
 export type Service = Tables<"services">;
+/** Serviço com os vínculos que precisam ser preservados antes de excluir. */
+export type ServiceWithUsage = Service & {
+  appointments: number;
+  futureAppointments: number;
+  linkedToProfessionals: boolean;
+  deletable: boolean;
+};
 
 export type ProductType = "beauty" | "barber";
 
