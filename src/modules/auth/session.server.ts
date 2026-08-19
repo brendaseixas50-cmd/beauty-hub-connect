@@ -27,7 +27,7 @@ const platformAccessSchema = z.object({
       z.object({
         productType: z.enum(["beauty", "barber"]),
         accessType: z.enum(["administrator", "courtesy", "beta_tester"]),
-        status: z.enum(["active", "suspended", "revoked", "expired"]),
+        status: z.enum(["pending", "active", "suspended", "revoked", "expired"]),
         startsAt: z.string(),
         expiresAt: z.string().nullable(),
       }),
