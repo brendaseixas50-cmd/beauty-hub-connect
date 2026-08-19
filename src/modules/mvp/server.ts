@@ -1518,11 +1518,13 @@ export const saveAppointment = createServerFn({ method: "POST" })
     const { supabase, tenantId } = await tenantContext();
     const { data: service, error: serviceError } = await supabase
       .from("services")
-      .select("duration_minutes, price_cents")
+      .select("duration_minutes, price_cents, active")
       .eq("id", data.serviceId)
       .eq("tenant_id", tenantId)
       .single();
     if (serviceError || !service) databaseError(serviceError, "Serviço inválido.");
+    if (!service.active && !data.id)
+      throw new Error("Este serviço está inativo e não pode ser usado em novos agendamentos.");
     const startsAt = new Date(data.startsAt);
     const endsAt = new Date(startsAt.getTime() + service.duration_minutes * 60_000);
     if (data.status === "scheduled" || data.status === "confirmed") {
