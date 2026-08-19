@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Clock, Pencil, Plus } from "lucide-react";
+import { Clock, EyeOff, Pencil, Plus, RotateCcw } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 
 import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { brl, centsFromInput, type Service, type ServiceWithUsage } from "@/modules/mvp/domain";
+import { brl, centsFromInput, type Service } from "@/modules/mvp/domain";
 import { deleteService, listServices, saveService, setServiceActive } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
