@@ -35,7 +35,8 @@ import {
 
 export const Route = createFileRoute("/p/$slug")({
   loader: ({ params }) => getPublicCompanyPage({ data: { slug: params.slug } }),
-  staleTime: 5 * 60_000,
+  // Alterações no painel (preço, duração, inativação, exclusão) refletem no mesmo link público.
+  staleTime: 15_000,
   preloadStaleTime: 5 * 60_000,
   head: ({ loaderData }) => ({
     meta: [
