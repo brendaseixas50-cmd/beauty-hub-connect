@@ -28,7 +28,11 @@ export const Route = createFileRoute("/onboarding")({
   beforeLoad: async ({ context }) => {
     const session = await readSession(context.queryClient);
     if (!session) throw redirect({ to: "/login", search: { redirect: "/onboarding" } });
-    if (!session.user.betaAccessActive) throw redirect({ to: "/beta-fechado" });
+    if (!session.user.betaAccessActive)
+      throw redirect({
+        to: "/beta-fechado",
+        search: { produto: session.user.productType },
+      });
     return { session };
   },
   loader: () => getOnboardingData(),
