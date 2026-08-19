@@ -1275,11 +1275,27 @@ export const saveService = createServerFn({ method: "POST" })
     return saved;
   });
 
+/** Exclui apenas quando é seguro: sem histórico e sem agendamentos futuros. */
 export const deleteService = createServerFn({ method: "POST" })
   .validator(idSchema)
   .handler(async ({ data }) => {
     const { supabase, tenantId, role } = await tenantContext();
     requireManager(role);
+    const { count, error: usageError } = await supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("service_id", data.id);
+    if (usageError) databaseError(usageError, "Não foi possível verificar os vínculos do serviço.");
+    if ((count ?? 0) > 0)
+      throw new Error(
+        "Este serviço possui histórico de agendamentos e não pode ser excluído. Use “Inativar serviço” para removê-lo da página pública sem perder o histórico.",
+      );
+    await supabase
+      .from("professional_services")
+      .delete()
+      .eq("tenant_id", tenantId)
+      .eq("service_id", data.id);
     const { error } = await supabase
       .from("services")
       .delete()
