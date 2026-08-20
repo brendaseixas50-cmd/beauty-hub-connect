@@ -20,6 +20,9 @@ import type {
   LuviTheme,
 } from "@/modules/luvi-core/types";
 
+/** Estados visuais da assistente flutuante. */
+export type LuviAssistantState = "hidden" | "bubble" | "open";
+
 interface LuviContextValue {
   context: LuviContextSnapshot;
   theme: LuviTheme;
@@ -30,7 +33,14 @@ interface LuviContextValue {
   dismiss: (id: string) => void;
   remember: (title: string) => void;
   clearHistory: () => void;
+  tenantName: string;
+  assistantState: LuviAssistantState;
+  showAssistant: () => void;
+  openAssistant: () => void;
+  minimizeAssistant: () => void;
+  hideAssistant: () => void;
 }
+
 
 const LuviContext = createContext<LuviContextValue | null>(null);
 const guidedProvider = new RuleBasedLuviProvider();
@@ -101,6 +111,28 @@ export function LuviContextProvider({
   }, []);
   const clearHistory = useCallback(() => setHistory([]), []);
 
+  const assistantKey = `luvi:assistant:v1:${product}:${session.user.id}`;
+  const [assistantState, setAssistantState] = useState<LuviAssistantState>("bubble");
+  // Restaura a preferência somente após a hidratação para não divergir do HTML do servidor.
+  useEffect(() => {
+    setAssistantState(readAssistantState(assistantKey));
+  }, [assistantKey]);
+  const persistAssistant = useCallback(
+    (next: LuviAssistantState) => {
+      setAssistantState(next);
+      try {
+        window.localStorage.setItem(assistantKey, next);
+      } catch {
+        // Armazenamento indisponível: o estado vale apenas para esta navegação.
+      }
+    },
+    [assistantKey],
+  );
+  const showAssistant = useCallback(() => persistAssistant("bubble"), [persistAssistant]);
+  const openAssistant = useCallback(() => persistAssistant("open"), [persistAssistant]);
+  const minimizeAssistant = useCallback(() => persistAssistant("bubble"), [persistAssistant]);
+  const hideAssistant = useCallback(() => persistAssistant("hidden"), [persistAssistant]);
+
   const value = useMemo(
     () => ({
       context,
@@ -112,9 +144,31 @@ export function LuviContextProvider({
       dismiss,
       remember,
       clearHistory,
+      tenantName: session.user.tenantName,
+      assistantState,
+      showAssistant,
+      openAssistant,
+      minimizeAssistant,
+      hideAssistant,
     }),
-    [clearHistory, context, dismiss, dismissed, history, remember, suggestions, theme],
+    [
+      assistantState,
+      clearHistory,
+      context,
+      dismiss,
+      dismissed,
+      hideAssistant,
+      history,
+      minimizeAssistant,
+      openAssistant,
+      remember,
+      session.user.tenantName,
+      showAssistant,
+      suggestions,
+      theme,
+    ],
   );
+
 
   return <LuviContext.Provider value={value}>{children}</LuviContext.Provider>;
 }
@@ -132,6 +186,17 @@ export function LuviContextBridge({ facts }: { facts: LuviFacts }) {
   useEffect(() => setFacts(JSON.parse(serialized) as LuviFacts), [serialized, setFacts]);
   return null;
 }
+
+function readAssistantState(key: string): LuviAssistantState {
+  if (typeof window === "undefined") return "bubble";
+  try {
+    const value = window.localStorage.getItem(key);
+    return value === "hidden" || value === "open" || value === "bubble" ? value : "bubble";
+  } catch {
+    return "bubble";
+  }
+}
+
 
 function readDismissed(key: string) {
   if (typeof window === "undefined") return new Set<string>();
