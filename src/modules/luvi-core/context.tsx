@@ -187,6 +187,17 @@ export function LuviContextBridge({ facts }: { facts: LuviFacts }) {
   return null;
 }
 
+function readAssistantState(key: string): LuviAssistantState {
+  if (typeof window === "undefined") return "bubble";
+  try {
+    const value = window.localStorage.getItem(key);
+    return value === "hidden" || value === "open" || value === "bubble" ? value : "bubble";
+  } catch {
+    return "bubble";
+  }
+}
+
+
 function readDismissed(key: string) {
   if (typeof window === "undefined") return new Set<string>();
   try {
