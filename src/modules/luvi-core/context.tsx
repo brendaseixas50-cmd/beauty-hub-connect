@@ -20,6 +20,9 @@ import type {
   LuviTheme,
 } from "@/modules/luvi-core/types";
 
+/** Estados visuais da assistente flutuante. */
+export type LuviAssistantState = "hidden" | "bubble" | "open";
+
 interface LuviContextValue {
   context: LuviContextSnapshot;
   theme: LuviTheme;
@@ -30,7 +33,14 @@ interface LuviContextValue {
   dismiss: (id: string) => void;
   remember: (title: string) => void;
   clearHistory: () => void;
+  tenantName: string;
+  assistantState: LuviAssistantState;
+  showAssistant: () => void;
+  openAssistant: () => void;
+  minimizeAssistant: () => void;
+  hideAssistant: () => void;
 }
+
 
 const LuviContext = createContext<LuviContextValue | null>(null);
 const guidedProvider = new RuleBasedLuviProvider();
