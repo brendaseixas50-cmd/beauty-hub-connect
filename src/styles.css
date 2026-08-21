@@ -741,21 +741,11 @@
   main [data-slot="card"] a[role="button"] {
     min-height: 2.75rem;
   }
-  .luvi-inline-card {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-  .luvi-inline-card > a {
-    width: 100%;
-  }
-  .luvi-floating-button {
-    width: 3.5rem;
-    height: 3.5rem;
-  }
   .luvi-avatar-floating {
     width: 3rem;
     height: 3rem;
   }
+
 }
 
 @media (max-width: 640px) {
