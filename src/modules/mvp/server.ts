@@ -1438,6 +1438,17 @@ export const deleteProduct = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabase, tenantId, role } = await tenantContext();
     requireManager(role);
+    const { count, error: usageError } = await supabase
+      .from("inventory_movements")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("product_id", data.id)
+      .neq("reason", "initial");
+    if (usageError) databaseError(usageError, "Não foi possível verificar o histórico do produto.");
+    if ((count ?? 0) > 0)
+      throw new Error(
+        "Este produto tem movimentações registradas. Inative-o para preservar o histórico.",
+      );
     const { error } = await supabase
       .from("products")
       .delete()

@@ -22,6 +22,8 @@ export type MarketingClient = Client & {
   lastProfessionalName: string | null;
 };
 export type Product = Tables<"products">;
+/** Produto com o histórico que impede a exclusão definitiva. */
+export type ProductWithUsage = Product & { movements: number; deletable: boolean };
 export type Professional = Tables<"professionals">;
 export type ProfessionalWithServices = Professional & { serviceIds: string[] };
 export type Service = Tables<"services">;
