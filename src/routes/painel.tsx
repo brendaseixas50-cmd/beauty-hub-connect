@@ -311,8 +311,8 @@ function PainelLayout() {
           </aside>
 
           <div className="min-w-0 flex-1">
-            <header className="sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
-              <Marca session={session} />
+            <header className="sticky top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
+              {/* Acionador no mesmo lado em que o menu abre (esquerda), junto da identidade. */}
               <Sheet open={aberto} onOpenChange={setAberto}>
                 <SheetTrigger asChild>
                   <Button variant="outline" size="icon" aria-label="Abrir menu">
@@ -334,7 +334,9 @@ function PainelLayout() {
                   </div>
                 </SheetContent>
               </Sheet>
+              <Marca session={session} />
             </header>
+
 
             <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-10">
               <Outlet />
