@@ -53,10 +53,8 @@ function Dashboard() {
           </Button>
         }
       />
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 
-      <LuviInlineSuggestion />
-
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Metric
           icon={CalendarCheck}
           title="Agendamentos hoje"
