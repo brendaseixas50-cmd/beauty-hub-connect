@@ -27,6 +27,7 @@ import {
   Megaphone,
   ShieldCheck,
   LoaderCircle,
+  Sparkles,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -37,8 +38,9 @@ import { cacheSession, clearSessionCache, readSession } from "@/modules/auth/ses
 import { AuthProvider } from "@/modules/auth/context";
 import type { Session } from "@/modules/auth/domain";
 import { LuviAssistant, LuviOnboardingProgress } from "@/modules/luvi-core/components";
-import { LuviContextProvider } from "@/modules/luvi-core/context";
+import { LuviContextProvider, useLuvi } from "@/modules/luvi-core/context";
 import { lembrarProduto, produtoLembrado } from "@/lib/produto-preferido";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/painel")({
   staleTime: 5 * 60_000,
@@ -160,7 +162,7 @@ function AcoesInferiores({
 }
 
 /** Restaura apenas a bolinha flutuante da Luvi; não abre página nem a conversa. */
-function LuviMenuItem({ onNavigate }: { onNavigate?: () => void }) {
+function LuviMenuItem({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
   const { assistantState, showAssistant } = useLuvi();
 
   return (
