@@ -159,6 +159,26 @@ function AcoesInferiores({
   );
 }
 
+/** Restaura apenas a bolinha flutuante da Luvi; não abre página nem a conversa. */
+function LuviMenuItem({ onNavigate }: { onNavigate?: () => void }) {
+  const { assistantState, showAssistant } = useLuvi();
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        showAssistant();
+        if (assistantState === "hidden") toast.success("Luvi restaurada na tela.");
+        onNavigate?.();
+      }}
+      className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-sidebar-accent/50"
+    >
+      <Sparkles className="h-4 w-4" /> Luvi Assistente
+    </button>
+  );
+}
+
+
 function Marca({ session }: { session: Session }) {
   const [logoFalhou, setLogoFalhou] = useState(false);
   const initials = session.user.tenantName
