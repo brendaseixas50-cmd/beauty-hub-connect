@@ -17,6 +17,7 @@ import type {
   MarketingClient,
   MarketingTemplate,
   Product,
+  ProductWithUsage,
   Professional,
   ProfessionalWithServices,
   Service,
