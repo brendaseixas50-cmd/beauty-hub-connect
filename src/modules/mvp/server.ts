@@ -1328,18 +1328,56 @@ const productSchema = z.object({
 });
 
 export const listProducts = createServerFn({ method: "GET" }).handler(
-  async (): Promise<Product[]> => {
+  async (): Promise<ProductWithUsage[]> => {
     const { supabase, tenantId } = await tenantContext();
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("tenant_id", tenantId)
-      .order("active", { ascending: false })
-      .order("name");
-    if (error) databaseError(error, "Não foi possível carregar os produtos.");
-    return data;
+    const [productsResult, movementsResult] = await Promise.all([
+      supabase
+        .from("products")
+        .select("*")
+        .eq("tenant_id", tenantId)
+        .order("active", { ascending: false })
+        .order("name"),
+      supabase
+        .from("inventory_movements")
+        .select("product_id, reason")
+        .eq("tenant_id", tenantId),
+    ]);
+    if (productsResult.error)
+      databaseError(productsResult.error, "Não foi possível carregar os produtos.");
+    // Só o saldo inicial não conta como histórico: ele nasce junto com o cadastro.
+    const movements = new Map<string, number>();
+    for (const movement of movementsResult.data ?? []) {
+      if (!movement.product_id || movement.reason === "initial") continue;
+      movements.set(movement.product_id, (movements.get(movement.product_id) ?? 0) + 1);
+    }
+    return productsResult.data.map((product) => {
+      const used = movements.get(product.id) ?? 0;
+      return { ...product, movements: used, deletable: used === 0 };
+    });
   },
 );
+
+/** Inativa ou reativa um produto preservando estoque e histórico de movimentações. */
+export const setProductActive = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().uuid(), active: z.boolean() }))
+  .handler(async ({ data }): Promise<Product> => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const { data: saved, error } = await supabase
+      .from("products")
+      .update({ active: data.active })
+      .eq("id", data.id)
+      .eq("tenant_id", tenantId)
+      .select()
+      .single();
+    if (error || !saved)
+      databaseError(
+        error,
+        data.active ? "Não foi possível reativar o produto." : "Não foi possível inativar o produto.",
+      );
+    return saved;
+  });
+
 
 export const saveProduct = createServerFn({ method: "POST" })
   .validator(productSchema)
