@@ -16,7 +16,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/mvp-page";
 import { brl, formatDateTime } from "@/modules/mvp/domain";
 import { getDashboard } from "@/modules/mvp/server";
-import { LuviInlineSuggestion } from "@/modules/luvi-core/components";
+
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/")({
