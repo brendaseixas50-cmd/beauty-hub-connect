@@ -127,6 +127,7 @@ function AcoesInferiores({
       >
         <Globe2 className="h-4 w-4" /> Minha Página Pública
       </a>
+      <LuviMenuItem onNavigate={onNavigate} />
       <Link
         to="/painel/configuracoes"
         preload="intent"
@@ -135,6 +136,7 @@ function AcoesInferiores({
       >
         <Settings className="h-4 w-4" /> Configurações
       </Link>
+
       {platformAdmin ? (
         <Link
           to="/painel/admin-acessos"
