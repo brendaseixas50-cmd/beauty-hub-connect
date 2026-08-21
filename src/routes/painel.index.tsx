@@ -16,7 +16,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/mvp-page";
 import { brl, formatDateTime } from "@/modules/mvp/domain";
 import { getDashboard } from "@/modules/mvp/server";
-import { LuviInlineSuggestion } from "@/modules/luvi-core/components";
+
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/")({
@@ -53,10 +53,8 @@ function Dashboard() {
           </Button>
         }
       />
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 
-      <LuviInlineSuggestion />
-
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Metric
           icon={CalendarCheck}
           title="Agendamentos hoje"

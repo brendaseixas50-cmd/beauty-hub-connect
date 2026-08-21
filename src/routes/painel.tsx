@@ -27,6 +27,7 @@ import {
   Megaphone,
   ShieldCheck,
   LoaderCircle,
+  Sparkles,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -37,8 +38,9 @@ import { cacheSession, clearSessionCache, readSession } from "@/modules/auth/ses
 import { AuthProvider } from "@/modules/auth/context";
 import type { Session } from "@/modules/auth/domain";
 import { LuviAssistant, LuviOnboardingProgress } from "@/modules/luvi-core/components";
-import { LuviContextProvider } from "@/modules/luvi-core/context";
+import { LuviContextProvider, useLuvi } from "@/modules/luvi-core/context";
 import { lembrarProduto, produtoLembrado } from "@/lib/produto-preferido";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/painel")({
   staleTime: 5 * 60_000,
@@ -127,6 +129,7 @@ function AcoesInferiores({
       >
         <Globe2 className="h-4 w-4" /> Minha Página Pública
       </a>
+      <LuviMenuItem onNavigate={onNavigate} />
       <Link
         to="/painel/configuracoes"
         preload="intent"
@@ -135,6 +138,7 @@ function AcoesInferiores({
       >
         <Settings className="h-4 w-4" /> Configurações
       </Link>
+
       {platformAdmin ? (
         <Link
           to="/painel/admin-acessos"
@@ -156,6 +160,26 @@ function AcoesInferiores({
     </div>
   );
 }
+
+/** Restaura apenas a bolinha flutuante da Luvi; não abre página nem a conversa. */
+function LuviMenuItem({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
+  const { assistantState, showAssistant } = useLuvi();
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        showAssistant();
+        if (assistantState === "hidden") toast.success("Luvi restaurada na tela.");
+        onNavigate?.();
+      }}
+      className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-sidebar-accent/50"
+    >
+      <Sparkles className="h-4 w-4" /> Luvi Assistente
+    </button>
+  );
+}
+
 
 function Marca({ session }: { session: Session }) {
   const [logoFalhou, setLogoFalhou] = useState(false);
@@ -287,8 +311,8 @@ function PainelLayout() {
           </aside>
 
           <div className="min-w-0 flex-1">
-            <header className="sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
-              <Marca session={session} />
+            <header className="sticky top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
+              {/* Acionador no mesmo lado em que o menu abre (esquerda), junto da identidade. */}
               <Sheet open={aberto} onOpenChange={setAberto}>
                 <SheetTrigger asChild>
                   <Button variant="outline" size="icon" aria-label="Abrir menu">
@@ -310,7 +334,9 @@ function PainelLayout() {
                   </div>
                 </SheetContent>
               </Sheet>
+              <Marca session={session} />
             </header>
+
 
             <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-10">
               <Outlet />
