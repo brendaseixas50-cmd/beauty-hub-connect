@@ -516,37 +516,137 @@
   --luvi-border: #c9a227;
   --luvi-gold: #c9a227;
 }
-.luvi-floating-button {
+/* Bolinha flutuante arrastável da Luvi. */
+.luvi-bubble {
   position: fixed;
-  right: max(1rem, env(safe-area-inset-right));
-  bottom: max(1rem, env(safe-area-inset-bottom));
-  z-index: 40;
-  width: 4rem;
-  height: 4rem;
-  overflow: visible;
+  z-index: 45;
+  display: flex;
+  visibility: hidden;
+  align-items: center;
+  gap: 0.5rem;
   border: 2px solid var(--luvi-border);
   border-radius: 999px;
-  background: var(--luvi-surface);
-  padding: 0;
-  box-shadow: 0 10px 28px rgb(22 22 22 / 18%);
+  background: color-mix(in srgb, var(--luvi-surface) 92%, var(--color-card));
+  padding: 0.25rem;
+  box-shadow: 0 12px 30px rgb(22 22 22 / 22%);
+  touch-action: none;
+  user-select: none;
 }
+.luvi-bubble-capsule {
+  padding-right: 0.9rem;
+}
+.luvi-bubble-avatar {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  cursor: grab;
+}
+.luvi-bubble-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--color-foreground);
+}
+
+/* Janela de conversa. */
+.luvi-chat {
+  position: fixed;
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  left: max(0.75rem, env(safe-area-inset-left));
+  z-index: 60;
+  display: flex;
+  overflow: hidden;
+  max-height: min(80dvh, 34rem);
+  flex-direction: column;
+  border: 1px solid var(--luvi-border);
+  border-radius: 1.25rem;
+  background: var(--color-card);
+  box-shadow: 0 24px 60px rgb(22 22 22 / 28%);
+}
+@media (min-width: 640px) {
+  .luvi-chat {
+    left: auto;
+    width: 24rem;
+    max-height: min(80dvh, 38rem);
+  }
+}
+.luvi-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--luvi-border);
+  background: color-mix(in srgb, var(--luvi-surface) 80%, var(--color-card));
+  padding: 0.75rem 1rem;
+}
+.luvi-chat-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--color-muted-foreground);
+}
+.luvi-chat-icon:hover {
+  background: color-mix(in srgb, var(--luvi-surface) 70%, var(--color-card));
+}
+.luvi-chat-body {
+  display: grid;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+.luvi-chat-msg {
+  max-width: 92%;
+  border-radius: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  padding: 0.6rem 0.85rem;
+}
+.luvi-chat-msg-luvi {
+  border: 1px solid var(--luvi-border);
+  background: color-mix(in srgb, var(--luvi-surface) 55%, var(--color-card));
+  justify-self: start;
+}
+.luvi-chat-msg-voce {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  justify-self: end;
+}
+.luvi-chat-footer {
+  border-top: 1px solid var(--luvi-border);
+  background: var(--color-card);
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+}
+.luvi-chip {
+  border: 1px solid var(--luvi-border);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.7rem;
+}
+
 .luvi-avatar {
   position: relative;
   display: inline-grid;
   flex: 0 0 auto;
   place-items: center;
   overflow: hidden;
-  border: 1px solid var(--luvi-border);
+  border: 2px solid var(--luvi-border);
   border-radius: 999px;
   background: var(--luvi-surface);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-card) 70%, transparent);
 }
+/* Enquadramento fechado no rosto para a Luvi ficar nítida mesmo pequena. */
 .luvi-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 22%;
+  object-position: 50% 16%;
   image-rendering: auto;
-  transform: scale(1.02);
+  transform: scale(1.35);
+  transform-origin: 50% 20%;
 }
 
 .luvi-avatar-small {
@@ -554,13 +654,12 @@
   height: 2.5rem;
 }
 .luvi-avatar-medium {
-  width: 3.5rem;
-  height: 3.5rem;
+  width: 3rem;
+  height: 3rem;
 }
 .luvi-avatar-floating {
-  width: 3.5rem;
-  height: 3.5rem;
-  border: 0;
+  width: 3.25rem;
+  height: 3.25rem;
 }
 .luvi-status-star {
   position: absolute;
@@ -579,14 +678,7 @@
   background: color-mix(in srgb, var(--luvi-surface) 86%, var(--color-background));
   padding: 1.25rem;
 }
-.luvi-inline-card {
-  border-color: var(--luvi-border);
-  background: linear-gradient(
-    120deg,
-    color-mix(in srgb, var(--luvi-surface) 75%, var(--color-card)),
-    var(--color-card)
-  );
-}
+
 
 .route-progress {
   position: fixed;
