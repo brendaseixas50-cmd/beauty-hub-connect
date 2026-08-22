@@ -723,9 +723,24 @@ function StoreCatalog({ page }: { page: PageData }) {
   const [error, setError] = useState<string>();
   const [success, setSuccess] = useState<{ code: string; total: number }>();
   const categories = useMemo(
-    () => [...new Set(page.products.map((product) => product.category).filter(Boolean))],
+    () =>
+      [...new Set(page.products.map((product) => product.category).filter(Boolean))].sort((a, b) =>
+        String(a).localeCompare(String(b), "pt-BR"),
+      ) as string[],
     [page.products],
   );
+  const [categoriaAtiva, setCategoriaAtiva] = useState<string>("all");
+  const [paginaLoja, setPaginaLoja] = useState(1);
+  const produtosFiltrados = useMemo(
+    () =>
+      categoriaAtiva === "all"
+        ? page.products
+        : page.products.filter((product) => product.category === categoriaAtiva),
+    [page.products, categoriaAtiva],
+  );
+  const totalPaginasLoja = Math.max(1, Math.ceil(produtosFiltrados.length / 10));
+  const paginaAtual = Math.min(paginaLoja, totalPaginasLoja);
+  const produtosVisiveis = produtosFiltrados.slice((paginaAtual - 1) * 10, paginaAtual * 10);
   const items = page.products
     .filter((product) => cart[product.id])
     .map((product) => ({ product, quantity: cart[product.id] ?? 0 }));
@@ -852,20 +867,36 @@ function StoreCatalog({ page }: { page: PageData }) {
         </p>
       </div>
       {categories.length ? (
-        <div className="flex gap-2 overflow-x-auto">
-          {categories.map((category) => (
-            <span
-              key={category!}
-              className="whitespace-nowrap rounded-full bg-secondary px-3 py-2 text-sm"
-            >
-              {category}
-            </span>
-          ))}
+        <div
+          role="group"
+          aria-label="Filtrar por categoria"
+          className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
+        >
+          {([["all", "Todos"], ...categories.map((item) => [item, item] as const)] as const).map(
+            ([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={categoriaAtiva === value}
+                onClick={() => {
+                  setCategoriaAtiva(value);
+                  setPaginaLoja(1);
+                }}
+                className={`min-h-10 whitespace-nowrap rounded-full px-4 text-sm transition ${
+                  categoriaAtiva === value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:opacity-80"
+                }`}
+              >
+                {label}
+              </button>
+            ),
+          )}
         </div>
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
-        {page.products.length ? (
-          page.products.map((product) => (
+        {produtosVisiveis.length ? (
+          produtosVisiveis.map((product) => (
             <Card key={product.id} className="overflow-hidden p-0">
               {product.imageUrl ? (
                 <img
