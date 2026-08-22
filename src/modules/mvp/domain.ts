@@ -33,7 +33,9 @@ export type ServiceWithUsage = Service & {
   futureAppointments: number;
   linkedToProfessionals: boolean;
   deletable: boolean;
+  comboServiceIds: string[];
 };
+
 
 export type ProductType = "beauty" | "barber";
 

@@ -1193,12 +1193,15 @@ const serviceSchema = z.object({
   durationMinutes: z.number().int().min(5).max(1440),
   priceCents: z.number().int().min(0).max(100_000_000),
   active: z.boolean(),
+  imageUrl: z.string().url().max(1000).or(z.literal("")),
+  isCombo: z.boolean().default(false),
+  comboServiceIds: z.array(z.string().uuid()).max(12).default([]),
 });
 
 export const listServices = createServerFn({ method: "GET" }).handler(
   async (): Promise<ServiceWithUsage[]> => {
     const { supabase, tenantId } = await tenantContext();
-    const [servicesResult, appointmentsResult, linksResult] = await Promise.all([
+    const [servicesResult, appointmentsResult, linksResult, comboResult] = await Promise.all([
       supabase
         .from("services")
         .select("*")
@@ -1207,6 +1210,11 @@ export const listServices = createServerFn({ method: "GET" }).handler(
         .order("name"),
       supabase.from("appointments").select("service_id, starts_at").eq("tenant_id", tenantId),
       supabase.from("professional_services").select("service_id").eq("tenant_id", tenantId),
+      supabase
+        .from("service_combo_items")
+        .select("combo_service_id, service_id, position")
+        .eq("tenant_id", tenantId)
+        .order("position"),
     ]);
     if (servicesResult.error)
       databaseError(servicesResult.error, "Não foi possível carregar os serviços.");
@@ -1219,6 +1227,12 @@ export const listServices = createServerFn({ method: "GET" }).handler(
       if (new Date(appointment.starts_at).getTime() > now)
         upcoming.set(appointment.service_id, (upcoming.get(appointment.service_id) ?? 0) + 1);
     }
+    const combos = new Map<string, string[]>();
+    for (const item of comboResult.data ?? []) {
+      const current = combos.get(item.combo_service_id) ?? [];
+      current.push(item.service_id);
+      combos.set(item.combo_service_id, current);
+    }
     const linked = new Set((linksResult.data ?? []).map((link) => link.service_id));
     return servicesResult.data.map((service) => {
       const appointments = history.get(service.id) ?? 0;
@@ -1229,10 +1243,12 @@ export const listServices = createServerFn({ method: "GET" }).handler(
         futureAppointments,
         linkedToProfessionals: linked.has(service.id),
         deletable: appointments === 0 && futureAppointments === 0,
+        comboServiceIds: combos.get(service.id) ?? [],
       };
     });
   },
 );
+
 
 /** Inativa ou reativa um serviço preservando todo o histórico vinculado. */
 export const setServiceActive = createServerFn({ method: "POST" })

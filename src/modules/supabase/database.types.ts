@@ -772,6 +772,33 @@ export type Database = {
           },
         ];
       };
+      service_combo_items: {
+        Row: {
+          combo_service_id: string;
+          created_at: string;
+          id: string;
+          position: number;
+          service_id: string;
+          tenant_id: string;
+        };
+        Insert: {
+          combo_service_id: string;
+          created_at?: string;
+          id?: string;
+          position?: number;
+          service_id: string;
+          tenant_id: string;
+        };
+        Update: {
+          combo_service_id?: string;
+          created_at?: string;
+          id?: string;
+          position?: number;
+          service_id?: string;
+          tenant_id?: string;
+        };
+        Relationships: [];
+      };
       services: {
         Row: {
           active: boolean;
@@ -780,6 +807,8 @@ export type Database = {
           description: string | null;
           duration_minutes: number;
           id: string;
+          image_url: string | null;
+          is_combo: boolean;
           name: string;
           price_cents: number;
           tenant_id: string;
@@ -792,6 +821,8 @@ export type Database = {
           description?: string | null;
           duration_minutes: number;
           id?: string;
+          image_url?: string | null;
+          is_combo?: boolean;
           name: string;
           price_cents: number;
           tenant_id?: string;
@@ -804,6 +835,8 @@ export type Database = {
           description?: string | null;
           duration_minutes?: number;
           id?: string;
+          image_url?: string | null;
+          is_combo?: boolean;
           name?: string;
           price_cents?: number;
           tenant_id?: string;
@@ -819,6 +852,7 @@ export type Database = {
           },
         ];
       };
+
       specialty_catalog: {
         Row: {
           active: boolean;
