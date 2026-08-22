@@ -947,6 +947,33 @@ function StoreCatalog({ page }: { page: PageData }) {
           </p>
         )}
       </div>
+      {totalPaginasLoja > 1 ? (
+        <nav
+          aria-label="Paginação da loja"
+          className="flex flex-wrap items-center justify-between gap-3"
+        >
+          <small className="text-muted-foreground">
+            Página {paginaAtual} de {totalPaginasLoja} · {produtosFiltrados.length} produtos
+          </small>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPaginasLoja }, (_, index) => index + 1).map((item) => (
+              <button
+                key={item}
+                type="button"
+                aria-current={item === paginaAtual ? "page" : undefined}
+                onClick={() => setPaginaLoja(item)}
+                className={`grid h-10 w-10 place-items-center rounded-full text-sm transition ${
+                  item === paginaAtual
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:opacity-80"
+                }`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </nav>
+      ) : null}
       {count ? (
         <Card className="sticky bottom-3 gap-4 p-4 shadow-xl">
           <div className="flex items-center justify-between">
