@@ -1333,11 +1333,26 @@ export const deleteService = createServerFn({ method: "POST" })
       throw new Error(
         "Este serviço possui histórico de agendamentos e não pode ser excluído. Use “Inativar serviço” para removê-lo da página pública sem perder o histórico.",
       );
+    const { count: comboCount } = await supabase
+      .from("service_combo_items")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("service_id", data.id);
+    if ((comboCount ?? 0) > 0)
+      throw new Error(
+        "Este serviço faz parte de um combo. Remova-o da composição do combo antes de excluir.",
+      );
+    await supabase
+      .from("service_combo_items")
+      .delete()
+      .eq("tenant_id", tenantId)
+      .eq("combo_service_id", data.id);
     await supabase
       .from("professional_services")
       .delete()
       .eq("tenant_id", tenantId)
       .eq("service_id", data.id);
+
     const { error } = await supabase
       .from("services")
       .delete()
