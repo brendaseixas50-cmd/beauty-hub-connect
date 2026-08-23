@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Clock, EyeOff, Pencil, Plus, RotateCcw } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { Clock, EyeOff, ImagePlus, Layers, Pencil, Plus, RotateCcw } from "lucide-react";
+import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+
 
 import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
 import { Badge } from "@/components/ui/badge";
