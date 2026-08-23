@@ -197,13 +197,67 @@ function ServicesPage() {
   );
 }
 
-function ServiceDialog({ service, onClose }: { service: Service | null; onClose: () => void }) {
+function ServiceDialog({
+  service,
+  services,
+  onClose,
+}: {
+  service: ServiceWithUsage | null;
+  services: ServiceWithUsage[];
+  onClose: () => void;
+}) {
   const save = useServerFn(saveService);
+  const upload = useServerFn(uploadPublicMedia);
   const action = useMvpAction();
+  const [imageUrl, setImageUrl] = useState(service?.image_url ?? "");
+  const [mediaKey] = useState(() => service?.id ?? crypto.randomUUID());
+  const [uploading, setUploading] = useState(false);
+  const [isCombo, setIsCombo] = useState(service?.is_combo ?? false);
+  const [comboServiceIds, setComboServiceIds] = useState<string[]>(service?.comboServiceIds ?? []);
+  const options = services.filter((item) => item.id !== service?.id && !item.is_combo);
+  const combined = options.filter((item) => comboServiceIds.includes(item.id));
+  const comboMinutes = combined.reduce((total, item) => total + item.duration_minutes, 0);
+  const comboCents = combined.reduce((total, item) => total + item.price_cents, 0);
+
+  async function onImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
+    if (
+      !(["image/jpeg", "image/png", "image/webp"] as string[]).includes(file.type) ||
+      file.size > 3 * 1024 * 1024
+    ) {
+      await action.run(
+        () => Promise.reject(new Error("Use JPG, PNG ou WebP com no máximo 3 MB.")),
+        "",
+      );
+      return;
+    }
+    setUploading(true);
+    try {
+      const result = await upload({
+        data: {
+          kind: "gallery",
+          key: mediaKey,
+          mimeType: file.type as "image/jpeg" | "image/png" | "image/webp",
+          base64: await fileToBase64(file),
+        },
+      });
+      setImageUrl(result.url);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const manualMinutes =
+      Math.max(
+        0,
+        Number(form.get("durationHours") || 0) * 60 +
+          Number(form.get("durationMinutesPart") || 0),
+      ) || 60;
+    const manualCents = centsFromInput(String(form.get("price") ?? ""));
     const ok = await action.run(
       () =>
         save({
@@ -212,14 +266,12 @@ function ServiceDialog({ service, onClose }: { service: Service | null; onClose:
             name: String(form.get("name")),
             category: String(form.get("category")),
             description: String(form.get("description")),
-            durationMinutes:
-              Math.max(
-                0,
-                Number(form.get("durationHours") || 0) * 60 +
-                  Number(form.get("durationMinutesPart") || 0),
-              ) || 60,
-            priceCents: centsFromInput(String(form.get("price") ?? "")),
+            durationMinutes: isCombo && comboMinutes > 0 ? comboMinutes : manualMinutes,
+            priceCents: isCombo && manualCents === 0 ? comboCents : manualCents,
             active: form.get("active") === "on",
+            imageUrl,
+            isCombo,
+            comboServiceIds: isCombo ? comboServiceIds : [],
           },
         }),
       service ? "Serviço atualizado." : "Serviço cadastrado.",
@@ -229,7 +281,7 @@ function ServiceDialog({ service, onClose }: { service: Service | null; onClose:
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{service ? "Editar serviço" : "Novo serviço"}</DialogTitle>
           <DialogDescription>
@@ -239,6 +291,98 @@ function ServiceDialog({ service, onClose }: { service: Service | null; onClose:
         <form onSubmit={onSubmit} className="grid gap-4">
           <Field label="Nome" name="name" defaultValue={service?.name ?? ""} required />
           <Field label="Categoria" name="category" defaultValue={service?.category ?? ""} />
+
+          <div className="grid gap-2">
+            <Label htmlFor="serviceImage">Foto do serviço (opcional)</Label>
+            <div className="flex items-center gap-3">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt="Pré-visualização do serviço"
+                  className="h-16 w-16 rounded-lg object-cover"
+                />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-dashed text-muted-foreground">
+                  <ImagePlus className="h-5 w-5" />
+                </div>
+              )}
+              <div className="grid gap-2">
+                <Input
+                  id="serviceImage"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(event) => void onImage(event)}
+                  disabled={uploading}
+                />
+                {imageUrl ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="justify-self-start"
+                    onClick={() => setImageUrl("")}
+                  >
+                    Remover foto
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+            {uploading ? (
+              <p className="text-xs text-muted-foreground">Enviando imagem…</p>
+            ) : null}
+          </div>
+
+          <div className="grid gap-3 rounded-lg border p-3">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={isCombo}
+                onChange={(event) => setIsCombo(event.currentTarget.checked)}
+              />
+              Este serviço é um combo (composição de serviços)
+            </label>
+            {isCombo ? (
+              <div className="grid gap-2">
+                <p className="text-xs text-muted-foreground">
+                  Escolha pelo menos dois serviços. Duração é somada automaticamente e o preço pode
+                  receber desconto no campo abaixo.
+                </p>
+                <div className="grid max-h-40 gap-1 overflow-y-auto">
+                  {options.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Cadastre serviços simples antes de criar um combo.
+                    </p>
+                  ) : (
+                    options.map((item) => (
+                      <label key={item.id} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={comboServiceIds.includes(item.id)}
+                          onChange={(event) =>
+                            setComboServiceIds((current) =>
+                              event.currentTarget.checked
+                                ? [...current, item.id]
+                                : current.filter((id) => id !== item.id),
+                            )
+                          }
+                        />
+                        <span className="truncate">{item.name}</span>
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {formatDuration(item.duration_minutes)} · {brl(item.price_cents)}
+                        </span>
+                      </label>
+                    ))
+                  )}
+                </div>
+                {combined.length > 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Total da composição: {formatDuration(comboMinutes)} · {brl(comboCents)}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="durationHours">Duração</Label>
@@ -251,6 +395,7 @@ function ServiceDialog({ service, onClose }: { service: Service | null; onClose:
                     min={0}
                     max={12}
                     placeholder="0"
+                    disabled={isCombo && comboMinutes > 0}
                     defaultValue={service ? Math.floor(service.duration_minutes / 60) || "" : ""}
                   />
                   <span className="text-sm text-muted-foreground">h</span>
@@ -264,6 +409,7 @@ function ServiceDialog({ service, onClose }: { service: Service | null; onClose:
                     max={59}
                     step={5}
                     placeholder="30"
+                    disabled={isCombo && comboMinutes > 0}
                     defaultValue={service ? service.duration_minutes % 60 || "" : ""}
                   />
                   <span className="text-sm text-muted-foreground">min</span>
@@ -274,7 +420,7 @@ function ServiceDialog({ service, onClose }: { service: Service | null; onClose:
               label="Preço (R$)"
               name="price"
               inputMode="decimal"
-              placeholder="0,00"
+              placeholder={isCombo ? (comboCents / 100).toFixed(2).replace(".", ",") : "0,00"}
               defaultValue={
                 service?.price_cents ? (service.price_cents / 100).toFixed(2).replace(".", ",") : ""
               }
@@ -296,7 +442,7 @@ function ServiceDialog({ service, onClose }: { service: Service | null; onClose:
             <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={action.pending}>
+            <Button type="submit" disabled={action.pending || uploading}>
               {action.pending ? "Salvando…" : "Salvar"}
             </Button>
           </DialogFooter>
@@ -305,6 +451,15 @@ function ServiceDialog({ service, onClose }: { service: Service | null; onClose:
     </Dialog>
   );
 }
+
+async function fileToBase64(file: File) {
+  const buffer = await file.arrayBuffer();
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  for (let index = 0; index < bytes.length; index += 1) binary += String.fromCharCode(bytes[index]!);
+  return btoa(binary);
+}
+
 
 function Field({
   label,
