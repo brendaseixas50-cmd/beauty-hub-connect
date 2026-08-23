@@ -19,8 +19,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { brl, centsFromInput, type Service } from "@/modules/mvp/domain";
-import { deleteService, listServices, saveService, setServiceActive } from "@/modules/mvp/server";
+import { brl, centsFromInput, type ServiceWithUsage } from "@/modules/mvp/domain";
+import {
+  deleteService,
+  listServices,
+  saveService,
+  setServiceActive,
+  uploadPublicMedia,
+} from "@/modules/mvp/server";
+
 import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
