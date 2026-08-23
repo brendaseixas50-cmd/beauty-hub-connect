@@ -132,16 +132,33 @@ function ServicesPage() {
           {filtered.map((service) => (
             <Card key={service.id} className="gap-4 p-5">
               <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="truncate text-lg font-medium">{service.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {service.category || "Sem categoria"}
-                  </p>
+                <div className="flex min-w-0 items-center gap-3">
+                  {service.image_url ? (
+                    <img
+                      src={service.image_url}
+                      alt={service.name}
+                      className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                    />
+                  ) : null}
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-medium">{service.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {service.category || "Sem categoria"}
+                    </p>
+                  </div>
                 </div>
-                <Badge variant={service.active ? "secondary" : "outline"}>
-                  {service.active ? "Ativo" : "Inativo"}
-                </Badge>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <Badge variant={service.active ? "secondary" : "outline"}>
+                    {service.active ? "Ativo" : "Inativo"}
+                  </Badge>
+                  {service.is_combo ? (
+                    <Badge variant="outline" className="gap-1">
+                      <Layers className="h-3 w-3" /> Combo
+                    </Badge>
+                  ) : null}
+                </div>
               </div>
+
               {service.description ? (
                 <p className="text-sm text-muted-foreground">{service.description}</p>
               ) : null}
