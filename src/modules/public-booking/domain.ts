@@ -58,7 +58,11 @@ const serviceSchema = z.object({
   description: z.string().nullable(),
   durationMinutes: z.number(),
   priceCents: z.number(),
+  imageUrl: z.string().nullable().default(null),
+  isCombo: z.boolean().default(false),
+  comboServices: z.array(z.string()).default([]),
 });
+
 
 const professionalSchema = z.object({
   id: z.string().uuid(),
