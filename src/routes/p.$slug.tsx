@@ -492,13 +492,36 @@ function StepServices({
             selected={selected.includes(service.id)}
             onClick={() => onToggle(service.id)}
           >
-            <span>
-              <strong className="block">{service.name}</strong>
-              <small className="text-muted-foreground">{service.durationMinutes} min</small>
+            <span className="flex min-w-0 items-center gap-3">
+              {service.imageUrl ? (
+                <img
+                  src={service.imageUrl}
+                  alt={service.name}
+                  loading="lazy"
+                  className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                />
+              ) : null}
+              <span className="min-w-0">
+                <strong className="block">
+                  {service.name}
+                  {service.isCombo ? (
+                    <em className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-[11px] not-italic">
+                      Combo
+                    </em>
+                  ) : null}
+                </strong>
+                <small className="block text-muted-foreground">{service.durationMinutes} min</small>
+                {service.isCombo && service.comboServices.length ? (
+                  <small className="block text-muted-foreground">
+                    Inclui: {service.comboServices.join(" + ")}
+                  </small>
+                ) : null}
+              </span>
             </span>
             <strong>{brl(service.priceCents)}</strong>
           </Choice>
         ))
+
       ) : (
         <p className="rounded-xl bg-secondary p-4">Nenhum serviço disponível.</p>
       )}
