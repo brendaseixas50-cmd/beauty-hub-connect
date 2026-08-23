@@ -1276,6 +1276,11 @@ export const saveService = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<Service> => {
     const { supabase, tenantId, role } = await tenantContext();
     requireManager(role);
+    const comboServiceIds = data.isCombo
+      ? [...new Set(data.comboServiceIds.filter((id) => id !== data.id))]
+      : [];
+    if (data.isCombo && comboServiceIds.length < 2)
+      throw new Error("Um combo precisa de pelo menos dois serviços na composição.");
     const values = {
       tenant_id: tenantId,
       name: data.name,
@@ -1284,14 +1289,33 @@ export const saveService = createServerFn({ method: "POST" })
       duration_minutes: data.durationMinutes,
       price_cents: data.priceCents,
       active: data.active,
+      image_url: data.imageUrl || null,
+      is_combo: data.isCombo,
     };
     const query = data.id
       ? supabase.from("services").update(values).eq("id", data.id).eq("tenant_id", tenantId)
       : supabase.from("services").insert(values);
     const { data: saved, error } = await query.select().single();
     if (error || !saved) databaseError(error, "Não foi possível salvar o serviço.");
+    await supabase
+      .from("service_combo_items")
+      .delete()
+      .eq("tenant_id", tenantId)
+      .eq("combo_service_id", saved.id);
+    if (comboServiceIds.length > 0) {
+      const { error: comboError } = await supabase.from("service_combo_items").insert(
+        comboServiceIds.map((serviceId, index) => ({
+          tenant_id: tenantId,
+          combo_service_id: saved.id,
+          service_id: serviceId,
+          position: index,
+        })),
+      );
+      if (comboError) databaseError(comboError, "Não foi possível salvar a composição do combo.");
+    }
     return saved;
   });
+
 
 /** Exclui apenas quando é seguro: sem histórico e sem agendamentos futuros. */
 export const deleteService = createServerFn({ method: "POST" })
@@ -1309,11 +1333,26 @@ export const deleteService = createServerFn({ method: "POST" })
       throw new Error(
         "Este serviço possui histórico de agendamentos e não pode ser excluído. Use “Inativar serviço” para removê-lo da página pública sem perder o histórico.",
       );
+    const { count: comboCount } = await supabase
+      .from("service_combo_items")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("service_id", data.id);
+    if ((comboCount ?? 0) > 0)
+      throw new Error(
+        "Este serviço faz parte de um combo. Remova-o da composição do combo antes de excluir.",
+      );
+    await supabase
+      .from("service_combo_items")
+      .delete()
+      .eq("tenant_id", tenantId)
+      .eq("combo_service_id", data.id);
     await supabase
       .from("professional_services")
       .delete()
       .eq("tenant_id", tenantId)
       .eq("service_id", data.id);
+
     const { error } = await supabase
       .from("services")
       .delete()
