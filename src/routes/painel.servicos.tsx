@@ -46,7 +46,7 @@ function ServicesPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [situation, setSituation] = useState<"all" | "active" | "inactive">("all");
-  const [editing, setEditing] = useState<Service | null>();
+  const [editing, setEditing] = useState<ServiceWithUsage | null>();
   const categories = useMemo(
     () => [...new Set(services.map((item) => item.category).filter(Boolean))] as string[],
     [services],
@@ -216,7 +216,11 @@ function ServicesPage() {
         </div>
       )}
       {editing !== undefined ? (
-        <ServiceDialog service={editing} onClose={() => setEditing(undefined)} />
+        <ServiceDialog
+          service={editing}
+          services={services}
+          onClose={() => setEditing(undefined)}
+        />
       ) : null}
     </div>
   );
