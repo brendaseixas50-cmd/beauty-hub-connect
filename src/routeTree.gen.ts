@@ -36,6 +36,7 @@ import { Route as PainelProfissionaisRouteImport } from './routes/painel.profiss
 import { Route as PainelRelatoriosRouteImport } from './routes/painel.relatorios'
 import { Route as PainelServicosRouteImport } from './routes/painel.servicos'
 import { Route as ProfissionalIndexRouteImport } from './routes/profissional.index'
+import { Route as ProfissionalHorariosRouteImport } from './routes/profissional.horarios'
 import { Route as ApiMercadoPagoWebhookRouteImport } from './routes/api.mercado-pago.webhook'
 import { Route as IntegracoesMercadoPagoRetornoRouteImport } from './routes/integracoes.mercado-pago.retorno'
 
@@ -174,6 +175,11 @@ const ProfissionalIndexRoute = ProfissionalIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProfissionalRoute,
 } as any)
+const ProfissionalHorariosRoute = ProfissionalHorariosRouteImport.update({
+  id: '/horarios',
+  path: '/horarios',
+  getParentRoute: () => ProfissionalRoute,
+} as any)
 const ApiMercadoPagoWebhookRoute = ApiMercadoPagoWebhookRouteImport.update({
   id: '/api/mercado-pago/webhook',
   path: '/api/mercado-pago/webhook',
@@ -212,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
+  '/profissional/horarios': typeof ProfissionalHorariosRoute
   '/painel/': typeof PainelIndexRoute
   '/profissional/': typeof ProfissionalIndexRoute
   '/api/mercado-pago/webhook': typeof ApiMercadoPagoWebhookRoute
@@ -241,6 +248,7 @@ export interface FileRoutesByTo {
   '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
+  '/profissional/horarios': typeof ProfissionalHorariosRoute
   '/painel': typeof PainelIndexRoute
   '/profissional': typeof ProfissionalIndexRoute
   '/api/mercado-pago/webhook': typeof ApiMercadoPagoWebhookRoute
@@ -273,6 +281,7 @@ export interface FileRoutesById {
   '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
+  '/profissional/horarios': typeof ProfissionalHorariosRoute
   '/painel/': typeof PainelIndexRoute
   '/profissional/': typeof ProfissionalIndexRoute
   '/api/mercado-pago/webhook': typeof ApiMercadoPagoWebhookRoute
@@ -306,6 +315,7 @@ export interface FileRouteTypes {
     | '/painel/profissionais'
     | '/painel/relatorios'
     | '/painel/servicos'
+    | '/profissional/horarios'
     | '/painel/'
     | '/profissional/'
     | '/api/mercado-pago/webhook'
@@ -335,6 +345,7 @@ export interface FileRouteTypes {
     | '/painel/profissionais'
     | '/painel/relatorios'
     | '/painel/servicos'
+    | '/profissional/horarios'
     | '/painel'
     | '/profissional'
     | '/api/mercado-pago/webhook'
@@ -366,6 +377,7 @@ export interface FileRouteTypes {
     | '/painel/profissionais'
     | '/painel/relatorios'
     | '/painel/servicos'
+    | '/profissional/horarios'
     | '/painel/'
     | '/profissional/'
     | '/api/mercado-pago/webhook'
@@ -580,6 +592,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfissionalIndexRouteImport
       parentRoute: typeof ProfissionalRoute
     }
+    '/profissional/horarios': {
+      id: '/profissional/horarios'
+      path: '/horarios'
+      fullPath: '/profissional/horarios'
+      preLoaderRoute: typeof ProfissionalHorariosRouteImport
+      parentRoute: typeof ProfissionalRoute
+    }
     '/api/mercado-pago/webhook': {
       id: '/api/mercado-pago/webhook'
       path: '/api/mercado-pago/webhook'
@@ -635,10 +654,12 @@ const PainelRouteWithChildren =
   PainelRoute._addFileChildren(PainelRouteChildren)
 
 interface ProfissionalRouteChildren {
+  ProfissionalHorariosRoute: typeof ProfissionalHorariosRoute
   ProfissionalIndexRoute: typeof ProfissionalIndexRoute
 }
 
 const ProfissionalRouteChildren: ProfissionalRouteChildren = {
+  ProfissionalHorariosRoute: ProfissionalHorariosRoute,
   ProfissionalIndexRoute: ProfissionalIndexRoute,
 }
 
