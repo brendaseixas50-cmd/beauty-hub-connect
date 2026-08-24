@@ -56,7 +56,13 @@ export type ProfessionalPanelResult =
   | { status: "ok"; data: ProfessionalPanelData }
   | { status: "unauthenticated" }
   | { status: "not_professional" }
+  | { status: "not_authorized"; email: string | null }
   | { status: "disabled"; name: string; tenantName: string; productType: "beauty" | "barber" };
+
+/** Mensagem única para acesso desativado pelo proprietário. */
+export const disabledAccessMessage =
+  "Seu acesso a esta empresa está desativado. Entre em contato com o administrador.";
+
 
 export const appointmentStatusLabels: Record<ProfessionalAppointment["status"], string> = {
   scheduled: "Agendado",

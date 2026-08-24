@@ -5,11 +5,13 @@ import { parseWorkingHours } from "@/modules/mvp/agenda-disponibilidade";
 import { professionalAvailabilityIssue } from "@/modules/mvp/server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 import type { Json } from "@/modules/supabase/database.types";
+import { disabledAccessMessage } from "./domain";
 import type {
   ProfessionalAppointment,
   ProfessionalIdentity,
   ProfessionalPanelResult,
 } from "./domain";
+
 
 type SupabaseServerClient = ReturnType<typeof createSupabaseServerClient>;
 
@@ -36,14 +38,33 @@ async function readIdentity(
   };
 }
 
+/**
+ * Reivindica o acesso profissional a partir do e-mail previamente autorizado
+ * pelo proprietário. Autenticar (Google ou e-mail/senha) não basta: o e-mail
+ * precisa estar cadastrado em um profissional ativo da empresa.
+ */
+async function claimAccess(
+  supabase: SupabaseServerClient,
+): Promise<"ok" | "disabled" | "not_authorized" | "unauthenticated"> {
+  const { data } = await supabase.rpc("claim_professional_access");
+  const status = (data as { status?: string } | null)?.status;
+  return status === "ok" || status === "disabled" || status === "unauthenticated"
+    ? status
+    : "not_authorized";
+}
+
 /** Contexto obrigatório para qualquer ação do Painel Profissional. */
 async function professionalContext() {
   const supabase = createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) throw new Error("Faça login novamente para continuar.");
+  const claim = await claimAccess(supabase);
+  if (claim === "not_authorized")
+    throw new Error("Seu e-mail não está autorizado no Painel Profissional desta empresa.");
+  if (claim === "disabled") throw new Error(disabledAccessMessage);
   const identity = await readIdentity(supabase);
   if (!identity) throw new Error("Sua conta não está vinculada a um profissional ativo.");
-  if (!identity.active) throw new Error("Seu acesso profissional está desativado.");
+  if (!identity.active) throw new Error(disabledAccessMessage);
   return { supabase, identity };
 }
 
@@ -52,6 +73,10 @@ export const getProfessionalPanel = createServerFn({ method: "GET" }).handler(
     const supabase = createSupabaseServerClient();
     const { data: auth } = await supabase.auth.getUser();
     if (!auth.user) return { status: "unauthenticated" };
+    const claim = await claimAccess(supabase);
+    if (claim === "unauthenticated") return { status: "unauthenticated" };
+    if (claim === "not_authorized")
+      return { status: "not_authorized", email: auth.user.email ?? null };
     const identity = await readIdentity(supabase);
     if (!identity) return { status: "not_professional" };
     if (!identity.active) {
@@ -62,6 +87,7 @@ export const getProfessionalPanel = createServerFn({ method: "GET" }).handler(
         productType: identity.productType,
       };
     }
+
 
     const from = new Date();
     from.setDate(from.getDate() - 30);
