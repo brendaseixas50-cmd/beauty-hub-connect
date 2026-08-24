@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ImageUp, Pencil, Plus, UserRound } from "lucide-react";
+import { Copy, ImageUp, KeyRound, Pencil, Plus, UserRound } from "lucide-react";
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
 import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
@@ -23,10 +23,12 @@ import type { ProfessionalWithServices } from "@/modules/mvp/domain";
 import {
   deleteProfessional,
   deleteProfessionalUnavailability,
+  generateProfessionalAccess,
   getProfessionalCapacity,
   listProfessionalUnavailability,
   listProfessionals,
   listServices,
+  resetProfessionalAccess,
   saveProfessional,
   saveProfessionalSchedule,
   saveProfessionalUnavailability,
@@ -195,7 +197,9 @@ function ProfessionalsPage() {
                   }
                 />
               </div>
+              <AcessoProfissional professional={professional} />
             </Card>
+
           ))}
         </div>
       )}
@@ -210,6 +214,112 @@ function ProfessionalsPage() {
     </div>
   );
 }
+
+/** Acesso individual ao Painel Profissional (login próprio, sem dados de colegas). */
+function AcessoProfissional({ professional }: { professional: ProfessionalWithServices }) {
+  const gerar = useServerFn(generateProfessionalAccess);
+  const redefinir = useServerFn(resetProfessionalAccess);
+  const [pending, setPending] = useState(false);
+  const [senha, setSenha] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string>();
+  const vinculado = Boolean(professional.user_id);
+  const link =
+    typeof window === "undefined"
+      ? "/login?redirect=%2Fprofissional"
+      : `${window.location.origin}/login?redirect=%2Fprofissional`;
+
+  async function executar(acao: () => Promise<{ temporaryPassword: string | null }>, texto: string) {
+    setPending(true);
+    setAviso(undefined);
+    try {
+      const resultado = await acao();
+      setSenha(resultado.temporaryPassword);
+      setAviso(
+        resultado.temporaryPassword
+          ? texto
+          : "Este e-mail já possui conta na plataforma. O acesso foi vinculado e o profissional entra com a senha que já usa.",
+      );
+    } catch (cause) {
+      setAviso(cause instanceof Error ? cause.message : "Não foi possível gerar o acesso.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="grid gap-2 rounded-2xl border border-dashed p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <KeyRound className="h-4 w-4 text-muted-foreground" />
+        <p className="text-sm font-medium">Acesso ao Painel Profissional</p>
+        <Badge variant={vinculado ? "secondary" : "outline"}>
+          {vinculado ? "Ativo" : "Não gerado"}
+        </Badge>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {professional.email
+          ? `Login por e-mail: ${professional.email}`
+          : "Cadastre o e-mail do profissional para liberar o acesso individual."}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          variant={vinculado ? "outline" : "default"}
+          disabled={pending || !professional.email || !professional.active}
+          onClick={() =>
+            void executar(
+              () => gerar({ data: { id: professional.id } }),
+              "Acesso criado. Envie o link e a senha temporária ao profissional.",
+            )
+          }
+        >
+          {vinculado ? "Revalidar acesso" : "Gerar acesso"}
+        </Button>
+        {vinculado ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={pending}
+            onClick={() =>
+              void executar(
+                () => redefinir({ data: { id: professional.id } }),
+                "Nova senha temporária gerada.",
+              )
+            }
+          >
+            Redefinir senha
+          </Button>
+        ) : null}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(link);
+              setAviso("Link do Painel Profissional copiado.");
+            } catch {
+              setAviso(link);
+            }
+          }}
+        >
+          <Copy className="h-4 w-4" /> Copiar link
+        </Button>
+      </div>
+      {senha ? (
+        <p className="rounded-lg bg-secondary px-3 py-2 text-sm">
+          Senha temporária: <strong className="font-mono">{senha}</strong> — o profissional pode
+          alterá-la depois em “Esqueci minha senha”.
+        </p>
+      ) : null}
+      {aviso ? (
+        <p role="status" className="text-xs text-muted-foreground">
+          {aviso}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+
 
 function ProfessionalDialog({
   professional,

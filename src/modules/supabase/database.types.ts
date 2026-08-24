@@ -1723,6 +1723,26 @@ export type Database = {
         Args: { target_tenant_id: string };
         Returns: undefined;
       };
+      get_my_professional_context: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      professional_update_working_hours: {
+        Args: { p_working_hours: Json };
+        Returns: undefined;
+      };
+      professional_create_client: {
+        Args: { p_name: string; p_phone: string | null; p_email: string | null };
+        Returns: string;
+      };
+      admin_find_auth_user_id: {
+        Args: { p_email: string };
+        Returns: string | null;
+      };
+      admin_link_professional_account: {
+        Args: { p_professional_id: string; p_user_id: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;

@@ -15,6 +15,7 @@ import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PainelRouteImport } from './routes/painel'
+import { Route as ProfissionalRouteImport } from './routes/profissional'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
@@ -34,6 +35,9 @@ import { Route as PainelProdutosRouteImport } from './routes/painel.produtos'
 import { Route as PainelProfissionaisRouteImport } from './routes/painel.profissionais'
 import { Route as PainelRelatoriosRouteImport } from './routes/painel.relatorios'
 import { Route as PainelServicosRouteImport } from './routes/painel.servicos'
+import { Route as ProfissionalIndexRouteImport } from './routes/profissional.index'
+import { Route as ProfissionalBloqueiosRouteImport } from './routes/profissional.bloqueios'
+import { Route as ProfissionalHorariosRouteImport } from './routes/profissional.horarios'
 import { Route as ApiMercadoPagoWebhookRouteImport } from './routes/api.mercado-pago.webhook'
 import { Route as IntegracoesMercadoPagoRetornoRouteImport } from './routes/integracoes.mercado-pago.retorno'
 
@@ -65,6 +69,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const PainelRoute = PainelRouteImport.update({
   id: '/painel',
   path: '/painel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfissionalRoute = ProfissionalRouteImport.update({
+  id: '/profissional',
+  path: '/profissional',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
@@ -162,6 +171,21 @@ const PainelServicosRoute = PainelServicosRouteImport.update({
   path: '/servicos',
   getParentRoute: () => PainelRoute,
 } as any)
+const ProfissionalIndexRoute = ProfissionalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProfissionalRoute,
+} as any)
+const ProfissionalBloqueiosRoute = ProfissionalBloqueiosRouteImport.update({
+  id: '/bloqueios',
+  path: '/bloqueios',
+  getParentRoute: () => ProfissionalRoute,
+} as any)
+const ProfissionalHorariosRoute = ProfissionalHorariosRouteImport.update({
+  id: '/horarios',
+  path: '/horarios',
+  getParentRoute: () => ProfissionalRoute,
+} as any)
 const ApiMercadoPagoWebhookRoute = ApiMercadoPagoWebhookRouteImport.update({
   id: '/api/mercado-pago/webhook',
   path: '/api/mercado-pago/webhook',
@@ -181,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/painel': typeof PainelRouteWithChildren
+  '/profissional': typeof ProfissionalRouteWithChildren
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
@@ -199,7 +224,10 @@ export interface FileRoutesByFullPath {
   '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
+  '/profissional/bloqueios': typeof ProfissionalBloqueiosRoute
+  '/profissional/horarios': typeof ProfissionalHorariosRoute
   '/painel/': typeof PainelIndexRoute
+  '/profissional/': typeof ProfissionalIndexRoute
   '/api/mercado-pago/webhook': typeof ApiMercadoPagoWebhookRoute
   '/integracoes/mercado-pago/retorno': typeof IntegracoesMercadoPagoRetornoRoute
 }
@@ -227,7 +255,10 @@ export interface FileRoutesByTo {
   '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
+  '/profissional/bloqueios': typeof ProfissionalBloqueiosRoute
+  '/profissional/horarios': typeof ProfissionalHorariosRoute
   '/painel': typeof PainelIndexRoute
+  '/profissional': typeof ProfissionalIndexRoute
   '/api/mercado-pago/webhook': typeof ApiMercadoPagoWebhookRoute
   '/integracoes/mercado-pago/retorno': typeof IntegracoesMercadoPagoRetornoRoute
 }
@@ -239,6 +270,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/painel': typeof PainelRouteWithChildren
+  '/profissional': typeof ProfissionalRouteWithChildren
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
@@ -257,7 +289,10 @@ export interface FileRoutesById {
   '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
+  '/profissional/bloqueios': typeof ProfissionalBloqueiosRoute
+  '/profissional/horarios': typeof ProfissionalHorariosRoute
   '/painel/': typeof PainelIndexRoute
+  '/profissional/': typeof ProfissionalIndexRoute
   '/api/mercado-pago/webhook': typeof ApiMercadoPagoWebhookRoute
   '/integracoes/mercado-pago/retorno': typeof IntegracoesMercadoPagoRetornoRoute
 }
@@ -270,6 +305,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/painel'
+    | '/profissional'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/auth/confirm'
@@ -288,7 +324,10 @@ export interface FileRouteTypes {
     | '/painel/profissionais'
     | '/painel/relatorios'
     | '/painel/servicos'
+    | '/profissional/bloqueios'
+    | '/profissional/horarios'
     | '/painel/'
+    | '/profissional/'
     | '/api/mercado-pago/webhook'
     | '/integracoes/mercado-pago/retorno'
   fileRoutesByTo: FileRoutesByTo
@@ -316,7 +355,10 @@ export interface FileRouteTypes {
     | '/painel/profissionais'
     | '/painel/relatorios'
     | '/painel/servicos'
+    | '/profissional/bloqueios'
+    | '/profissional/horarios'
     | '/painel'
+    | '/profissional'
     | '/api/mercado-pago/webhook'
     | '/integracoes/mercado-pago/retorno'
   id:
@@ -327,6 +369,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/painel'
+    | '/profissional'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/auth/confirm'
@@ -345,7 +388,10 @@ export interface FileRouteTypes {
     | '/painel/profissionais'
     | '/painel/relatorios'
     | '/painel/servicos'
+    | '/profissional/bloqueios'
+    | '/profissional/horarios'
     | '/painel/'
+    | '/profissional/'
     | '/api/mercado-pago/webhook'
     | '/integracoes/mercado-pago/retorno'
   fileRoutesById: FileRoutesById
@@ -357,6 +403,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   PainelRoute: typeof PainelRouteWithChildren
+  ProfissionalRoute: typeof ProfissionalRouteWithChildren
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
@@ -408,6 +455,13 @@ declare module '@tanstack/react-router' {
       path: '/painel'
       fullPath: '/painel'
       preLoaderRoute: typeof PainelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profissional': {
+      id: '/profissional'
+      path: '/profissional'
+      fullPath: '/profissional'
+      preLoaderRoute: typeof ProfissionalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recuperar-senha': {
@@ -543,6 +597,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PainelServicosRouteImport
       parentRoute: typeof PainelRoute
     }
+    '/profissional/': {
+      id: '/profissional/'
+      path: '/'
+      fullPath: '/profissional/'
+      preLoaderRoute: typeof ProfissionalIndexRouteImport
+      parentRoute: typeof ProfissionalRoute
+    }
+    '/profissional/bloqueios': {
+      id: '/profissional/bloqueios'
+      path: '/bloqueios'
+      fullPath: '/profissional/bloqueios'
+      preLoaderRoute: typeof ProfissionalBloqueiosRouteImport
+      parentRoute: typeof ProfissionalRoute
+    }
+    '/profissional/horarios': {
+      id: '/profissional/horarios'
+      path: '/horarios'
+      fullPath: '/profissional/horarios'
+      preLoaderRoute: typeof ProfissionalHorariosRouteImport
+      parentRoute: typeof ProfissionalRoute
+    }
     '/api/mercado-pago/webhook': {
       id: '/api/mercado-pago/webhook'
       path: '/api/mercado-pago/webhook'
@@ -597,6 +672,22 @@ const PainelRouteChildren: PainelRouteChildren = {
 const PainelRouteWithChildren =
   PainelRoute._addFileChildren(PainelRouteChildren)
 
+interface ProfissionalRouteChildren {
+  ProfissionalBloqueiosRoute: typeof ProfissionalBloqueiosRoute
+  ProfissionalHorariosRoute: typeof ProfissionalHorariosRoute
+  ProfissionalIndexRoute: typeof ProfissionalIndexRoute
+}
+
+const ProfissionalRouteChildren: ProfissionalRouteChildren = {
+  ProfissionalBloqueiosRoute: ProfissionalBloqueiosRoute,
+  ProfissionalHorariosRoute: ProfissionalHorariosRoute,
+  ProfissionalIndexRoute: ProfissionalIndexRoute,
+}
+
+const ProfissionalRouteWithChildren = ProfissionalRoute._addFileChildren(
+  ProfissionalRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BetaFechadoRoute: BetaFechadoRoute,
@@ -604,6 +695,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   PainelRoute: PainelRouteWithChildren,
+  ProfissionalRoute: ProfissionalRouteWithChildren,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   AuthConfirmRoute: AuthConfirmRoute,
