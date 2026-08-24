@@ -200,7 +200,8 @@ function BookingWizard({ page }: { page: PageData }) {
           slug: company.slug,
           date: targetDate,
           serviceIds,
-          professionalId: professionalChoice === "any" ? null : professionalChoice,
+          professionalId:
+            !needsProfessionalChoice || professionalChoice === "any" ? null : professionalChoice,
         },
       });
       setSlots(response.slots);
@@ -345,7 +346,9 @@ function BookingWizard({ page }: { page: PageData }) {
                   onClick={() => {
                     setStartsAt(slot.startsAt);
                     const professional =
-                      professionalChoice === "any" ? slot.professionals[0]?.id : professionalChoice;
+                      !needsProfessionalChoice || professionalChoice === "any"
+                        ? slot.professionals[0]?.id
+                        : professionalChoice;
                     setResolvedProfessionalId(professional ?? "");
                   }}
                 >
