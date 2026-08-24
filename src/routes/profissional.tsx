@@ -36,8 +36,11 @@ export const Route = createFileRoute("/profissional")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
+      { name: "apple-mobile-web-app-title", content: "Profissional" },
     ],
+    links: [{ rel: "manifest", href: "/manifest-profissional.webmanifest" }],
   }),
+
   component: ProfessionalLayout,
   errorComponent: () => (
     <main className="grid min-h-screen place-items-center px-4">
