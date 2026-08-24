@@ -165,6 +165,17 @@ export const getProfessionalPanel = createServerFn({ method: "GET" }).handler(
   },
 );
 
+/** Indica se a conta logada também possui um cadastro profissional ativo. */
+export const hasProfessionalPanel = createServerFn({ method: "GET" }).handler(
+  async (): Promise<boolean> => {
+    const supabase = createSupabaseServerClient();
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) return false;
+    const identity = await readIdentity(supabase);
+    return Boolean(identity?.active);
+  },
+);
+
 export const professionalSaveAppointment = createServerFn({ method: "POST" })
   .validator(
     z.object({

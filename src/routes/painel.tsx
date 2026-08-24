@@ -28,7 +28,6 @@ import {
   ShieldCheck,
   LoaderCircle,
   Sparkles,
-  Smartphone,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
