@@ -867,11 +867,9 @@ export const generateProfessionalAccess = createServerFn({ method: "POST" })
         email,
         password,
         email_confirm: true,
-        user_metadata: {
-          full_name: professional.name,
-          invited_tenant_id: tenantId,
-          invited_role: "professional",
-        },
+        // Nenhum vínculo por metadata: o tenant é definido apenas por
+        // admin_link_professional_account (service_role, após validação owner/admin).
+        user_metadata: { full_name: professional.name },
       });
       if (created.error || !created.data.user)
         throw new Error(created.error?.message ?? "Não foi possível criar a conta do profissional.");
