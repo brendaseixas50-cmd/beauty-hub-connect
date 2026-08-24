@@ -165,10 +165,23 @@ function BookingWizard({ page }: { page: PageData }) {
   const total = selectedServices.reduce((sum, service) => sum + service.priceCents, 0);
   const duration = selectedServices.reduce((sum, service) => sum + service.durationMinutes, 0);
   const signal = depositAmount(company, total);
+  /** Serviços da seleção em que o cliente precisa escolher um profissional. */
+  const servicesNeedingProfessional = selectedServices.filter(
+    (service) => service.requiresProfessional,
+  );
+  const needsProfessionalChoice = servicesNeedingProfessional.length > 0;
+  /**
+   * Compatibilidade serviço por serviço: o profissional aparece quando executa
+   * ao menos um dos serviços que exigem profissional (combos podem ser feitos
+   * por mais de uma pessoa, organizadas internamente pela empresa).
+   */
   const availableProfessionals = professionals.filter(
     (professional) =>
       !professional.serviceIds.length ||
-      serviceIds.every((id) => professional.serviceIds.includes(id)),
+      !needsProfessionalChoice ||
+      servicesNeedingProfessional.some((service) =>
+        professional.serviceIds.includes(service.id),
+      ),
   );
   const chosenProfessional = professionals.find(
     (professional) => professional.id === resolvedProfessionalId,
