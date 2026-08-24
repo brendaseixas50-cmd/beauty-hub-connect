@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Clock, EyeOff, ImagePlus, Layers, Pencil, Plus, RotateCcw } from "lucide-react";
+import { Clock, EyeOff, ImagePlus, Layers, Pencil, Plus, PlusCircle, RotateCcw } from "lucide-react";
 import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 
 
@@ -156,6 +156,11 @@ function ServicesPage() {
                       <Layers className="h-3 w-3" /> Combo
                     </Badge>
                   ) : null}
+                  {service.is_addon ? (
+                    <Badge variant="outline" className="gap-1">
+                      <PlusCircle className="h-3 w-3" /> Adicional
+                    </Badge>
+                  ) : null}
                 </div>
               </div>
 
@@ -246,7 +251,15 @@ function ServiceDialog({
     service?.requires_professional ?? true,
   );
   const [comboServiceIds, setComboServiceIds] = useState<string[]>(service?.comboServiceIds ?? []);
-  const options = services.filter((item) => item.id !== service?.id && !item.is_combo);
+  const [isAddon, setIsAddon] = useState(service?.is_addon ?? false);
+  const [addonForServiceIds, setAddonForServiceIds] = useState<string[]>(
+    service?.addonForServiceIds ?? [],
+  );
+  const options = services.filter(
+    (item) => item.id !== service?.id && !item.is_combo && !item.is_addon,
+  );
+  /** Serviços principais e combos que podem oferecer este adicional. */
+  const addonParentOptions = services.filter((item) => item.id !== service?.id && !item.is_addon);
   const combined = options.filter((item) => comboServiceIds.includes(item.id));
   const comboMinutes = combined.reduce((total, item) => total + item.duration_minutes, 0);
   const comboCents = combined.reduce((total, item) => total + item.price_cents, 0);
@@ -305,6 +318,8 @@ function ServiceDialog({
             isCombo,
             requiresProfessional,
             comboServiceIds: isCombo ? comboServiceIds : [],
+            isAddon: isCombo ? false : isAddon,
+            addonForServiceIds: !isCombo && isAddon ? addonForServiceIds : [],
           },
         }),
       service ? "Serviço atualizado." : "Serviço cadastrado.",
@@ -391,6 +406,53 @@ function ServiceDialog({
               Com “Não”, o cliente agenda normalmente e a empresa define internamente quem executa.
               O serviço continua valendo na página pública e dentro de combos.
             </p>
+          </div>
+
+          <div className="grid gap-3 rounded-lg border p-3">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={isAddon}
+                disabled={isCombo}
+                onChange={(event) => setIsAddon(event.currentTarget.checked)}
+              />
+              Pode ser oferecido como adicional?
+            </label>
+            {isAddon && !isCombo ? (
+              <div className="grid gap-2">
+                <p className="text-xs text-muted-foreground">
+                  Escolha em quais serviços e combos este adicional aparece na seção “Adicionar
+                  também” da página pública. Preço e duração continuam sendo os deste serviço.
+                </p>
+                <div className="grid max-h-40 gap-1 overflow-y-auto">
+                  {addonParentOptions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Cadastre primeiro os serviços ou combos principais.
+                    </p>
+                  ) : (
+                    addonParentOptions.map((item) => (
+                      <label key={item.id} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={addonForServiceIds.includes(item.id)}
+                          onChange={(event) =>
+                            setAddonForServiceIds((current) =>
+                              event.currentTarget.checked
+                                ? [...current, item.id]
+                                : current.filter((id) => id !== item.id),
+                            )
+                          }
+                        />
+                        <span className="truncate">{item.name}</span>
+                        {item.is_combo ? (
+                          <span className="text-xs text-muted-foreground">Combo</span>
+                        ) : null}
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="grid gap-3 rounded-lg border p-3">
