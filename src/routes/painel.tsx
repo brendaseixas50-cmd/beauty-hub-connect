@@ -143,18 +143,23 @@ function AcoesInferiores({
         <Globe2 className="h-4 w-4" /> Minha Página Pública
       </a>
       {professionalPanel ? (
-        <Link
-          to="/profissional"
-          preload="intent"
+        <a
+          href="/profissional"
+          target="_blank"
+          rel="noreferrer"
           onClick={onNavigate}
           className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-sidebar-accent/50"
         >
           <UserCog className="h-4 w-4" /> Meu Painel Profissional
-        </Link>
+        </a>
       ) : null}
       <div className="px-1 py-1">
-        <InstalarApp className="w-full justify-start gap-3 border-0 px-2 text-muted-foreground hover:bg-sidebar-accent/50" />
+        <InstalarApp
+          escopo="gestao"
+          className="w-full justify-start gap-3 border-0 px-2 text-muted-foreground hover:bg-sidebar-accent/50"
+        />
       </div>
+
       <LuviMenuItem onNavigate={onNavigate} />
       <Link
         to="/painel/configuracoes"
