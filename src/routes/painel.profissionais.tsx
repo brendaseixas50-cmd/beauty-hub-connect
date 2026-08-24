@@ -31,6 +31,8 @@ import {
   resetProfessionalAccess,
   saveProfessional,
   saveProfessionalSchedule,
+  setProfessionalActive,
+
   saveProfessionalUnavailability,
   uploadPublicMedia,
 } from "@/modules/mvp/server";
