@@ -61,6 +61,8 @@ const serviceSchema = z.object({
   imageUrl: z.string().nullable().default(null),
   isCombo: z.boolean().default(false),
   comboServices: z.array(z.string()).default([]),
+  /** Falso quando a empresa organiza internamente quem executa o serviço. */
+  requiresProfessional: z.boolean().default(true),
 });
 
 

@@ -165,10 +165,23 @@ function BookingWizard({ page }: { page: PageData }) {
   const total = selectedServices.reduce((sum, service) => sum + service.priceCents, 0);
   const duration = selectedServices.reduce((sum, service) => sum + service.durationMinutes, 0);
   const signal = depositAmount(company, total);
+  /** Serviços da seleção em que o cliente precisa escolher um profissional. */
+  const servicesNeedingProfessional = selectedServices.filter(
+    (service) => service.requiresProfessional,
+  );
+  const needsProfessionalChoice = servicesNeedingProfessional.length > 0;
+  /**
+   * Compatibilidade serviço por serviço: o profissional aparece quando executa
+   * ao menos um dos serviços que exigem profissional (combos podem ser feitos
+   * por mais de uma pessoa, organizadas internamente pela empresa).
+   */
   const availableProfessionals = professionals.filter(
     (professional) =>
       !professional.serviceIds.length ||
-      serviceIds.every((id) => professional.serviceIds.includes(id)),
+      !needsProfessionalChoice ||
+      servicesNeedingProfessional.some((service) =>
+        professional.serviceIds.includes(service.id),
+      ),
   );
   const chosenProfessional = professionals.find(
     (professional) => professional.id === resolvedProfessionalId,
@@ -187,7 +200,8 @@ function BookingWizard({ page }: { page: PageData }) {
           slug: company.slug,
           date: targetDate,
           serviceIds,
-          professionalId: professionalChoice === "any" ? null : professionalChoice,
+          professionalId:
+            !needsProfessionalChoice || professionalChoice === "any" ? null : professionalChoice,
         },
       });
       setSlots(response.slots);
@@ -293,11 +307,19 @@ function BookingWizard({ page }: { page: PageData }) {
         />
       ) : null}
       {step === 2 ? (
-        <StepProfessionals
-          professionals={availableProfessionals}
-          value={professionalChoice}
-          onChange={setProfessionalChoice}
-        />
+        needsProfessionalChoice ? (
+          <StepProfessionals
+            professionals={availableProfessionals}
+            value={professionalChoice}
+            onChange={setProfessionalChoice}
+          />
+        ) : (
+          <div className="rounded-xl bg-secondary p-4 text-sm">
+            <strong className="block">Sem escolha de profissional</strong>
+            Para os serviços selecionados a equipe é organizada internamente pela empresa. Siga para
+            escolher a data e o horário.
+          </div>
+        )
       ) : null}
       {step === 3 ? (
         <div className="grid gap-4">
@@ -324,7 +346,9 @@ function BookingWizard({ page }: { page: PageData }) {
                   onClick={() => {
                     setStartsAt(slot.startsAt);
                     const professional =
-                      professionalChoice === "any" ? slot.professionals[0]?.id : professionalChoice;
+                      !needsProfessionalChoice || professionalChoice === "any"
+                        ? slot.professionals[0]?.id
+                        : professionalChoice;
                     setResolvedProfessionalId(professional ?? "");
                   }}
                 >
