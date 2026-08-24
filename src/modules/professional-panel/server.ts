@@ -334,7 +334,7 @@ export const professionalSaveBlock = createServerFn({ method: "POST" })
       starts_at: data.startsAt,
       ends_at: data.endsAt,
       reason: data.reason,
-      created_by: auth.user?.id ?? null,
+      ...(auth.user ? { created_by: auth.user.id } : {}),
     });
     if (error) databaseError(error, "Não foi possível salvar o bloqueio.");
     return { success: true } as const;
