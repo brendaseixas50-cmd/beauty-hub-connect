@@ -28,6 +28,7 @@ import {
   ShieldCheck,
   LoaderCircle,
   Sparkles,
+  Smartphone,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,8 @@ import type { Session } from "@/modules/auth/domain";
 import { LuviAssistant, LuviOnboardingProgress } from "@/modules/luvi-core/components";
 import { LuviContextProvider, useLuvi } from "@/modules/luvi-core/context";
 import { lembrarProduto, produtoLembrado } from "@/lib/produto-preferido";
+import { InstalarApp } from "@/components/instalar-app";
+import { hasProfessionalPanel } from "@/modules/professional-panel/server";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/painel")({
@@ -52,6 +55,9 @@ export const Route = createFileRoute("/painel")({
         search: { redirect: location.href, produto: produtoLembrado() },
       });
     }
+    if (session.user.role === "professional") {
+      throw redirect({ to: "/profissional" });
+    }
     if (!session.user.betaAccessActive) {
       throw redirect({ to: "/beta-fechado", search: { produto: session.user.productType } });
     }
@@ -61,6 +67,7 @@ export const Route = createFileRoute("/painel")({
     lembrarProduto(session.user.productType);
     return { session };
   },
+  loader: async () => ({ professionalPanel: await hasProfessionalPanel() }),
   component: PainelLayout,
 });
 
@@ -108,10 +115,12 @@ function Navegacao({ onNavigate }: { onNavigate?: () => void }) {
 
 function AcoesInferiores({
   session,
+  professionalPanel,
   onNavigate,
   onLogout,
 }: {
   session: Session;
+  professionalPanel: boolean;
   onNavigate?: () => void;
   onLogout: () => void;
 }) {
@@ -129,6 +138,19 @@ function AcoesInferiores({
       >
         <Globe2 className="h-4 w-4" /> Minha Página Pública
       </a>
+      {professionalPanel ? (
+        <Link
+          to="/profissional"
+          preload="intent"
+          onClick={onNavigate}
+          className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-sidebar-accent/50"
+        >
+          <UserCog className="h-4 w-4" /> Meu Painel Profissional
+        </Link>
+      ) : null}
+      <div className="px-1 py-1">
+        <InstalarApp className="w-full justify-start gap-3 border-0 px-2 text-muted-foreground hover:bg-sidebar-accent/50" />
+      </div>
       <LuviMenuItem onNavigate={onNavigate} />
       <Link
         to="/painel/configuracoes"
@@ -256,6 +278,7 @@ function CompanySwitcher({ session }: { session: Session }) {
 function PainelLayout() {
   const [aberto, setAberto] = useState(false);
   const { session } = Route.useRouteContext();
+  const { professionalPanel } = Route.useLoaderData();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const navigating = useRouterState({ select: (state) => state.status === "pending" });
@@ -305,7 +328,11 @@ function PainelLayout() {
             <div className="grid gap-3">
               <LuviOnboardingProgress />
               <p className="truncate px-1 text-xs text-muted-foreground">{session.user.email}</p>
-              <AcoesInferiores session={session} onLogout={() => void handleLogout()} />
+              <AcoesInferiores
+                session={session}
+                professionalPanel={professionalPanel}
+                onLogout={() => void handleLogout()}
+              />
               <BrandCredit />
             </div>
           </aside>
@@ -327,6 +354,7 @@ function PainelLayout() {
                   <div className="mt-4 grid gap-3">
                     <AcoesInferiores
                       session={session}
+                      professionalPanel={professionalPanel}
                       onNavigate={() => setAberto(false)}
                       onLogout={() => void handleLogout()}
                     />
