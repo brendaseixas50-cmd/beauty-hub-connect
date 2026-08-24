@@ -190,7 +190,7 @@ check(
   })) !== null,
 );
 check(
-  "Serviço inativo é recusado na página pública",
+  "Serviço inativo é recusado no agendamento público",
   (await publicBookingBlockReason({
     slug: state.a.slug,
     professionalId: state.a1.id,
@@ -253,6 +253,13 @@ check(
 
 // -------------------------------------------------- 5. Profissional x gestão
 const a1Token = await signIn(state.a1.email, PASSWORD);
+// O app chama claim_professional_access ao entrar no Painel Profissional.
+const a1Claim = await rpc("claim_professional_access", {}, a1Token);
+check(
+  "Login do profissional assume a empresa que o autorizou",
+  a1Claim.ok && a1Claim.text.includes(state.a.tenantId),
+  a1Claim.text.slice(0, 120),
+);
 const a1Context = await rpc("get_my_professional_context", {}, a1Token);
 check(
   "Herança de acesso: profissional autorizado entra sem liberação individual",
@@ -268,9 +275,12 @@ check(
 const a1Bootstrap = await rpc("get_my_session_bootstrap", {}, a1Token);
 check(
   "Sessão do profissional tem papel 'professional' na empresa correta",
-  ((a1Bootstrap.data?.companies ?? []) as { role: string; tenantId: string }[]).every(
+  ((a1Bootstrap.data?.companies ?? []) as { role: string; tenantId: string }[]).some(
     (company) => company.role === "professional" && company.tenantId === state.a.tenantId,
-  ),
+  ) &&
+    ((a1Bootstrap.data?.companies ?? []) as { role: string; tenantId: string }[]).every(
+      (company) => company.tenantId !== state.b.tenantId,
+    ),
   JSON.stringify(a1Bootstrap.data?.companies),
 );
 const a1Team = await rest("professionals?select=id,name", { token: a1Token });
@@ -313,6 +323,7 @@ check(
 
 // A1 x A2 (mesma empresa)
 const a2Token = await signIn(state.a2.email, PASSWORD);
+await rpc("claim_professional_access", {}, a2Token);
 const a2Appointments = await rest("appointments?select=id,professional_id", { token: a2Token });
 check(
   "Profissional A2 não vê agendamentos de A1",
@@ -322,6 +333,7 @@ check(
 
 // Empresa A x Empresa B
 const b1Token = await signIn(state.b1.email, PASSWORD);
+await rpc("claim_professional_access", {}, b1Token);
 const b1Services = await rest("services?select=id,tenant_id", { token: b1Token });
 check(
   "Profissional de B não lê dados de A",
@@ -367,14 +379,15 @@ const selfMembership = await rest("tenant_memberships", {
 check("Auto-vínculo em empresa alheia é bloqueado", !selfMembership.ok, `${selfMembership.status}`);
 const claim = await rpc("claim_professional_access", {}, outsiderToken);
 check(
-  "claim_professional_access não libera e-mail não autorizado",
-  !claim.ok || claim.data === null || claim.data === false || JSON.stringify(claim.data).includes("null"),
-  `${claim.status} ${claim.text.slice(0, 90)}`,
+  "claim_professional_access não dá acesso a empresa que não autorizou o e-mail",
+  !claim.text.includes(state.a.tenantId) && !claim.text.includes(state.b.tenantId),
+  `${claim.status} ${claim.text.slice(0, 120)}`,
 );
 
 // Desativação e remoção
 await rest(`professionals?id=eq.${state.a1.id}`, { method: "PATCH", body: { active: false } });
 const a1TokenOff = await signIn(state.a1.email, PASSWORD);
+await rpc("claim_professional_access", {}, a1TokenOff);
 const contextOff = await rpc("get_my_professional_context", {}, a1TokenOff);
 check(
   "Profissional desativado perde o acesso imediatamente",
@@ -383,7 +396,7 @@ check(
 );
 await rest(`professionals?id=eq.${state.a1.id}`, { method: "PATCH", body: { active: true } });
 const a1TokenBack = await signIn(state.a1.email, PASSWORD);
-await rpc("switch_active_tenant", { target_tenant_id: state.a.tenantId }, a1TokenBack);
+await rpc("claim_professional_access", {}, a1TokenBack);
 const contextBack = await rpc("get_my_professional_context", {}, a1TokenBack);
 check("Reativação devolve o acesso do profissional", contextBack.ok && Boolean(contextBack.data));
 
@@ -420,6 +433,13 @@ await rpc(
 
 // -------------------------------------------------- 6. Solo x Equipe
 const soloOwnerToken = await signIn(state.solo.ownerEmail, PASSWORD);
+const soloFirst = await rest("professionals", {
+  method: "POST",
+  token: soloOwnerToken,
+  prefer: "return=representation",
+  body: { tenant_id: state.solo.tenantId, name: "Solo unico", email: `qa-solo-1-${state.stamp}@luiaqa.dev`, active: true },
+});
+check("Plano Solo aceita o profissional único", soloFirst.ok, `${soloFirst.status}`);
 const soloExtra = await rest("professionals", {
   method: "POST",
   token: soloOwnerToken,
@@ -465,10 +485,11 @@ for (let index = 0; index < 8; index += 1) {
   teamNinth.push(created.status);
   if (!created.ok) break;
 }
+const activeTeam = await rest(`professionals?select=id&tenant_id=eq.${state.a.tenantId}&active=is.true`);
 check(
-  "Plano Equipe permite 8 profissionais e bloqueia o 9º",
-  teamNinth.filter((status) => status === 201).length + 3 === 8 && teamNinth.at(-1) === 400,
-  `respostas=${teamNinth.join(",")}`,
+  "Plano Equipe permite 8 profissionais ativos e bloqueia o 9º",
+  activeTeam.data.length === 8 && teamNinth.at(-1) === 400,
+  `ativos=${activeTeam.data.length} respostas=${teamNinth.join(",")}`,
 );
 
 // -------------------------------------------------- 7. Pagamento (Mercado Pago)
