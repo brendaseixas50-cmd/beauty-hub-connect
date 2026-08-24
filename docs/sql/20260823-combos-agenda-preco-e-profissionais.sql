@@ -43,31 +43,78 @@ before insert or update on public.service_combo_items
 for each row execute function public.validate_service_combo_item();
 
 -- ---------------------------------------------------------------------------
--- 2) Profissionais compatíveis: um profissional atende o combo quando atende
---    TODOS os serviços da composição. Mantém a regra atual (a página pública e
---    as RPCs olham professional_services) sem mudar nada dos serviços normais.
+-- 2) Profissionais compatíveis — regra nova (multiprofissional):
+--
+--    a) serviço SEM escolha de profissional (requires_professional = false):
+--       qualquer profissional ativo da empresa pode ser registrado como
+--       responsável interno, então todos ficam vinculados ao serviço. O cliente
+--       não precisa escolher ninguém na página pública.
+--
+--    b) COMBO: a compatibilidade é verificada serviço por serviço. Um
+--       profissional é apto ao combo quando executa PELO MENOS UM dos itens que
+--       exigem profissional. Se nenhum item do combo exige profissional, todos
+--       os profissionais ativos ficam aptos. O combo só fica inviável quando
+--       algum item que exige profissional não tem nenhum profissional apto —
+--       nesse caso nenhum vínculo é criado e ele não aparece com horários.
+--
+--    Serviços normais (requires_professional = true e não combo) continuam
+--    exatamente como hoje: vínculo manual em professional_services.
 -- ---------------------------------------------------------------------------
 create or replace function public.refresh_combo_professional_links(p_tenant_id uuid)
 returns void language plpgsql security definer set search_path = '' as $$
 begin
-  -- vincula quem atende todos os itens do combo
+  -- (a) serviços sem escolha pública de profissional: todos os ativos atendem
+  insert into public.professional_services (tenant_id, professional_id, service_id)
+  select p_tenant_id, professional.id, service.id
+  from public.services service
+  join public.professionals professional
+    on professional.tenant_id = service.tenant_id and professional.active
+  where service.tenant_id = p_tenant_id
+    and not service.is_combo
+    and not service.requires_professional
+  on conflict do nothing;
+
+  -- (b) combos: vincula quem executa ao menos um item que exige profissional
   insert into public.professional_services (tenant_id, professional_id, service_id)
   select p_tenant_id, professional.id, combo.id
   from public.services combo
-  join public.professionals professional on professional.tenant_id = combo.tenant_id
+  join public.professionals professional
+    on professional.tenant_id = combo.tenant_id and professional.active
   where combo.tenant_id = p_tenant_id
     and combo.is_combo
     and exists (select 1 from public.service_combo_items item
                 where item.combo_service_id = combo.id)
+    -- todo item que exige profissional precisa ter alguém apto na empresa
     and not exists (
-      select 1 from public.service_combo_items item
+      select 1
+      from public.service_combo_items item
+      join public.services child on child.id = item.service_id
       where item.combo_service_id = combo.id
+        and child.requires_professional
         and not exists (
           select 1 from public.professional_services link
-          where link.tenant_id = p_tenant_id
-            and link.professional_id = professional.id
-            and link.service_id = item.service_id
+          join public.professionals other
+            on other.id = link.professional_id and other.active
+          where link.tenant_id = p_tenant_id and link.service_id = item.service_id
         )
+    )
+    -- e este profissional executa ao menos um item que exige profissional
+    -- (ou o combo é inteiramente composto por serviços sem escolha)
+    and (
+      not exists (
+        select 1 from public.service_combo_items item
+        join public.services child on child.id = item.service_id
+        where item.combo_service_id = combo.id and child.requires_professional
+      )
+      or exists (
+        select 1 from public.service_combo_items item
+        join public.services child on child.id = item.service_id
+        join public.professional_services link
+          on link.service_id = item.service_id
+         and link.tenant_id = p_tenant_id
+         and link.professional_id = professional.id
+        where item.combo_service_id = combo.id and child.requires_professional
+      )
     )
   on conflict do nothing;
 
@@ -80,13 +127,17 @@ begin
     and combo.is_combo
     and exists (
       select 1 from public.service_combo_items item
-      where item.combo_service_id = combo.id
-        and not exists (
-          select 1 from public.professional_services inner_link
-          where inner_link.tenant_id = p_tenant_id
-            and inner_link.professional_id = link.professional_id
-            and inner_link.service_id = item.service_id
-        )
+      join public.services child on child.id = item.service_id
+      where item.combo_service_id = combo.id and child.requires_professional
+    )
+    and not exists (
+      select 1 from public.service_combo_items item
+      join public.services child on child.id = item.service_id
+      join public.professional_services inner_link
+        on inner_link.service_id = item.service_id
+       and inner_link.tenant_id = p_tenant_id
+       and inner_link.professional_id = link.professional_id
+      where item.combo_service_id = combo.id and child.requires_professional
     );
 end;
 $$;
@@ -116,15 +167,28 @@ for each row execute function public.sync_combo_professional_links();
 
 drop trigger if exists sync_combo_links_on_services on public.services;
 create trigger sync_combo_links_on_services
-after update of is_combo on public.services
+after update of is_combo, requires_professional, active on public.services
 for each row execute function public.sync_combo_professional_links();
 
--- vínculos dos combos já cadastrados (só insere/corrige combos)
+drop trigger if exists sync_combo_links_on_new_services on public.services;
+create trigger sync_combo_links_on_new_services
+after insert on public.services
+for each row execute function public.sync_combo_professional_links();
+
+drop trigger if exists sync_combo_links_on_professionals on public.professionals;
+create trigger sync_combo_links_on_professionals
+after insert or update of active on public.professionals
+for each row execute function public.sync_combo_professional_links();
+
+-- vínculos já cadastrados (combos + serviços sem escolha de profissional)
 do $$
 declare
   v_tenant uuid;
 begin
-  for v_tenant in select distinct tenant_id from public.services where is_combo loop
+  for v_tenant in
+    select distinct tenant_id from public.services
+    where is_combo or not requires_professional
+  loop
     perform public.refresh_combo_professional_links(v_tenant);
   end loop;
 end;
