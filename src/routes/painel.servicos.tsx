@@ -242,6 +242,9 @@ function ServiceDialog({
   const [mediaKey] = useState(() => service?.id ?? crypto.randomUUID());
   const [uploading, setUploading] = useState(false);
   const [isCombo, setIsCombo] = useState(service?.is_combo ?? false);
+  const [requiresProfessional, setRequiresProfessional] = useState(
+    service?.requires_professional ?? true,
+  );
   const [comboServiceIds, setComboServiceIds] = useState<string[]>(service?.comboServiceIds ?? []);
   const options = services.filter((item) => item.id !== service?.id && !item.is_combo);
   const combined = options.filter((item) => comboServiceIds.includes(item.id));
@@ -300,6 +303,7 @@ function ServiceDialog({
             active: form.get("active") === "on",
             imageUrl,
             isCombo,
+            requiresProfessional,
             comboServiceIds: isCombo ? comboServiceIds : [],
           },
         }),
@@ -359,6 +363,34 @@ function ServiceDialog({
             {uploading ? (
               <p className="text-xs text-muted-foreground">Enviando imagem…</p>
             ) : null}
+          </div>
+
+          <div className="grid gap-2 rounded-lg border p-3">
+            <Label>Cliente precisa escolher um profissional para este serviço?</Label>
+            <div className="flex gap-4 text-sm">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="requiresProfessional"
+                  checked={requiresProfessional}
+                  onChange={() => setRequiresProfessional(true)}
+                />
+                Sim
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="requiresProfessional"
+                  checked={!requiresProfessional}
+                  onChange={() => setRequiresProfessional(false)}
+                />
+                Não
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Com “Não”, o cliente agenda normalmente e a empresa define internamente quem executa.
+              O serviço continua valendo na página pública e dentro de combos.
+            </p>
           </div>
 
           <div className="grid gap-3 rounded-lg border p-3">

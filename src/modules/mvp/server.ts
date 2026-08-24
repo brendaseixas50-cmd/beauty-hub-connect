@@ -1195,6 +1195,7 @@ const serviceSchema = z.object({
   active: z.boolean(),
   imageUrl: z.string().url().max(1000).or(z.literal("")),
   isCombo: z.boolean().default(false),
+  requiresProfessional: z.boolean().default(true),
   comboServiceIds: z.array(z.string().uuid()).max(12).default([]),
 });
 
@@ -1291,6 +1292,7 @@ export const saveService = createServerFn({ method: "POST" })
       active: data.active,
       image_url: data.imageUrl || null,
       is_combo: data.isCombo,
+      requires_professional: data.requiresProfessional,
     };
     const query = data.id
       ? supabase.from("services").update(values).eq("id", data.id).eq("tenant_id", tenantId)
