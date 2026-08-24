@@ -837,6 +837,7 @@ export type Database = {
           id: string;
           image_url: string | null;
           is_combo: boolean;
+          is_addon: boolean;
           requires_professional: boolean;
           name: string;
           price_cents: number;
@@ -852,6 +853,7 @@ export type Database = {
           id?: string;
           image_url?: string | null;
           is_combo?: boolean;
+          is_addon?: boolean;
           requires_professional?: boolean;
           name: string;
           price_cents: number;
@@ -867,6 +869,7 @@ export type Database = {
           id?: string;
           image_url?: string | null;
           is_combo?: boolean;
+          is_addon?: boolean;
           requires_professional?: boolean;
           name?: string;
           price_cents?: number;
