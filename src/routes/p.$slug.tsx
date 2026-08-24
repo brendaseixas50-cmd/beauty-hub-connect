@@ -306,11 +306,19 @@ function BookingWizard({ page }: { page: PageData }) {
         />
       ) : null}
       {step === 2 ? (
-        <StepProfessionals
-          professionals={availableProfessionals}
-          value={professionalChoice}
-          onChange={setProfessionalChoice}
-        />
+        needsProfessionalChoice ? (
+          <StepProfessionals
+            professionals={availableProfessionals}
+            value={professionalChoice}
+            onChange={setProfessionalChoice}
+          />
+        ) : (
+          <div className="rounded-xl bg-secondary p-4 text-sm">
+            <strong className="block">Sem escolha de profissional</strong>
+            Para os serviços selecionados a equipe é organizada internamente pela empresa. Siga para
+            escolher a data e o horário.
+          </div>
+        )
       ) : null}
       {step === 3 ? (
         <div className="grid gap-4">
