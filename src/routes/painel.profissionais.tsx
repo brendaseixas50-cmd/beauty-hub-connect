@@ -219,6 +219,7 @@ function ProfessionalsPage() {
 function AcessoProfissional({ professional }: { professional: ProfessionalWithServices }) {
   const gerar = useServerFn(generateProfessionalAccess);
   const redefinir = useServerFn(resetProfessionalAccess);
+  const action = useMvpAction();
   const [pending, setPending] = useState(false);
   const [senha, setSenha] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string>();
@@ -251,15 +252,33 @@ function AcessoProfissional({ professional }: { professional: ProfessionalWithSe
       <div className="flex flex-wrap items-center gap-2">
         <KeyRound className="h-4 w-4 text-muted-foreground" />
         <p className="text-sm font-medium">Acesso ao Painel Profissional</p>
-        <Badge variant={vinculado ? "secondary" : "outline"}>
-          {vinculado ? "Ativo" : "Não gerado"}
+        <Badge variant={professional.active ? "secondary" : "destructive"}>
+          {professional.active ? "Ativo" : "Desativado"}
         </Badge>
+        <Badge variant="outline">{vinculado ? "Conta vinculada" : "Aguardando 1º login"}</Badge>
       </div>
       <p className="text-xs text-muted-foreground">
         {professional.email
-          ? `Login por e-mail: ${professional.email}`
-          : "Cadastre o e-mail do profissional para liberar o acesso individual."}
+          ? `E-mail autorizado: ${professional.email} — entra com Google ou e-mail e senha, sempre com este e-mail.`
+          : "Cadastre o e-mail do profissional para autorizar o acesso individual."}
       </p>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          variant={professional.active ? "outline" : "default"}
+          disabled={action.pending}
+          onClick={() =>
+            void action.run(
+              () => setProfessionalActive({ data: { id: professional.id, active: !professional.active } }),
+              professional.active
+                ? "Acesso desativado. O profissional perde o painel imediatamente; histórico preservado."
+                : "Acesso reativado com a mesma conta e histórico.",
+            )
+          }
+        >
+          {professional.active ? "Desativar acesso" : "Reativar acesso"}
+        </Button>
+
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
