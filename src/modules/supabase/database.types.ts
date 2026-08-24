@@ -1727,6 +1727,11 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: Json;
       };
+      claim_professional_access: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+
       professional_update_working_hours: {
         Args: { p_working_hours: Json };
         Returns: undefined;
