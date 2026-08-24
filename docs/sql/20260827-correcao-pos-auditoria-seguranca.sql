@@ -311,10 +311,7 @@ create policy "members read own waitlist"
 on public.waitlist_entries for select to authenticated
 using (
   tenant_id = private.current_tenant_id()
-  and (
-    not private.is_restricted_professional()
-    or professional_id = private.current_professional_id()
-  )
+  and (select private.current_role()) in ('owner', 'admin', 'receptionist')
 );
 
 drop policy if exists "members manage own categories" on public.product_categories;
