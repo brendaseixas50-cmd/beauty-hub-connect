@@ -1,7 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, Clock, LogOut, ShieldAlert } from "lucide-react";
-import { useEffect } from "react";
 
 import { InstalarApp } from "@/components/instalar-app";
 import { Button } from "@/components/ui/button";
@@ -54,11 +53,6 @@ function ProfessionalLayout() {
   const result = Route.useLoaderData();
   const produto = result.status === "ok" ? result.data.identity.productType : result.productType;
   const tema = produto === "barber" ? "tema-barbearia" : "tema-beleza";
-
-  useEffect(() => {
-    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
-    void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
-  }, []);
 
   if (result.status === "disabled") {
     return (
