@@ -67,7 +67,12 @@ export const Route = createFileRoute("/painel")({
     return { session };
   },
   loader: async () => ({ professionalPanel: await hasProfessionalPanel() }),
+  head: () => ({
+    links: [{ rel: "manifest", href: "/manifest.webmanifest" }],
+    meta: [{ name: "apple-mobile-web-app-title", content: "Gestão" }],
+  }),
   component: PainelLayout,
+
 });
 
 const itens = [
