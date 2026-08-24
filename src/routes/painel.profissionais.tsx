@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ImageUp, Pencil, Plus, UserRound } from "lucide-react";
+import { Copy, ImageUp, KeyRound, Pencil, Plus, UserRound } from "lucide-react";
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
 import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
@@ -23,10 +23,12 @@ import type { ProfessionalWithServices } from "@/modules/mvp/domain";
 import {
   deleteProfessional,
   deleteProfessionalUnavailability,
+  generateProfessionalAccess,
   getProfessionalCapacity,
   listProfessionalUnavailability,
   listProfessionals,
   listServices,
+  resetProfessionalAccess,
   saveProfessional,
   saveProfessionalSchedule,
   saveProfessionalUnavailability,
