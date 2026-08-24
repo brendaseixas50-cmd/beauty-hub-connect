@@ -278,9 +278,8 @@ function AcessoProfissional({ professional }: { professional: ProfessionalWithSe
         >
           {professional.active ? "Desativar acesso" : "Reativar acesso"}
         </Button>
-
-      <div className="flex flex-wrap gap-2">
         <Button
+
           size="sm"
           variant={vinculado ? "outline" : "default"}
           disabled={pending || !professional.email || !professional.active}
