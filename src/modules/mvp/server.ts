@@ -706,7 +706,50 @@ export const listProfessionals = createServerFn({ method: "GET" }).handler(
   },
 );
 
+/**
+ * Ativa ou desativa o profissional. Desativar bloqueia imediatamente o acesso ao
+ * Painel Profissional (Google e e-mail/senha) sem apagar histórico nem vínculo:
+ * o RLS deixa de reconhecer o profissional na próxima leitura, inclusive em
+ * sessões já abertas e no PWA instalado. Reativar reaproveita a mesma conta.
+ */
+export const setProfessionalActive = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().uuid(), active: z.boolean() }))
+  .handler(async ({ data }): Promise<Professional> => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    if (data.active) {
+      const [plan, activeProfessionals] = await Promise.all([
+        planCapacity(supabase, tenantId),
+        supabase.from("professionals").select("id").eq("tenant_id", tenantId).eq("active", true),
+      ]);
+      const others = (activeProfessionals.data ?? []).filter(
+        (professional) => professional.id !== data.id,
+      ).length;
+      if (others >= plan.limit) {
+        throw new Error(
+          `Seu plano ${plan.name} permite ${plan.limit} profissional${plan.limit > 1 ? "is" : ""} ativo${plan.limit > 1 ? "s" : ""}. Faça upgrade do plano para reativar mais.`,
+        );
+      }
+    }
+    const { data: saved, error } = await supabase
+      .from("professionals")
+      .update({ active: data.active })
+      .eq("id", data.id)
+      .eq("tenant_id", tenantId)
+      .select()
+      .single();
+    if (error || !saved)
+      databaseError(
+        error,
+        data.active
+          ? "Não foi possível reativar o profissional."
+          : "Não foi possível desativar o profissional.",
+      );
+    return saved;
+  });
+
 export const saveProfessional = createServerFn({ method: "POST" })
+
   .validator(professionalSchema)
   .handler(async ({ data }): Promise<Professional> => {
     const { supabase, tenantId, role } = await tenantContext();
