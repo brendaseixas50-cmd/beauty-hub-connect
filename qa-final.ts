@@ -3,7 +3,7 @@
  * Executa fluxos reais: disponibilidade pública, agenda individual, serviços,
  * isolamento entre empresas/profissionais, planos e pagamento.
  */
-import { rest, rpc, signIn, PASSWORD, check, summary } from "/tmp/qa/lib";
+import { rest, rpc, signIn, PASSWORD, check, report } from "/tmp/qa/lib";
 import {
   filterSlotsByProfessionalAgenda,
   publicBookingBlockReason,
@@ -498,4 +498,4 @@ check(
   `HTTP ${webhook.status}`,
 );
 
-summary();
+report();
