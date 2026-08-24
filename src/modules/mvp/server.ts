@@ -780,6 +780,101 @@ export const deleteProfessional = createServerFn({ method: "POST" })
     return { success: true } as const;
   });
 
+function temporaryPassword(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
+}
+
+/**
+ * Cria (ou reaproveita) a conta de acesso do profissional e vincula ao próprio
+ * cadastro dentro da empresa. O profissional entra apenas no Painel Profissional.
+ */
+export const generateProfessionalAccess = createServerFn({ method: "POST" })
+  .validator(idSchema)
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const { data: professional, error } = await supabase
+      .from("professionals")
+      .select("id, name, email, active, user_id")
+      .eq("id", data.id)
+      .eq("tenant_id", tenantId)
+      .single();
+    if (error || !professional) databaseError(error, "Profissional não encontrado.");
+    const email = professional.email?.trim().toLowerCase();
+    if (!email)
+      throw new Error("Cadastre o e-mail do profissional antes de gerar o acesso individual.");
+    if (!professional.active)
+      throw new Error("Ative o profissional antes de gerar o acesso individual.");
+
+    const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
+    const admin = createSupabaseAdminClient();
+
+    const { data: existingId, error: lookupError } = await admin.rpc("admin_find_auth_user_id", {
+      p_email: email,
+    });
+    if (lookupError) databaseError(lookupError, "Não foi possível verificar a conta do e-mail.");
+
+    let userId = existingId ?? null;
+    let password: string | null = null;
+    if (!userId) {
+      password = temporaryPassword();
+      const created = await admin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: professional.name,
+          invited_tenant_id: tenantId,
+          invited_role: "professional",
+        },
+      });
+      if (created.error || !created.data.user)
+        throw new Error(created.error?.message ?? "Não foi possível criar a conta do profissional.");
+      userId = created.data.user.id;
+    }
+
+    const { error: linkError } = await admin.rpc("admin_link_professional_account", {
+      p_professional_id: professional.id,
+      p_user_id: userId,
+    });
+    if (linkError) databaseError(linkError, "Não foi possível vincular o acesso do profissional.");
+
+    return {
+      email,
+      temporaryPassword: password,
+      reused: password === null,
+      loginPath: "/login?redirect=%2Fprofissional",
+    } as const;
+  });
+
+/** Redefine a senha temporária de um profissional que já possui acesso. */
+export const resetProfessionalAccess = createServerFn({ method: "POST" })
+  .validator(idSchema)
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const { data: professional, error } = await supabase
+      .from("professionals")
+      .select("id, email, user_id")
+      .eq("id", data.id)
+      .eq("tenant_id", tenantId)
+      .single();
+    if (error || !professional) databaseError(error, "Profissional não encontrado.");
+    if (!professional.user_id)
+      throw new Error("Gere o acesso individual do profissional antes de redefinir a senha.");
+    const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
+    const admin = createSupabaseAdminClient();
+    const password = temporaryPassword();
+    const updated = await admin.auth.admin.updateUserById(professional.user_id, { password });
+    if (updated.error)
+      throw new Error(updated.error.message ?? "Não foi possível redefinir a senha.");
+    return { email: professional.email, temporaryPassword: password } as const;
+  });
+
+
+
 const scheduleDaySchema = z.object({
   weekday: z.number().int().min(0).max(6),
   dayOff: z.boolean(),
