@@ -3,7 +3,7 @@
  * Executa fluxos reais: disponibilidade pública, agenda individual, serviços,
  * isolamento entre empresas/profissionais, planos e pagamento.
  */
-import { rest, rpc, signIn, PASSWORD, check, report } from "/tmp/qa/lib";
+import { rest, rpc, rpcPublic, signIn, PASSWORD, check, report } from "/tmp/qa/lib";
 import {
   filterSlotsByProfessionalAgenda,
   publicBookingBlockReason,
@@ -38,7 +38,7 @@ const sunday = nextWeekday(0);
 const at = (date: string, time: string) => `${date}T${time}:00-03:00`;
 
 async function availability(slug: string, date: string, serviceIds: string[], professionalId: string | null) {
-  const response = await rpc("get_public_booking_availability_v2", {
+  const response = await rpcPublic("get_public_booking_availability_v2", {
     p_slug: slug,
     p_date: date,
     p_service_ids: serviceIds,
@@ -122,6 +122,7 @@ const block = await rest("professional_unavailability", {
     starts_at: at(tuesday, "15:00"),
     ends_at: at(tuesday, "16:00"),
     reason: "QA bloqueio",
+    created_by: state.a1.userId,
   },
 });
 if (!block.ok) throw new Error(`bloqueio: ${block.text}`);
@@ -199,7 +200,7 @@ check(
 );
 
 // -------------------------------------------------- 3. Agendamento real
-const booking = await rpc("create_public_booking_v3", {
+const booking = await rpcPublic("create_public_booking_v3", {
   p_slug: state.a.slug,
   p_service_ids: [state.a.serviceId],
   p_professional_id: state.a1.id,
@@ -235,7 +236,7 @@ check(
 );
 
 // -------------------------------------------------- 4. Página pública
-const page = await rpc("get_public_company_page_v3", { p_slug: state.a.slug });
+const page = await rpcPublic("get_public_company_page_v3", { p_slug: state.a.slug });
 const services = (page.data?.services ?? []) as { id: string; name: string }[];
 check("Página pública publica a empresa", Boolean(page.data), page.data?.company?.name ?? "");
 check(
@@ -244,7 +245,7 @@ check(
     !services.some((service) => service.id === state.a.inactiveServiceId),
   services.map((service) => service.name).join(", "),
 );
-const pageOther = await rpc("get_public_company_page_v3", { p_slug: state.b.slug });
+const pageOther = await rpcPublic("get_public_company_page_v3", { p_slug: state.b.slug });
 check(
   "Página pública de B não expõe dados de A",
   ((pageOther.data?.services ?? []) as { id: string }[]).every((service) => service.id !== state.a.serviceId),
