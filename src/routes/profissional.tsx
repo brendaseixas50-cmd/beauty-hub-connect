@@ -119,7 +119,7 @@ function ProfessionalLayout() {
             <p className="truncate text-sm font-semibold">{identity.name}</p>
             <p className="truncate text-xs text-muted-foreground">{identity.tenantName}</p>
           </div>
-          <InstalarApp className="hidden sm:inline-flex" />
+          <InstalarApp escopo="profissional" className="hidden sm:inline-flex" />
           <SairButton />
         </div>
         <nav className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-3 pb-2">
@@ -140,7 +140,7 @@ function ProfessionalLayout() {
         <Outlet />
       </main>
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 sm:hidden">
-        <InstalarApp className="rounded-full shadow-lg" />
+        <InstalarApp escopo="profissional" className="rounded-full shadow-lg" />
       </div>
     </div>
   );
