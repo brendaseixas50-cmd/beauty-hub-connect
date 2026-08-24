@@ -59,7 +59,7 @@ async function loadTenantAgenda(
     current.push({ starts_at: block.starts_at, ends_at: block.ends_at });
     unavailability.set(block.professional_id, current);
   }
-  return { tenantId: tenant.id, timezone: tenant.timezone, workingHours, unavailability } as never as TenantAgenda;
+  return { tenantId: tenant.id, timeZone: tenant.timezone, workingHours, unavailability };
 }
 
 /** Keeps only the slots each professional can actually take, individually. */
