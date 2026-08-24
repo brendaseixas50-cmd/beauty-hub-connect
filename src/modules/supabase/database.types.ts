@@ -799,6 +799,34 @@ export type Database = {
         };
         Relationships: [];
       };
+      service_addon_links: {
+        Row: {
+          addon_service_id: string;
+          created_at: string;
+          id: string;
+          parent_service_id: string;
+          position: number;
+          tenant_id: string;
+        };
+        Insert: {
+          addon_service_id: string;
+          created_at?: string;
+          id?: string;
+          parent_service_id: string;
+          position?: number;
+          tenant_id: string;
+        };
+        Update: {
+          addon_service_id?: string;
+          created_at?: string;
+          id?: string;
+          parent_service_id?: string;
+          position?: number;
+          tenant_id?: string;
+        };
+        Relationships: [];
+      };
+
       services: {
         Row: {
           active: boolean;
@@ -809,6 +837,7 @@ export type Database = {
           id: string;
           image_url: string | null;
           is_combo: boolean;
+          is_addon: boolean;
           requires_professional: boolean;
           name: string;
           price_cents: number;
@@ -824,6 +853,7 @@ export type Database = {
           id?: string;
           image_url?: string | null;
           is_combo?: boolean;
+          is_addon?: boolean;
           requires_professional?: boolean;
           name: string;
           price_cents: number;
@@ -839,6 +869,7 @@ export type Database = {
           id?: string;
           image_url?: string | null;
           is_combo?: boolean;
+          is_addon?: boolean;
           requires_professional?: boolean;
           name?: string;
           price_cents?: number;

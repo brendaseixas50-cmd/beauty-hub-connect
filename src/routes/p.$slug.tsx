@@ -161,6 +161,26 @@ function BookingWizard({ page }: { page: PageData }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
   const [result, setResult] = useState<BookingResult>();
+  /**
+   * Serviços adicionais ("Adicionar também") só valem enquanto o serviço ou
+   * combo principal que os oferece continuar selecionado.
+   */
+  function toggleService(id: string) {
+    setServiceIds((current) => {
+      const next = current.includes(id)
+        ? current.filter((item) => item !== id)
+        : [...current, id];
+      const mainIds = next.filter(
+        (item) => !services.find((service) => service.id === item)?.isAddon,
+      );
+      return next.filter((item) => {
+        const service = services.find((entry) => entry.id === item);
+        if (!service?.isAddon) return true;
+        return service.addonForServiceIds.some((parentId) => mainIds.includes(parentId));
+      });
+    });
+  }
+
   const selectedServices = services.filter((service) => serviceIds.includes(service.id));
   const total = selectedServices.reduce((sum, service) => sum + service.priceCents, 0);
   const duration = selectedServices.reduce((sum, service) => sum + service.durationMinutes, 0);
@@ -297,11 +317,7 @@ function BookingWizard({ page }: { page: PageData }) {
         <StepServices
           services={services}
           selected={serviceIds}
-          onToggle={(id) =>
-            setServiceIds((current) =>
-              current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
-            )
-          }
+          onToggle={toggleService}
           total={total}
           duration={duration}
         />
@@ -507,10 +523,46 @@ function StepServices({
   total: number;
   duration: number;
 }) {
+  const [tab, setTab] = useState<"servicos" | "combos">("servicos");
+  const combos = services.filter((service) => service.isCombo && !service.isAddon);
+  const simples = services.filter((service) => !service.isCombo && !service.isAddon);
+  const mainServices = tab === "combos" ? combos : simples;
+  const selectedMainIds = selected.filter(
+    (id) => !services.find((service) => service.id === id)?.isAddon,
+  );
+  /** Adicionais configurados para o serviço/combo principal escolhido. */
+  const addons = services.filter(
+    (service) =>
+      service.isAddon &&
+      service.addonForServiceIds.some((parentId) => selectedMainIds.includes(parentId)),
+  );
   return (
     <div className="grid gap-3">
-      {services.length ? (
-        services.map((service) => (
+      {combos.length ? (
+        <div role="tablist" aria-label="Tipo de serviço" className="flex gap-2">
+          {(
+            [
+              ["servicos", "Serviços"],
+              ["combos", "Combos"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={tab === value}
+              onClick={() => setTab(value)}
+              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                tab === value ? "bg-primary text-primary-foreground" : "bg-secondary"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {mainServices.length ? (
+        mainServices.map((service) => (
           <Choice
             key={service.id}
             selected={selected.includes(service.id)}
@@ -549,6 +601,41 @@ function StepServices({
       ) : (
         <p className="rounded-xl bg-secondary p-4">Nenhum serviço disponível.</p>
       )}
+
+      {addons.length ? (
+        <div className="grid gap-2 rounded-xl border border-dashed p-3">
+          <div>
+            <strong className="text-sm">Adicionar também</strong>
+            <p className="text-xs text-muted-foreground">Opcional — você pode seguir sem escolher.</p>
+          </div>
+          {addons.map((addon) => (
+            <Choice
+              key={addon.id}
+              selected={selected.includes(addon.id)}
+              onClick={() => onToggle(addon.id)}
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                {addon.imageUrl ? (
+                  <img
+                    src={addon.imageUrl}
+                    alt={addon.name}
+                    loading="lazy"
+                    className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                  />
+                ) : null}
+                <span className="min-w-0">
+                  <strong className="block">{addon.name}</strong>
+                  <small className="block text-muted-foreground">
+                    +{addon.durationMinutes} min
+                  </small>
+                </span>
+              </span>
+              <strong>+ {brl(addon.priceCents)}</strong>
+            </Choice>
+          ))}
+        </div>
+      ) : null}
+
       <div className="flex justify-between rounded-xl bg-secondary p-3 text-sm">
         <span>{duration} min</span>
         <strong>{brl(total)}</strong>

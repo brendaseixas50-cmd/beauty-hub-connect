@@ -34,7 +34,10 @@ export type ServiceWithUsage = Service & {
   linkedToProfessionals: boolean;
   deletable: boolean;
   comboServiceIds: string[];
+  /** Serviços/combos que oferecem este serviço na seção "Adicionar também". */
+  addonForServiceIds: string[];
 };
+
 
 
 export type ProductType = "beauty" | "barber";

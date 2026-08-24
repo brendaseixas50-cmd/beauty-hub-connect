@@ -1195,14 +1195,18 @@ const serviceSchema = z.object({
   active: z.boolean(),
   imageUrl: z.string().url().max(1000).or(z.literal("")),
   isCombo: z.boolean().default(false),
+  isAddon: z.boolean().default(false),
   requiresProfessional: z.boolean().default(true),
   comboServiceIds: z.array(z.string().uuid()).max(12).default([]),
+  /** Serviços/combos que oferecem este serviço como adicional opcional. */
+  addonForServiceIds: z.array(z.string().uuid()).max(60).default([]),
 });
 
 export const listServices = createServerFn({ method: "GET" }).handler(
   async (): Promise<ServiceWithUsage[]> => {
     const { supabase, tenantId } = await tenantContext();
-    const [servicesResult, appointmentsResult, linksResult, comboResult] = await Promise.all([
+    const [servicesResult, appointmentsResult, linksResult, comboResult, addonResult] =
+      await Promise.all([
       supabase
         .from("services")
         .select("*")
@@ -1216,7 +1220,12 @@ export const listServices = createServerFn({ method: "GET" }).handler(
         .select("combo_service_id, service_id, position")
         .eq("tenant_id", tenantId)
         .order("position"),
-    ]);
+      supabase
+        .from("service_addon_links")
+        .select("parent_service_id, addon_service_id, position")
+        .eq("tenant_id", tenantId)
+        .order("position"),
+      ]);
     if (servicesResult.error)
       databaseError(servicesResult.error, "Não foi possível carregar os serviços.");
     const now = Date.now();
@@ -1234,6 +1243,12 @@ export const listServices = createServerFn({ method: "GET" }).handler(
       current.push(item.service_id);
       combos.set(item.combo_service_id, current);
     }
+    const addons = new Map<string, string[]>();
+    for (const link of addonResult.data ?? []) {
+      const current = addons.get(link.addon_service_id) ?? [];
+      current.push(link.parent_service_id);
+      addons.set(link.addon_service_id, current);
+    }
     const linked = new Set((linksResult.data ?? []).map((link) => link.service_id));
     return servicesResult.data.map((service) => {
       const appointments = history.get(service.id) ?? 0;
@@ -1245,6 +1260,7 @@ export const listServices = createServerFn({ method: "GET" }).handler(
         linkedToProfessionals: linked.has(service.id),
         deletable: appointments === 0 && futureAppointments === 0,
         comboServiceIds: combos.get(service.id) ?? [],
+        addonForServiceIds: addons.get(service.id) ?? [],
       };
     });
   },
@@ -1292,6 +1308,7 @@ export const saveService = createServerFn({ method: "POST" })
       active: data.active,
       image_url: data.imageUrl || null,
       is_combo: data.isCombo,
+      is_addon: data.isCombo ? false : data.isAddon,
       requires_professional: data.requiresProfessional,
     };
     const query = data.id
@@ -1314,6 +1331,28 @@ export const saveService = createServerFn({ method: "POST" })
         })),
       );
       if (comboError) databaseError(comboError, "Não foi possível salvar a composição do combo.");
+    }
+    // Vínculos de adicional: quais serviços/combos oferecem este adicional.
+    const addonParentIds =
+      !data.isCombo && data.isAddon
+        ? [...new Set(data.addonForServiceIds.filter((id) => id !== saved.id))]
+        : [];
+    await supabase
+      .from("service_addon_links")
+      .delete()
+      .eq("tenant_id", tenantId)
+      .eq("addon_service_id", saved.id);
+    if (addonParentIds.length > 0) {
+      const { error: addonError } = await supabase.from("service_addon_links").insert(
+        addonParentIds.map((parentId, index) => ({
+          tenant_id: tenantId,
+          parent_service_id: parentId,
+          addon_service_id: saved.id,
+          position: index,
+        })),
+      );
+      if (addonError)
+        databaseError(addonError, "Não foi possível salvar os adicionais deste serviço.");
     }
     return saved;
   });
