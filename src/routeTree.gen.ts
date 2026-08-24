@@ -15,6 +15,7 @@ import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PainelRouteImport } from './routes/painel'
+import { Route as ProfissionalRouteImport } from './routes/profissional'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
@@ -65,6 +66,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const PainelRoute = PainelRouteImport.update({
   id: '/painel',
   path: '/painel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfissionalRoute = ProfissionalRouteImport.update({
+  id: '/profissional',
+  path: '/profissional',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/painel': typeof PainelRouteWithChildren
+  '/profissional': typeof ProfissionalRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
@@ -209,6 +216,7 @@ export interface FileRoutesByTo {
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/profissional': typeof ProfissionalRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/painel': typeof PainelRouteWithChildren
+  '/profissional': typeof ProfissionalRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/auth/confirm': typeof AuthConfirmRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/painel'
+    | '/profissional'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/auth/confirm'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/login'
     | '/onboarding'
+    | '/profissional'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/auth/confirm'
@@ -327,6 +338,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/painel'
+    | '/profissional'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/auth/confirm'
@@ -357,6 +369,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   PainelRoute: typeof PainelRouteWithChildren
+  ProfissionalRoute: typeof ProfissionalRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
@@ -408,6 +421,13 @@ declare module '@tanstack/react-router' {
       path: '/painel'
       fullPath: '/painel'
       preLoaderRoute: typeof PainelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profissional': {
+      id: '/profissional'
+      path: '/profissional'
+      fullPath: '/profissional'
+      preLoaderRoute: typeof ProfissionalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recuperar-senha': {
@@ -604,6 +624,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   PainelRoute: PainelRouteWithChildren,
+  ProfissionalRoute: ProfissionalRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   AuthConfirmRoute: AuthConfirmRoute,
