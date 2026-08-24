@@ -68,30 +68,61 @@ export const getProfessionalPanel = createServerFn({ method: "GET" }).handler(
     const to = new Date();
     to.setDate(to.getDate() + 90);
 
-    const [appointmentsResult, blocksResult, servicesResult, clientsResult] = await Promise.all([
-      supabase
-        .from("appointments")
-        .select(
-          "id, starts_at, ends_at, status, price_cents, notes, clients(name, phone), services(name), appointment_services(service_id, position, duration_minutes, price_cents, services(name))",
-        )
-        .eq("professional_id", identity.professionalId)
-        .gte("starts_at", from.toISOString())
-        .lt("starts_at", to.toISOString())
-        .order("starts_at"),
-      supabase
-        .from("professional_unavailability")
-        .select("id, starts_at, ends_at, reason")
-        .eq("professional_id", identity.professionalId)
-        .gte("ends_at", from.toISOString())
-        .order("starts_at"),
-      supabase
-        .from("professional_services")
-        .select("services(id, name, duration_minutes, price_cents, active)")
-        .eq("professional_id", identity.professionalId),
-      supabase.from("clients").select("id, name, phone").eq("active", true).order("name"),
-    ]);
+    const [appointmentsResult, blocksResult, linkResult, clientsResult, servicesResult] =
+      await Promise.all([
+        supabase
+          .from("appointments")
+          .select(
+            "id, starts_at, ends_at, status, price_cents, notes, clients(name, phone), services(name)",
+          )
+          .eq("professional_id", identity.professionalId)
+          .gte("starts_at", from.toISOString())
+          .lt("starts_at", to.toISOString())
+          .order("starts_at"),
+        supabase
+          .from("professional_unavailability")
+          .select("id, starts_at, ends_at, reason")
+          .eq("professional_id", identity.professionalId)
+          .gte("ends_at", from.toISOString())
+          .order("starts_at"),
+        supabase
+          .from("professional_services")
+          .select("service_id")
+          .eq("professional_id", identity.professionalId),
+        supabase.from("clients").select("id, name, phone").eq("active", true).order("name"),
+        supabase
+          .from("services")
+          .select("id, name, duration_minutes, price_cents, active")
+          .eq("tenant_id", identity.tenantId),
+      ]);
 
-    const appointments: ProfessionalAppointment[] = (appointmentsResult.data ?? []).map((row) => ({
+    const appointmentRows = appointmentsResult.data ?? [];
+    const serviceRows = servicesResult.data ?? [];
+    const serviceNames = new Map(serviceRows.map((service) => [service.id, service.name]));
+
+    const itemsByAppointment = new Map<string, ProfessionalAppointment["items"]>();
+    if (appointmentRows.length > 0) {
+      const { data: itemRows } = await supabase
+        .from("appointment_services")
+        .select("appointment_id, service_id, position, duration_minutes, price_cents")
+        .in(
+          "appointment_id",
+          appointmentRows.map((row) => row.id),
+        );
+      for (const item of itemRows ?? []) {
+        const list = itemsByAppointment.get(item.appointment_id) ?? [];
+        list.push({
+          serviceId: item.service_id,
+          name: serviceNames.get(item.service_id) ?? "Serviço",
+          durationMinutes: item.duration_minutes,
+          priceCents: item.price_cents,
+          position: item.position,
+        });
+        itemsByAppointment.set(item.appointment_id, list);
+      }
+    }
+
+    const appointments: ProfessionalAppointment[] = appointmentRows.map((row) => ({
       id: row.id,
       startsAt: row.starts_at,
       endsAt: row.ends_at,
@@ -101,20 +132,12 @@ export const getProfessionalPanel = createServerFn({ method: "GET" }).handler(
       clientName: row.clients?.name ?? "Cliente",
       clientPhone: row.clients?.phone ?? null,
       serviceName: row.services?.name ?? "Serviço",
-      items: (row.appointment_services ?? [])
-        .map((item) => ({
-          serviceId: item.service_id,
-          name: item.services?.name ?? "Serviço",
-          durationMinutes: item.duration_minutes,
-          priceCents: item.price_cents,
-          position: item.position,
-        }))
-        .sort((a, b) => a.position - b.position),
+      items: (itemsByAppointment.get(row.id) ?? []).sort((a, b) => a.position - b.position),
     }));
 
-    const services = (servicesResult.data ?? [])
-      .map((row) => row.services)
-      .filter((service): service is NonNullable<typeof service> => Boolean(service?.active))
+    const allowedServiceIds = new Set((linkResult.data ?? []).map((row) => row.service_id));
+    const services = serviceRows
+      .filter((service) => service.active && allowedServiceIds.has(service.id))
       .map((service) => ({
         id: service.id,
         name: service.name,
@@ -122,6 +145,7 @@ export const getProfessionalPanel = createServerFn({ method: "GET" }).handler(
         priceCents: service.price_cents,
       }))
       .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+
 
     return {
       status: "ok",
