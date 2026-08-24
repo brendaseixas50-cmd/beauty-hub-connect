@@ -1,0 +1,27 @@
+{
+  "id": "/profissional",
+  "name": "Lu IA Studio — Profissional",
+  "short_name": "Profissional",
+  "description": "Sua agenda pessoal, horários e folgas em um aplicativo só seu.",
+  "start_url": "/profissional",
+  "scope": "/profissional",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#101014",
+  "theme_color": "#101014",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
