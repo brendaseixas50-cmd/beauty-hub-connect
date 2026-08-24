@@ -61,8 +61,13 @@ const serviceSchema = z.object({
   imageUrl: z.string().nullable().default(null),
   isCombo: z.boolean().default(false),
   comboServices: z.array(z.string()).default([]),
+  /** Verdadeiro quando o serviço só é oferecido como adicional opcional. */
+  isAddon: z.boolean().default(false),
+  /** Serviços/combos que exibem este adicional em "Adicionar também". */
+  addonForServiceIds: z.array(z.string().uuid()).default([]),
   /** Falso quando a empresa organiza internamente quem executa o serviço. */
   requiresProfessional: z.boolean().default(true),
+
 });
 
 
