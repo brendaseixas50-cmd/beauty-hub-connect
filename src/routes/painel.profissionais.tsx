@@ -195,7 +195,9 @@ function ProfessionalsPage() {
                   }
                 />
               </div>
+              <AcessoProfissional professional={professional} />
             </Card>
+
           ))}
         </div>
       )}
