@@ -36,6 +36,7 @@ import { Route as PainelProfissionaisRouteImport } from './routes/painel.profiss
 import { Route as PainelRelatoriosRouteImport } from './routes/painel.relatorios'
 import { Route as PainelServicosRouteImport } from './routes/painel.servicos'
 import { Route as ProfissionalIndexRouteImport } from './routes/profissional.index'
+import { Route as ProfissionalBloqueiosRouteImport } from './routes/profissional.bloqueios'
 import { Route as ProfissionalHorariosRouteImport } from './routes/profissional.horarios'
 import { Route as ApiMercadoPagoWebhookRouteImport } from './routes/api.mercado-pago.webhook'
 import { Route as IntegracoesMercadoPagoRetornoRouteImport } from './routes/integracoes.mercado-pago.retorno'
@@ -175,6 +176,11 @@ const ProfissionalIndexRoute = ProfissionalIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProfissionalRoute,
 } as any)
+const ProfissionalBloqueiosRoute = ProfissionalBloqueiosRouteImport.update({
+  id: '/bloqueios',
+  path: '/bloqueios',
+  getParentRoute: () => ProfissionalRoute,
+} as any)
 const ProfissionalHorariosRoute = ProfissionalHorariosRouteImport.update({
   id: '/horarios',
   path: '/horarios',
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
+  '/profissional/bloqueios': typeof ProfissionalBloqueiosRoute
   '/profissional/horarios': typeof ProfissionalHorariosRoute
   '/painel/': typeof PainelIndexRoute
   '/profissional/': typeof ProfissionalIndexRoute
@@ -248,6 +255,7 @@ export interface FileRoutesByTo {
   '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
+  '/profissional/bloqueios': typeof ProfissionalBloqueiosRoute
   '/profissional/horarios': typeof ProfissionalHorariosRoute
   '/painel': typeof PainelIndexRoute
   '/profissional': typeof ProfissionalIndexRoute
@@ -281,6 +289,7 @@ export interface FileRoutesById {
   '/painel/profissionais': typeof PainelProfissionaisRoute
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
+  '/profissional/bloqueios': typeof ProfissionalBloqueiosRoute
   '/profissional/horarios': typeof ProfissionalHorariosRoute
   '/painel/': typeof PainelIndexRoute
   '/profissional/': typeof ProfissionalIndexRoute
@@ -315,6 +324,7 @@ export interface FileRouteTypes {
     | '/painel/profissionais'
     | '/painel/relatorios'
     | '/painel/servicos'
+    | '/profissional/bloqueios'
     | '/profissional/horarios'
     | '/painel/'
     | '/profissional/'
@@ -345,6 +355,7 @@ export interface FileRouteTypes {
     | '/painel/profissionais'
     | '/painel/relatorios'
     | '/painel/servicos'
+    | '/profissional/bloqueios'
     | '/profissional/horarios'
     | '/painel'
     | '/profissional'
@@ -377,6 +388,7 @@ export interface FileRouteTypes {
     | '/painel/profissionais'
     | '/painel/relatorios'
     | '/painel/servicos'
+    | '/profissional/bloqueios'
     | '/profissional/horarios'
     | '/painel/'
     | '/profissional/'
@@ -592,6 +604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfissionalIndexRouteImport
       parentRoute: typeof ProfissionalRoute
     }
+    '/profissional/bloqueios': {
+      id: '/profissional/bloqueios'
+      path: '/bloqueios'
+      fullPath: '/profissional/bloqueios'
+      preLoaderRoute: typeof ProfissionalBloqueiosRouteImport
+      parentRoute: typeof ProfissionalRoute
+    }
     '/profissional/horarios': {
       id: '/profissional/horarios'
       path: '/horarios'
@@ -654,11 +673,13 @@ const PainelRouteWithChildren =
   PainelRoute._addFileChildren(PainelRouteChildren)
 
 interface ProfissionalRouteChildren {
+  ProfissionalBloqueiosRoute: typeof ProfissionalBloqueiosRoute
   ProfissionalHorariosRoute: typeof ProfissionalHorariosRoute
   ProfissionalIndexRoute: typeof ProfissionalIndexRoute
 }
 
 const ProfissionalRouteChildren: ProfissionalRouteChildren = {
+  ProfissionalBloqueiosRoute: ProfissionalBloqueiosRoute,
   ProfissionalHorariosRoute: ProfissionalHorariosRoute,
   ProfissionalIndexRoute: ProfissionalIndexRoute,
 }
