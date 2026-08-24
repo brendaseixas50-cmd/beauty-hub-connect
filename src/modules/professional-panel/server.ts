@@ -55,6 +55,25 @@ async function claimAccess(
     : "not_authorized";
 }
 
+/**
+ * Se a conta também é proprietária de uma empresa própria (todo cadastro cria
+ * uma), a empresa ativa pode ficar apontando para ela. Aqui trocamos para a
+ * empresa em que a conta é PROFISSIONAL, que é o contexto do Painel Profissional.
+ */
+async function activateProfessionalTenant(supabase: SupabaseServerClient): Promise<boolean> {
+  const { data } = await supabase.rpc("get_my_session_bootstrap");
+  const companies = (data as { companies?: { role?: string; tenantId?: string }[] } | null)
+    ?.companies;
+  const target = (companies ?? []).find(
+    (company) => company.role === "professional" && company.tenantId,
+  );
+  if (!target?.tenantId) return false;
+  const { error } = await supabase.rpc("switch_active_tenant", {
+    target_tenant_id: target.tenantId,
+  });
+  return !error;
+}
+
 /** Contexto obrigatório para qualquer ação do Painel Profissional. */
 async function professionalContext() {
   const supabase = createSupabaseServerClient();
@@ -64,7 +83,10 @@ async function professionalContext() {
   if (claim === "not_authorized")
     throw new Error("Seu e-mail não está autorizado no Painel Profissional desta empresa.");
   if (claim === "disabled") throw new Error(disabledAccessMessage);
-  const identity = await readIdentity(supabase);
+  let identity = await readIdentity(supabase);
+  if (!identity && (await activateProfessionalTenant(supabase))) {
+    identity = await readIdentity(supabase);
+  }
   if (!identity) throw new Error("Sua conta não está vinculada a um profissional ativo.");
   if (!identity.active) throw new Error(disabledAccessMessage);
   return { supabase, identity };
