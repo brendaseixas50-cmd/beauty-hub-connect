@@ -120,8 +120,13 @@ export async function publicBookingBlockReason({
       .from("services")
       .select("duration_minutes")
       .eq("tenant_id", tenant.id)
+      .eq("active", true)
       .in("id", serviceIds);
     assertReadable(servicesError);
+    // Serviço inativo (ou de outra empresa) nunca entra no cálculo: a soma cai
+    // para zero e o agendamento é recusado antes de chegar ao banco.
+    if ((services ?? []).length !== serviceIds.length)
+      return "Serviço indisponível. Escolha outro serviço.";
     const totalMinutes = (services ?? []).reduce(
       (total, service) => total + service.duration_minutes,
       0,
