@@ -3,6 +3,10 @@
 
 alter table public.services add column if not exists image_url text;
 alter table public.services add column if not exists is_combo boolean not null default false;
+-- Serviços que o cliente agenda sem escolher um profissional específico na
+-- página pública (a empresa organiza internamente quem executa).
+alter table public.services
+  add column if not exists requires_professional boolean not null default true;
 
 create table if not exists public.service_combo_items (
   id uuid primary key default gen_random_uuid(),
@@ -89,6 +93,7 @@ returns jsonb language sql stable security definer set search_path = '' as $$
       'description', service.description, 'durationMinutes', service.duration_minutes,
       'priceCents', service.price_cents, 'imageUrl', service.image_url,
       'isCombo', service.is_combo,
+      'requiresProfessional', service.requires_professional,
       'comboServices', coalesce((
         select jsonb_agg(child.name order by item.position, child.name)
         from public.service_combo_items item
