@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { clearSessionCache } from "@/modules/auth/session-query";
+import { disabledAccessMessage } from "@/modules/professional-panel/domain";
 import { getProfessionalPanel } from "@/modules/professional-panel/server";
+
 
 export const Route = createFileRoute("/profissional")({
   loader: async () => {
