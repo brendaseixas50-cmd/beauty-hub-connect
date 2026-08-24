@@ -4,7 +4,7 @@
   "short_name": "Profissional",
   "description": "Sua agenda pessoal, horários e folgas em um aplicativo só seu.",
   "start_url": "/profissional",
-  "scope": "/profissional",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#101014",

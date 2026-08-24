@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-/** Rota legada: preferências criadas antes de /api/public/* continuam funcionando. */
-export const Route = createFileRoute("/api/mercado-pago/webhook")({
+/**
+ * Endpoint público do webhook do Mercado Pago.
+ * O prefixo /api/public/* garante que o provedor alcance a rota no site
+ * publicado. A autenticação real é a validação de assinatura HMAC do provedor.
+ */
+export const Route = createFileRoute("/api/public/mercado-pago/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
