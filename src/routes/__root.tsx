@@ -112,7 +112,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
       { rel: "icon", href: "/favicon.png", type: "image/png" },
       { rel: "apple-touch-icon", href: "/favicon.png" },
-      { rel: "manifest", href: "/manifest.webmanifest" },
+      // O manifest é declarado por rota: /painel usa o app de Gestão e
+      // /profissional usa o app Profissional (atalhos distintos no celular).
+
     ],
   }),
 
