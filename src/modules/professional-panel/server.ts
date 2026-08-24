@@ -5,11 +5,13 @@ import { parseWorkingHours } from "@/modules/mvp/agenda-disponibilidade";
 import { professionalAvailabilityIssue } from "@/modules/mvp/server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 import type { Json } from "@/modules/supabase/database.types";
+import { disabledAccessMessage } from "./domain";
 import type {
   ProfessionalAppointment,
   ProfessionalIdentity,
   ProfessionalPanelResult,
 } from "./domain";
+
 
 type SupabaseServerClient = ReturnType<typeof createSupabaseServerClient>;
 
