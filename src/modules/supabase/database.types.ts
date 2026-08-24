@@ -799,6 +799,34 @@ export type Database = {
         };
         Relationships: [];
       };
+      service_addon_links: {
+        Row: {
+          addon_service_id: string;
+          created_at: string;
+          id: string;
+          parent_service_id: string;
+          position: number;
+          tenant_id: string;
+        };
+        Insert: {
+          addon_service_id: string;
+          created_at?: string;
+          id?: string;
+          parent_service_id: string;
+          position?: number;
+          tenant_id: string;
+        };
+        Update: {
+          addon_service_id?: string;
+          created_at?: string;
+          id?: string;
+          parent_service_id?: string;
+          position?: number;
+          tenant_id?: string;
+        };
+        Relationships: [];
+      };
+
       services: {
         Row: {
           active: boolean;
