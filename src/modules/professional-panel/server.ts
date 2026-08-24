@@ -19,6 +19,8 @@ function databaseError(error: { code?: string; message: string } | null, fallbac
   if ((error?.code === "P0001" || error?.code === "42501" || error?.code === "22023") && error.message)
     throw new Error(error.message);
   if (error?.code === "23P01") throw new Error("Você já possui um atendimento nesse horário.");
+  if (error?.code === "23505")
+    throw new Error("Já existe um cliente com este telefone nesta empresa.");
   throw new Error(fallback);
 }
 
