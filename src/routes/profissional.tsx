@@ -51,6 +51,26 @@ export const Route = createFileRoute("/profissional")({
 
 function ProfessionalLayout() {
   const result = Route.useLoaderData();
+
+  if (result.status === "not_authorized") {
+    return (
+      <main className="tema-beleza grid min-h-screen place-items-center bg-background px-4 py-12">
+        <Card className="max-w-md gap-3 p-6 text-center">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-secondary">
+            <ShieldAlert className="h-5 w-5" />
+          </span>
+          <h1 className="text-xl font-semibold">Acesso não autorizado</h1>
+          <p className="text-sm text-muted-foreground">
+            {result.email ? `O e-mail ${result.email} ` : "Este e-mail "}
+            não está autorizado como profissional de nenhuma empresa. Peça ao proprietário para
+            cadastrar seu e-mail na equipe.
+          </p>
+          <SairButton />
+        </Card>
+      </main>
+    );
+  }
+
   const produto = result.status === "ok" ? result.data.identity.productType : result.productType;
   const tema = produto === "barber" ? "tema-barbearia" : "tema-beleza";
 
@@ -62,15 +82,16 @@ function ProfessionalLayout() {
             <ShieldAlert className="h-5 w-5" />
           </span>
           <h1 className="text-xl font-semibold">Acesso profissional desativado</h1>
-          <p className="text-sm text-muted-foreground">
-            {result.name}, seu acesso em {result.tenantName} está inativo. Fale com a administração
-            da empresa para reativar seu painel.
+          <p className="text-sm text-muted-foreground">{disabledAccessMessage}</p>
+          <p className="text-xs text-muted-foreground">
+            {result.name} — {result.tenantName}
           </p>
           <SairButton />
         </Card>
       </main>
     );
   }
+
 
   const { identity } = result.data;
 
