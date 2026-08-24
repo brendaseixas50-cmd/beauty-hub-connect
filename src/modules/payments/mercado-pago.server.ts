@@ -433,7 +433,7 @@ export const createMercadoPagoCheckout = createServerOnlyFn(async (input: Checko
         },
       ],
       external_reference: externalReference,
-      notification_url: new URL("/api/mercado-pago/webhook", origin).toString(),
+      notification_url: new URL("/api/public/mercado-pago/webhook", origin).toString(),
       back_urls: {
         success: returnUrl.toString(),
         pending: returnUrl.toString(),
