@@ -67,6 +67,23 @@ const startsFor = (
     .filter((slot) => slot.professionals.some((professional) => professional.id === professionalId))
     .map((slot) => localTime(slot.startsAt));
 
+/** Reproduz o fallback do app: ativar a empresa em que a conta é profissional. */
+async function professionalContextFor(token: string) {
+  await rpc("claim_professional_access", {}, token);
+  let context = await rpc("get_my_professional_context", {}, token);
+  if (!context.data) {
+    const boot = await rpc("get_my_session_bootstrap", {}, token);
+    const target = ((boot.data?.companies ?? []) as { role: string; tenantId: string }[]).find(
+      (company) => company.role === "professional",
+    );
+    if (target) {
+      await rpc("switch_active_tenant", { target_tenant_id: target.tenantId }, token);
+      context = await rpc("get_my_professional_context", {}, token);
+    }
+  }
+  return context;
+}
+
 console.log(`\n== Datas de teste: terça ${tuesday} | sábado ${saturday} | domingo ${sunday}\n`);
 
 // ---------------------------------------------------------------- 1. Agenda
@@ -387,8 +404,7 @@ check(
 // Desativação e remoção
 await rest(`professionals?id=eq.${state.a1.id}`, { method: "PATCH", body: { active: false } });
 const a1TokenOff = await signIn(state.a1.email, PASSWORD);
-await rpc("claim_professional_access", {}, a1TokenOff);
-const contextOff = await rpc("get_my_professional_context", {}, a1TokenOff);
+const contextOff = await professionalContextFor(a1TokenOff);
 check(
   "Profissional desativado perde o acesso imediatamente",
   !contextOff.ok || !contextOff.data,
@@ -396,9 +412,18 @@ check(
 );
 await rest(`professionals?id=eq.${state.a1.id}`, { method: "PATCH", body: { active: true } });
 const a1TokenBack = await signIn(state.a1.email, PASSWORD);
-await rpc("claim_professional_access", {}, a1TokenBack);
-const contextBack = await rpc("get_my_professional_context", {}, a1TokenBack);
-check("Reativação devolve o acesso do profissional", contextBack.ok && Boolean(contextBack.data));
+const contextBack = await professionalContextFor(a1TokenBack);
+check(
+  "Reativação devolve o acesso do profissional (mesmo após relogin)",
+  contextBack.ok && contextBack.data?.tenantId === state.a.tenantId,
+  JSON.stringify(contextBack.data).slice(0, 120),
+);
+const contextAgain = await professionalContextFor(await signIn(state.a1.email, PASSWORD));
+check(
+  "Segundo login do profissional continua na empresa que o autorizou",
+  contextAgain.data?.tenantId === state.a.tenantId,
+  JSON.stringify(contextAgain.data?.tenantId),
+);
 
 // Empresa suspensa perde herança
 const masterToken = await signIn(state.master.email, PASSWORD);
@@ -413,7 +438,7 @@ const suspend = await rpc(
   },
   masterToken,
 );
-const contextSuspended = await rpc("get_my_professional_context", {}, a1TokenBack);
+const contextSuspended = await professionalContextFor(await signIn(state.a1.email, PASSWORD));
 check(
   "Empresa suspensa no Painel Master derruba o acesso herdado do profissional",
   suspend.ok && (!contextSuspended.ok || !contextSuspended.data),
