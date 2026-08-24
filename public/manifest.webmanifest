@@ -1,7 +1,8 @@
 {
-  "name": "Lu IA Studio — Painel",
-  "short_name": "Lu IA Studio",
-  "description": "Agenda, clientes e serviços do seu atendimento em um só aplicativo.",
+  "id": "/painel",
+  "name": "Lu IA Studio — Gestão",
+  "short_name": "Gestão",
+  "description": "Agenda, clientes, serviços e financeiro da sua empresa.",
   "start_url": "/painel",
   "scope": "/",
   "display": "standalone",
