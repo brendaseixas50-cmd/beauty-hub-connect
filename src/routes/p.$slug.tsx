@@ -1430,6 +1430,18 @@ function depositAmount(company: PageData["company"], total: number) {
   if (company.depositType === "fixed") return Math.min(company.depositValueCents, total);
   return 0;
 }
+/** "2026-08-25" -> "seg., 25 de agosto de 2026" (sem depender de fuso). */
+function formatDateLabel(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return value;
+  return new Intl.DateTimeFormat("pt-BR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
 function formatTime(value: string, timezone: string) {
   return new Date(value).toLocaleTimeString("pt-BR", {
     hour: "2-digit",
