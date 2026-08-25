@@ -96,6 +96,20 @@ function CompanyPage() {
             bookingIntervalMinutes: Number(form.get("bookingIntervalMinutes")) as
               10 | 15 | 20 | 30 | 45 | 60,
           },
+          bookingRules: {
+            bookingHorizonDays: Math.min(
+              365,
+              Math.max(1, Number(form.get("bookingHorizonDays")) || 60),
+            ),
+            rescheduleDeadlineEnabled: form.get("rescheduleDeadlineEnabled") === "on",
+            rescheduleDeadlineHours: Math.min(
+              720,
+              Math.max(0, Number(form.get("rescheduleDeadlineHours")) || 0),
+            ),
+            commissionTrigger:
+              form.get("commissionTrigger") === "paid" ? ("paid" as const) : ("completed" as const),
+          },
+
         },
       });
       if (result.locationWarning) toast.warning(result.locationWarning);
