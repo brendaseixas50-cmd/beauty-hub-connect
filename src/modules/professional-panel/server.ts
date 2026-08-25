@@ -282,9 +282,13 @@ export const professionalSaveAppointment = createServerFn({ method: "POST" })
           .update(values)
           .eq("id", data.id)
           .eq("professional_id", identity.professionalId)
-      : supabase.from("appointments").insert(values);
-    const { error } = await query;
+          .select("id")
+      : supabase.from("appointments").insert(values).select("id");
+    const { data: saved, error } = await query.maybeSingle();
     if (error) databaseError(error, "Não foi possível salvar o atendimento.");
+    if (saved?.id) {
+      await syncAppointmentFinancials({ tenantId: identity.tenantId, appointmentId: saved.id });
+    }
     return { success: true } as const;
   });
 
@@ -303,8 +307,43 @@ export const professionalSetAppointmentStatus = createServerFn({ method: "POST" 
       .eq("id", data.id)
       .eq("professional_id", identity.professionalId);
     if (error) databaseError(error, "Não foi possível atualizar o atendimento.");
+    await syncAppointmentFinancials({ tenantId: identity.tenantId, appointmentId: data.id });
     return { success: true } as const;
   });
+
+/**
+ * "Meus ganhos": comissões, vales e pagamentos do PRÓPRIO profissional.
+ * A RLS já restringe a leitura às próprias linhas; o filtro explícito é
+ * defesa em profundidade.
+ */
+export const getProfessionalEarnings = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ entries: LedgerEntry[]; summary: LedgerSummary }> => {
+    const { supabase, identity } = await professionalContext();
+    const { data, error } = await supabase
+      .from("professional_ledger_entries")
+      .select(
+        "id, kind, amount_cents, competence_date, description, notes, created_at, appointment_id, professional_id",
+      )
+      .eq("tenant_id", identity.tenantId)
+      .eq("professional_id", identity.professionalId)
+      .order("competence_date", { ascending: false })
+      .order("created_at", { ascending: false });
+    if (error) databaseError(error, "Não foi possível carregar seus ganhos.");
+    const entries: LedgerEntry[] = (data ?? []).map((row) => ({
+      id: row.id,
+      kind: isLedgerKind(row.kind) ? row.kind : "adjustment",
+      amountCents: row.amount_cents,
+      competenceDate: row.competence_date,
+      description: row.description,
+      notes: row.notes,
+      createdAt: row.created_at,
+      appointmentId: row.appointment_id,
+      professionalId: row.professional_id,
+    }));
+    return { entries, summary: summarizeLedger(entries) };
+  },
+);
+
 
 export const professionalCreateClient = createServerFn({ method: "POST" })
   .validator(
