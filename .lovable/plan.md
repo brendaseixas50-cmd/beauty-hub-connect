@@ -25,10 +25,11 @@ Confirmado no código:
 - Atalhos rápidos com texto visível (contorno dourado + texto escuro sobre a superfície clara).
 - "Sugestões rápidas", "Limpar conversa" e "Pedir suporte no WhatsApp" com contraste adequado.
 
-### 3. Bolinha da Luvi com a nova robô
-- Publicar a imagem enviada (`facep.png`) como asset e usá-la como rosto da Luvi **apenas no LuBarber**.
+### 3. Bolinha da Luvi com a nova robô (LuBeauty **e** LuBarber)
+- Publicar a imagem enviada (`facep.png`) como asset e usá-la como rosto da Luvi nos dois produtos (bolinha flutuante, cabeçalho da conversa e cartões da Luvi).
 - Reenquadrar: foco no centro do rosto, zoom reduzido, e aumentar levemente a bolinha flutuante para a robô ficar reconhecível.
-- O avatar do LuBeauty continua exatamente o mesmo.
+- No LuBeauty, **somente** a imagem/enquadramento da Luvi muda; cores, textos e botões continuam exatamente como estão.
+
 
 ## Observações técnicas
 - Mudanças concentradas em `src/styles.css` (regras já existentes com prefixo `.tema-barbearia`) e em `src/modules/luvi-core/config.ts` (apenas o tema barber).
