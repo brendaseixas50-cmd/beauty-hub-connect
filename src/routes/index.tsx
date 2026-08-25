@@ -6,6 +6,7 @@ import logoBarber from "@/assets/brand/lubarber-logo-round.webp";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { marcasProduto, type TipoNegocio } from "@/products/catalog";
+import { useTemaProduto } from "@/components/tema-produto";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -98,7 +99,7 @@ function Home() {
 function ProductCard({ type }: { type: TipoNegocio }) {
   const brand = marcasProduto[type];
   const productType = type === "barbearia" ? "barber" : "beauty";
-  const theme = type === "barbearia" ? "tema-barbearia" : "tema-beleza";
+  const theme = useTemaProduto(type === "barbearia" ? "barber" : "beauty");
 
   return (
     <article
