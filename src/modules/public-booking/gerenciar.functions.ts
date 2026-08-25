@@ -63,7 +63,7 @@ async function loadByToken(token: string) {
   const { data: appointment, error } = await supabase
     .from("appointments")
     .select(
-      "id, tenant_id, code, status, starts_at, ends_at, price_cents, professional_id, service_id, client_id",
+      "id, tenant_id, public_code, status, starts_at, ends_at, price_cents, professional_id, service_id, client_id",
     )
     .eq("manage_token", token)
     .maybeSingle();
@@ -119,7 +119,7 @@ export const getManagedBooking = createServerFn({ method: "GET" })
       : deadlineState(appointment.starts_at, rules);
     return {
       ok: true,
-      code: appointment.code ?? null,
+      code: appointment.public_code ?? null,
       status: appointment.status,
       startsAt: appointment.starts_at,
       endsAt: appointment.ends_at,
