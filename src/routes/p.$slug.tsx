@@ -19,7 +19,7 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
-import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -805,6 +805,23 @@ function BookingSuccess({
   paymentMethod: "pix" | "card" | "local" | "mercado_pago";
 }) {
   const [summaryOpened, setSummaryOpened] = useState(false);
+  const manageTokenFn = useServerFn(getManageLinkToken);
+  const [manageLink, setManageLink] = useState<string | null>(null);
+  const appointmentId = result.appointmentId;
+  // Link seguro (token opaco) para o próprio cliente cancelar ou remarcar
+  // depois, sem cadastro tradicional.
+  useEffect(() => {
+    if (!appointmentId) return;
+    let active = true;
+    void manageTokenFn({ data: { appointmentId } })
+      .then(({ token }) => {
+        if (active && token) setManageLink(`${window.location.origin}/agendamento/${token}`);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [appointmentId, manageTokenFn]);
   const localPayment = paymentMethod === "local";
   const url = whatsapp
     ? bookingWhatsappUrl(whatsapp, result, customerName, result.paymentMethod ?? "local", timezone)
@@ -838,6 +855,29 @@ function BookingSuccess({
           </p>
         ) : null}
       </div>
+      {manageLink ? (
+        <div className="w-full rounded-2xl border border-dashed p-4 text-sm">
+          <p className="font-medium">Gerenciar meu agendamento</p>
+          <p className="mt-1 text-muted-foreground">
+            Guarde este link para consultar, remarcar ou cancelar.
+          </p>
+          <div className="mt-3 flex flex-wrap justify-center gap-2">
+            <Button asChild size="sm">
+              <a href={manageLink}>Abrir meu agendamento</a>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                void navigator.clipboard?.writeText(manageLink);
+              }}
+            >
+              Copiar link
+            </Button>
+          </div>
+        </div>
+      ) : null}
       {result.paymentError ? (
         <p
           role="alert"
