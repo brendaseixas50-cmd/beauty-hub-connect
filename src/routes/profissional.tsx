@@ -86,8 +86,6 @@ function ProfessionalLayout() {
     );
   }
 
-  const produto = result.status === "ok" ? result.data.identity.productType : result.productType;
-
   if (result.status === "disabled") {
     return (
       <main className={`${tema} grid min-h-screen place-items-center bg-background px-4 py-12`}>
