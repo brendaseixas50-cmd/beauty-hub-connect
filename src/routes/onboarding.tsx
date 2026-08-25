@@ -14,11 +14,11 @@ import { Label } from "@/components/ui/label";
 import { readSession } from "@/modules/auth/session-query";
 import { centsFromInput } from "@/modules/mvp/domain";
 import {
-import { useTemaProduto } from "@/components/tema-produto";
   completeOnboarding,
   getOnboardingData,
   type ServiceSuggestion,
 } from "@/modules/onboarding/server";
+import { useTemaProduto } from "@/components/tema-produto";
 
 type DraftService = ServiceSuggestion & { selected: boolean };
 
