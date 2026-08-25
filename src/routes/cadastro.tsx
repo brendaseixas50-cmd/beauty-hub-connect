@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { startGoogleSignIn } from "@/modules/auth/google-sign-in";
 import { resendSignupConfirmation, signup } from "@/modules/auth/server";
 import { cacheSession } from "@/modules/auth/session-query";
+import { useTemaProduto } from "@/components/tema-produto";
 
 export const Route = createFileRoute("/cadastro")({
   validateSearch: z.object({ produto: z.enum(["beauty", "barber"]).catch("beauty") }),
@@ -87,10 +88,10 @@ function Cadastro() {
     }
   }
 
+  const tema = useTemaProduto(tipo === "barbearia" ? "barber" : "beauty");
+
   return (
-    <main
-      className={`${tipo === "barbearia" ? "tema-barbearia" : "tema-beleza"} min-h-screen bg-secondary/40 px-4 py-10`}
-    >
+    <main className={`${tema} min-h-screen bg-secondary/40 px-4 py-10`}>
       <div className="mx-auto w-full max-w-lg">
         <Link
           to="/"

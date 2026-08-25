@@ -43,6 +43,7 @@ import { lembrarProduto, produtoLembrado } from "@/lib/produto-preferido";
 import { InstalarApp } from "@/components/instalar-app";
 import { hasProfessionalPanel } from "@/modules/professional-panel/server";
 import { toast } from "sonner";
+import { useTemaProduto } from "@/components/tema-produto";
 
 export const Route = createFileRoute("/painel")({
   staleTime: 5 * 60_000,
@@ -143,15 +144,13 @@ function AcoesInferiores({
         <Globe2 className="h-4 w-4" /> Minha Página Pública
       </a>
       {professionalPanel ? (
-        <a
-          href="/profissional"
-          target="_blank"
-          rel="noreferrer"
+        <Link
+          to="/profissional"
           onClick={onNavigate}
           className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-sidebar-accent/50"
         >
           <UserCog className="h-4 w-4" /> Meu Painel Profissional
-        </a>
+        </Link>
       ) : null}
       <div className="px-1 py-1">
         <InstalarApp
@@ -293,16 +292,11 @@ function PainelLayout() {
   const navigating = useRouterState({ select: (state) => state.status === "pending" });
   const logoutFn = useServerFn(logout);
   const tipo = session.user.productType === "barber" ? "barbearia" : "beleza";
-  const tema = tipo === "barbearia" ? "tema-barbearia" : "tema-beleza";
+  const tema = useTemaProduto(session.user.productType === "barber" ? "barber" : "beauty");
 
   useEffect(() => {
     cacheSession(queryClient, session);
   }, [queryClient, session]);
-
-  useEffect(() => {
-    document.documentElement.classList.add(tema);
-    return () => document.documentElement.classList.remove(tema);
-  }, [tema]);
 
   async function handleLogout() {
     await logoutFn();

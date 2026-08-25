@@ -18,6 +18,7 @@ import {
   getOnboardingData,
   type ServiceSuggestion,
 } from "@/modules/onboarding/server";
+import { useTemaProduto } from "@/components/tema-produto";
 
 type DraftService = ServiceSuggestion & { selected: boolean };
 
@@ -159,10 +160,9 @@ function OnboardingPage() {
   }
 
   const tipo = data.productType === "barber" ? "barbearia" : "beleza";
+  const tema = useTemaProduto(data.productType === "barber" ? "barber" : "beauty");
   return (
-    <main
-      className={`${tipo === "barbearia" ? "tema-barbearia" : "tema-beleza"} min-h-screen bg-secondary/30 px-4 py-8`}
-    >
+    <main className={`${tema} min-h-screen bg-secondary/30 px-4 py-8`}>
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between gap-4">
           <MarcaProduto tipo={tipo} />
