@@ -319,8 +319,8 @@ function BookingWizard({
 
   return (
     <Card id="agendar" className="mt-5 gap-5 p-4 shadow-md sm:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">
             Etapa {step} de 5
           </p>
