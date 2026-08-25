@@ -2078,7 +2078,9 @@ export const getReports = createServerFn({ method: "GET" }).handler(async () => 
       .gte("starts_at", from.toISOString()),
     supabase
       .from("financial_entries")
-      .select("entry_type, amount_cents, due_date, status")
+      .select(
+        "entry_type, amount_cents, due_date, competence_date, status, origin, category, professionals(name)",
+      )
       .eq("tenant_id", tenantId)
       .gte("due_date", from.toISOString().slice(0, 10)),
     supabase
