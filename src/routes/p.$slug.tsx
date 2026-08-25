@@ -32,26 +32,50 @@ import {
   getPublicAvailability,
   getPublicCompanyPage,
 } from "@/modules/public-booking/server";
+import {
+  getManageLinkToken,
+  getPublicBookingRules,
+} from "@/modules/public-booking/gerenciar.functions";
 
 export const Route = createFileRoute("/p/$slug")({
-  loader: ({ params }) => getPublicCompanyPage({ data: { slug: params.slug } }),
+  loader: async ({ params }) => {
+    const [page, rules] = await Promise.all([
+      getPublicCompanyPage({ data: { slug: params.slug } }),
+      getPublicBookingRules({ data: { slug: params.slug } }),
+    ]);
+    return { page, rules };
+  },
   // Alterações no painel (preço, duração, inativação, exclusão) refletem no mesmo link público.
   staleTime: 15_000,
   preloadStaleTime: 5 * 60_000,
   head: ({ loaderData }) => ({
     meta: [
-      { title: loaderData ? `${loaderData.company.name} — Agendamento` : "Página indisponível" },
+      {
+        title: loaderData?.page
+          ? `${loaderData.page.company.name} — Agendamento`
+          : "Página indisponível",
+      },
       {
         name: "description",
-        content: loaderData?.company.description ?? "Agendamento online simples e rápido.",
+        content: loaderData?.page?.company.description ?? "Agendamento online simples e rápido.",
       },
+      {
+        property: "og:title",
+        content: loaderData?.page ? `${loaderData.page.company.name} — Agendamento` : "Agendamento",
+      },
+      {
+        property: "og:description",
+        content: loaderData?.page?.company.description ?? "Agendamento online simples e rápido.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: PublicBookingApp,
 });
 
 function PublicBookingApp() {
-  const page = Route.useLoaderData();
+  const { page, rules } = Route.useLoaderData();
   const [area, setArea] = useState<"booking" | "store">("booking");
   if (!page) return <Unavailable />;
   const { company } = page;
@@ -124,7 +148,11 @@ function PublicBookingApp() {
             </span>
           </button>
         </div>
-        {area === "booking" ? <BookingWizard page={page} /> : <StoreCatalog page={page} />}
+        {area === "booking" ? (
+          <BookingWizard page={page} rules={rules} />
+        ) : (
+          <StoreCatalog page={page} />
+        )}
         <CompanyInformation page={page} />
       </div>
       <footer className="border-t px-4 py-7 text-center text-xs text-muted-foreground">
@@ -141,7 +169,13 @@ type PageData = NonNullable<Awaited<ReturnType<typeof getPublicCompanyPage>>>;
 type Service = PageData["services"][number];
 type Professional = PageData["professionals"][number];
 
-function BookingWizard({ page }: { page: PageData }) {
+function BookingWizard({
+  page,
+  rules,
+}: {
+  page: PageData;
+  rules: { horizonDays: number; deadlineEnabled: boolean; deadlineHours: number };
+}) {
   const { company, services, professionals } = page;
   const availabilityFn = useServerFn(getPublicAvailability);
   const bookingFn = useServerFn(createSimplePublicBooking);
@@ -207,7 +241,8 @@ function BookingWizard({ page }: { page: PageData }) {
     (professional) => professional.id === resolvedProfessionalId,
   );
   const today = dateInTimeZone(company.timezone);
-  const maxDate = dateInTimeZone(company.timezone, 180);
+  // A empresa define até quantos dias à frente a agenda fica aberta.
+  const maxDate = dateInTimeZone(company.timezone, rules.horizonDays);
 
   async function loadSlots(targetDate = date) {
     if (!targetDate) return;
