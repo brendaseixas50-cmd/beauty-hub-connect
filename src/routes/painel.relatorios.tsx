@@ -16,6 +16,21 @@ export const Route = createFileRoute("/painel/relatorios")({
   component: ReportsPage,
 });
 
+/** Rótulos das origens financeiras usadas no Financeiro 2.0. */
+const originLabels: Record<string, string> = {
+  service: "Serviços",
+  product: "Produtos",
+  commission: "Comissões",
+  rent: "Aluguel / estrutura",
+  supply: "Insumos",
+  tax: "Impostos e taxas",
+  other: "Outros",
+};
+function originLabel(origin: string) {
+  return originLabels[origin] ?? "Outros";
+}
+
+
 function ReportsPage() {
   const data = Route.useLoaderData();
   const months = useMemo(() => {
