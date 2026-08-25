@@ -100,6 +100,42 @@ async function professionalContext() {
   return { supabase, identity };
 }
 
+/**
+ * Preferência da empresa sobre quem pode concluir atendimentos.
+ * Falha fechada: qualquer erro de leitura mantém o padrão "somente gestão".
+ */
+async function completionPermission(
+  supabase: SupabaseServerClient,
+  tenantId: string,
+): Promise<"management" | "management_professional"> {
+  const { data } = await supabase
+    .from("tenants")
+    .select("completion_permission")
+    .eq("id", tenantId)
+    .maybeSingle();
+  return data?.completion_permission === "management_professional"
+    ? "management_professional"
+    : "management";
+}
+
+/**
+ * Autorização de servidor: o profissional só conclui atendimentos quando a
+ * empresa liberou "Gestão + profissional responsável". Gestão (owner/admin)
+ * segue concluindo pelo Painel Administrativo.
+ */
+async function assertCanComplete(
+  supabase: SupabaseServerClient,
+  identity: { tenantId: string; role: string },
+) {
+  if (identity.role === "owner" || identity.role === "admin") return;
+  const permission = await completionPermission(supabase, identity.tenantId);
+  if (permission !== "management_professional") {
+    throw new Error(
+      "Somente a gestão da empresa pode concluir atendimentos. Fale com o administrador.",
+    );
+  }
+}
+
 export const getProfessionalPanel = createServerFn({ method: "GET" }).handler(
   async (): Promise<ProfessionalPanelResult> => {
     const supabase = createSupabaseServerClient();
@@ -218,6 +254,10 @@ export const getProfessionalPanel = createServerFn({ method: "GET" }).handler(
         })),
         services,
         clients: clientsResult.data ?? [],
+        canCompleteAppointments:
+          identity.role === "owner" ||
+          identity.role === "admin" ||
+          (await completionPermission(supabase, identity.tenantId)) === "management_professional",
       },
     };
   },
@@ -252,6 +292,7 @@ export const professionalSaveAppointment = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabase, identity } = await professionalContext();
+    if (data.status === "completed") await assertCanComplete(supabase, identity);
     const { data: service, error: serviceError } = await supabase
       .from("services")
       .select("duration_minutes, price_cents, active")
@@ -309,6 +350,7 @@ export const professionalSetAppointmentStatus = createServerFn({ method: "POST" 
   )
   .handler(async ({ data }) => {
     const { supabase, identity } = await professionalContext();
+    if (data.status === "completed") await assertCanComplete(supabase, identity);
     const { error } = await supabase
       .from("appointments")
       .update({ status: data.status })

@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { ArrowLeft, CalendarDays, Clock, HandCoins, LogOut, ShieldAlert } from "lucide-react";
 
 import { InstalarApp } from "@/components/instalar-app";
@@ -10,13 +11,18 @@ import { clearSessionCache } from "@/modules/auth/session-query";
 import { disabledAccessMessage } from "@/modules/professional-panel/domain";
 import { getProfessionalPanel } from "@/modules/professional-panel/server";
 import { useTemaProduto } from "@/components/tema-produto";
+import { lembrarProduto, produtoLembrado } from "@/lib/produto-preferido";
 
 
 export const Route = createFileRoute("/profissional")({
   loader: async () => {
     const result = await getProfessionalPanel();
     if (result.status === "unauthenticated") {
-      throw redirect({ to: "/login", search: { redirect: "/profissional" } });
+      // Preserva a identidade do portal (LuBarber x LuBeauty) já na tela de login.
+      throw redirect({
+        to: "/login",
+        search: { redirect: "/profissional", produto: produtoLembrado() },
+      });
     }
     if (result.status === "not_professional") throw redirect({ to: "/painel" });
     return result;
@@ -59,13 +65,16 @@ function ProfessionalLayout() {
   const result = Route.useLoaderData();
   // Tema definido pelo produto da empresa do profissional e propagado à raiz
   // do documento (cobre modais, toasts e telas de erro em portais).
-  const tema = useTemaProduto(
+  const produto =
     result.status === "ok"
       ? result.data.identity.productType
       : result.status === "disabled"
         ? result.productType
-        : "beauty",
-  );
+        : (produtoLembrado() ?? "beauty");
+  const tema = useTemaProduto(produto);
+  useEffect(() => {
+    if (produto === "beauty" || produto === "barber") lembrarProduto(produto);
+  }, [produto]);
 
   if (result.status === "not_authorized") {
     return (

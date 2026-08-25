@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updatePassword } from "@/modules/auth/server";
 import { readSession } from "@/modules/auth/session-query";
+import { useTemaProduto } from "@/components/tema-produto";
+import { useProdutoDaJornada } from "@/lib/produto-preferido";
 
 export const Route = createFileRoute("/redefinir-senha")({
   beforeLoad: async ({ context }) => {
@@ -32,6 +34,7 @@ function RedefinirSenha() {
   const navigate = useNavigate();
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
+  const tema = useTemaProduto(useProdutoDaJornada());
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,7 +58,7 @@ function RedefinirSenha() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-secondary/40 px-4 py-12">
+    <main className={`${tema} flex min-h-screen items-center justify-center bg-secondary/40 px-4 py-12`}>
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground">
