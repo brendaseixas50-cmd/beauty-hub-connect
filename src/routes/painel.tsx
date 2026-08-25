@@ -86,6 +86,7 @@ const itens = [
   { to: "/painel/marketing", label: "Marketing", icon: Megaphone },
   { to: "/painel/produtos", label: "Produtos", icon: Package },
   { to: "/painel/financeiro", label: "Financeiro", icon: Wallet },
+  { to: "/painel/comissoes", label: "Comissões", icon: HandCoins },
   { to: "/painel/estoque", label: "Estoque", icon: Package },
   { to: "/painel/relatorios", label: "Relatórios", icon: BarChart3 },
 ] as const;
