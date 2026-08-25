@@ -1390,6 +1390,7 @@ export type Database = {
           reschedule_deadline_enabled: boolean;
           reschedule_deadline_hours: number;
           commission_trigger: string;
+          completion_permission: string;
           public_information: string | null;
           public_store_enabled: boolean;
           show_public_location: boolean;
@@ -1453,6 +1454,7 @@ export type Database = {
           reschedule_deadline_enabled?: boolean;
           reschedule_deadline_hours?: number;
           commission_trigger?: string;
+          completion_permission?: string;
           public_information?: string | null;
           public_store_enabled?: boolean;
           show_public_location?: boolean;
@@ -1516,6 +1518,7 @@ export type Database = {
           reschedule_deadline_enabled?: boolean;
           reschedule_deadline_hours?: number;
           commission_trigger?: string;
+          completion_permission?: string;
           public_information?: string | null;
           public_store_enabled?: boolean;
           show_public_location?: boolean;
