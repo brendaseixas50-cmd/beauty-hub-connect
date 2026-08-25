@@ -25,6 +25,7 @@ const loginSchema = z.object({
   email: z.string().trim().email("Informe um e-mail válido.").max(254),
   password: z.string().min(1, "Informe a senha."),
   productType: z.enum(["beauty", "barber"]).optional(),
+  remember: z.boolean().optional(),
 });
 
 const signupSchema = z
@@ -82,7 +83,8 @@ export const getSession = createServerFn({ method: "GET" }).handler(() => resolv
 export const login = createServerFn({ method: "POST" })
   .validator(loginSchema)
   .handler(async ({ data }): Promise<Session> => {
-    const supabase = createSupabaseServerClient();
+    // "Manter conectado" define se os cookies duram 30 dias ou apenas a sessão.
+    const supabase = createSupabaseServerClient(data.remember === false ? null : { days: 30 });
     const { data: authData, error } = await supabase.auth.signInWithPassword({
       email: data.email.toLowerCase(),
       password: data.password,

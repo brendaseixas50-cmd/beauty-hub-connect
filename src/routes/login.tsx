@@ -81,6 +81,7 @@ function LoginPage() {
           email: String(form.get("email")),
           password: String(form.get("password")),
           productType: search.produto,
+          remember: form.get("remember") !== null,
         },
       });
       cacheSession(queryClient, session);

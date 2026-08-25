@@ -9,7 +9,7 @@ import { z } from "zod";
  * Todas as leituras/escritas usam o cliente administrativo porque o visitante
  * não tem sessão — por isso cada consulta é sempre filtrada pelo token.
  */
-const tokenSchema = z.object({ token: z.string().trim().min(20).max(120) });
+const tokenSchema = z.object({ token: z.string().trim().min(1).max(200) });
 
 export type ManagedBooking = {
   ok: true;
@@ -259,4 +259,40 @@ export const rescheduleManagedBooking = createServerFn({ method: "POST" })
       appointmentId: appointment.id,
     });
     return { ok: true };
+  });
+
+/**
+ * Regras públicas da agenda (limite de abertura e prazo de cancelamento).
+ * Somente campos não sensíveis, usados para limitar o seletor de datas.
+ */
+export const getPublicBookingRules = createServerFn({ method: "GET" })
+  .validator(z.object({ slug: z.string().trim().toLowerCase().min(3).max(80) }))
+  .handler(async ({ data }) => {
+    const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
+    const { data: tenant } = await createSupabaseAdminClient()
+      .from("tenants")
+      .select("booking_horizon_days, reschedule_deadline_enabled, reschedule_deadline_hours")
+      .eq("slug", data.slug)
+      .maybeSingle();
+    return {
+      horizonDays: tenant?.booking_horizon_days ?? 60,
+      deadlineEnabled: tenant?.reschedule_deadline_enabled === true,
+      deadlineHours: tenant?.reschedule_deadline_hours ?? 24,
+    };
+  });
+
+/**
+ * Entrega o link seguro de gerenciamento ao próprio cliente logo após reservar.
+ * O identificador do agendamento é conhecido apenas por quem acabou de agendar.
+ */
+export const getManageLinkToken = createServerFn({ method: "POST" })
+  .validator(z.object({ appointmentId: z.string().uuid() }))
+  .handler(async ({ data }): Promise<{ token: string | null }> => {
+    const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
+    const { data: appointment } = await createSupabaseAdminClient()
+      .from("appointments")
+      .select("manage_token")
+      .eq("id", data.appointmentId)
+      .maybeSingle();
+    return { token: appointment?.manage_token ?? null };
   });

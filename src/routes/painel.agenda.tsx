@@ -44,8 +44,12 @@ function AgendaPage() {
   const [search, setSearch] = useState("");
   const [professional, setProfessional] = useState("all");
   const [status, setStatus] = useState("all");
+  const [view, setView] = useState<AgendaView>("day");
+  const [anchor, setAnchor] = useState(todayInput());
   const [from, setFrom] = useState(todayInput());
   const [to, setTo] = useState(addDaysInput(30));
+  // Dia/Semana/Mês derivam o período do dia âncora; "Período" mantém os filtros livres.
+  const range = view === "range" ? { from, to } : rangeForView(view, anchor);
   const [editing, setEditing] = useState<Appointment | null>();
   const canCreate =
     data.clients.length > 0 && data.services.length > 0 && data.professionals.length > 0;
@@ -64,13 +68,13 @@ function AgendaPage() {
           ].some((value) => value?.toLowerCase().includes(term));
         return (
           matchesText &&
-          date >= from &&
-          date <= to &&
+          date >= range.from &&
+          date <= range.to &&
           (professional === "all" || appointment.professional_id === professional) &&
           (status === "all" || appointment.status === status)
         );
       }),
-    [data.appointments, from, professional, status, term, to],
+    [data.appointments, professional, range.from, range.to, status, term],
   );
 
   return (
@@ -105,7 +109,53 @@ function AgendaPage() {
         </Card>
       ) : null}
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-1 rounded-full border p-1">
+          {agendaViews.map((item) => (
+            <Button
+              key={item.value}
+              type="button"
+              size="sm"
+              variant={view === item.value ? "default" : "ghost"}
+              className="rounded-full"
+              onClick={() => setView(item.value)}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </div>
+        {view !== "range" ? (
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setAnchor(shiftAnchor(anchor, view, -1))}
+            >
+              Anterior
+            </Button>
+            <Input
+              type="date"
+              className="w-auto"
+              value={anchor}
+              onChange={(event) => setAnchor(event.target.value || todayInput())}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setAnchor(shiftAnchor(anchor, view, 1))}
+            >
+              Próximo
+            </Button>
+          </div>
+        ) : null}
+        <span className="text-sm text-muted-foreground">
+          {formatRange(range)} · {filtered.length} atendimento(s)
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <div className="xl:col-span-2">
           <SearchField
             value={search}
@@ -113,12 +163,16 @@ function AgendaPage() {
             placeholder="Buscar cliente, serviço ou profissional"
           />
         </div>
-        <Filter label="De">
-          <Input type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
-        </Filter>
-        <Filter label="Até">
-          <Input type="date" value={to} onChange={(event) => setTo(event.target.value)} />
-        </Filter>
+        {view === "range" ? (
+          <>
+            <Filter label="De">
+              <Input type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
+            </Filter>
+            <Filter label="Até">
+              <Input type="date" value={to} onChange={(event) => setTo(event.target.value)} />
+            </Filter>
+          </>
+        ) : null}
         <Filter label="Profissional">
           <select
             value={professional}
@@ -333,6 +387,47 @@ function AppointmentDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+type AgendaView = "day" | "week" | "month" | "range";
+const agendaViews = [
+  { value: "day", label: "Dia" },
+  { value: "week", label: "Semana" },
+  { value: "month", label: "Mês" },
+  { value: "range", label: "Período" },
+] as const satisfies readonly { value: AgendaView; label: string }[];
+
+function toKey(date: Date) {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+}
+
+function rangeForView(view: AgendaView, anchor: string) {
+  const base = new Date(`${anchor}T12:00:00`);
+  if (view === "day") return { from: anchor, to: anchor };
+  if (view === "week") {
+    const start = new Date(base);
+    start.setDate(start.getDate() - start.getDay());
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    return { from: toKey(start), to: toKey(end) };
+  }
+  const start = new Date(base.getFullYear(), base.getMonth(), 1, 12);
+  const end = new Date(base.getFullYear(), base.getMonth() + 1, 0, 12);
+  return { from: toKey(start), to: toKey(end) };
+}
+
+function shiftAnchor(anchor: string, view: AgendaView, direction: 1 | -1) {
+  const base = new Date(`${anchor}T12:00:00`);
+  if (view === "day") base.setDate(base.getDate() + direction);
+  else if (view === "week") base.setDate(base.getDate() + 7 * direction);
+  else base.setMonth(base.getMonth() + direction);
+  return toKey(base);
+}
+
+function formatRange({ from, to }: { from: string; to: string }) {
+  const label = (value: string) =>
+    new Date(`${value}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  return from === to ? label(from) : `${label(from)} — ${label(to)}`;
 }
 
 const statuses = [
