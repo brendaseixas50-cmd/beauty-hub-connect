@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, Clock, LogOut, ShieldAlert } from "lucide-react";
+import { ArrowLeft, CalendarDays, Clock, LogOut, ShieldAlert } from "lucide-react";
 
 import { InstalarApp } from "@/components/instalar-app";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { clearSessionCache } from "@/modules/auth/session-query";
 import { disabledAccessMessage } from "@/modules/professional-panel/domain";
 import { getProfessionalPanel } from "@/modules/professional-panel/server";
+import { useTemaProduto } from "@/components/tema-produto";
 
 
 export const Route = createFileRoute("/profissional")({
@@ -56,10 +57,19 @@ export const Route = createFileRoute("/profissional")({
 
 function ProfessionalLayout() {
   const result = Route.useLoaderData();
+  // Tema definido pelo produto da empresa do profissional e propagado à raiz
+  // do documento (cobre modais, toasts e telas de erro em portais).
+  const tema = useTemaProduto(
+    result.status === "ok"
+      ? result.data.identity.productType
+      : result.status === "disabled"
+        ? result.productType
+        : "beauty",
+  );
 
   if (result.status === "not_authorized") {
     return (
-      <main className="tema-beleza grid min-h-screen place-items-center bg-background px-4 py-12">
+      <main className="grid min-h-screen place-items-center bg-background px-4 py-12">
         <Card className="max-w-md gap-3 p-6 text-center">
           <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-secondary">
             <ShieldAlert className="h-5 w-5" />
@@ -77,7 +87,6 @@ function ProfessionalLayout() {
   }
 
   const produto = result.status === "ok" ? result.data.identity.productType : result.productType;
-  const tema = produto === "barber" ? "tema-barbearia" : "tema-beleza";
 
   if (result.status === "disabled") {
     return (
@@ -99,10 +108,13 @@ function ProfessionalLayout() {
 
 
   const { identity } = result.data;
+  // Somente proprietário/administrador pode voltar ao Painel Administrativo.
+  // O profissional comum continua restrito a /profissional.
+  const podeGerenciar = identity.role === "owner" || identity.role === "admin";
 
   return (
     <div className={`${tema} min-h-screen bg-background text-foreground`}>
-      <header className="sticky top-0 z-20 border-b bg-card/95 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
           {identity.photoUrl ? (
             <img
@@ -117,8 +129,16 @@ function ProfessionalLayout() {
           )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{identity.name}</p>
-            <p className="truncate text-xs text-muted-foreground">{identity.tenantName}</p>
+            <p className="truncate text-xs opacity-80">{identity.tenantName}</p>
           </div>
+          {podeGerenciar ? (
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/painel">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only sm:not-sr-only">Painel Administrativo</span>
+              </Link>
+            </Button>
+          ) : null}
           <InstalarApp escopo="profissional" className="hidden sm:inline-flex" />
           <SairButton />
         </div>
@@ -151,7 +171,7 @@ function TabLink({ to, icon, label }: { to: string; icon: React.ReactNode; label
     <Link
       to={to}
       activeOptions={{ exact: to === "/profissional" }}
-      className="flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary [&.active]:bg-primary [&.active]:text-primary-foreground"
+      className="flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground [&.active]:bg-primary [&.active]:text-primary-foreground"
     >
       {icon}
       {label}
