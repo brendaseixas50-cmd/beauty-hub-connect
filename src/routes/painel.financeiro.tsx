@@ -18,43 +18,97 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { brl, centsFromInput, type FinancialEntry } from "@/modules/mvp/domain";
+import { brl, centsFromInput } from "@/modules/mvp/domain";
 import {
   deleteFinancialEntry,
+  listFinanceLinkOptions,
   listFinancialEntries,
   saveFinancialEntry,
+  type FinancialEntryWithLinks,
 } from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
+type LinkOptions = Awaited<ReturnType<typeof listFinanceLinkOptions>>;
+
+const origens: { value: string; label: string }[] = [
+  { value: "service", label: "Serviços" },
+  { value: "product", label: "Produtos" },
+  { value: "commission", label: "Comissões" },
+  { value: "rent", label: "Aluguel / estrutura" },
+  { value: "supply", label: "Insumos" },
+  { value: "tax", label: "Impostos e taxas" },
+  { value: "other", label: "Outros" },
+];
+
+function origemLabel(origin: string) {
+  return origens.find((item) => item.value === origin)?.label ?? "Outros";
+}
+
+/** Competência é o mês de referência do lançamento (regime de competência). */
+function mesDe(entry: FinancialEntryWithLinks) {
+  return (entry.competence_date ?? entry.due_date).slice(0, 7);
+}
+
 export const Route = createFileRoute("/painel/financeiro")({
   staleTime: 60_000,
-  loader: () => listFinancialEntries(),
-  head: () => ({ meta: [{ title: "Financeiro — Beauty Hub Connect" }] }),
+  loader: async () => {
+    const [entries, options] = await Promise.all([
+      listFinancialEntries(),
+      listFinanceLinkOptions(),
+    ]);
+    return { entries, options };
+  },
+  head: () => ({
+    meta: [
+      { title: "Financeiro — LuBeauty Pro e LuBarber Pro" },
+      {
+        name: "description",
+        content:
+          "Receitas, despesas, competência mensal e vínculos com clientes, profissionais e produtos.",
+      },
+    ],
+  }),
   component: FinancePage,
 });
 
 function FinancePage() {
-  const entries = Route.useLoaderData();
+  const { entries, options } = Route.useLoaderData();
   const remove = useServerFn(deleteFinancialEntry);
   const action = useMvpAction();
   const [search, setSearch] = useState("");
   const [type, setType] = useState("all");
   const [status, setStatus] = useState("all");
-  const [editing, setEditing] = useState<FinancialEntry | null>();
+  const [origin, setOrigin] = useState("all");
+  const [editing, setEditing] = useState<FinancialEntryWithLinks | null>();
+
+  const meses = useMemo(() => {
+    const atual = new Date().toISOString().slice(0, 7);
+    return Array.from(new Set([atual, ...entries.map(mesDe)])).sort().reverse();
+  }, [entries]);
+  const [month, setMonth] = useState("all");
+
   const term = search.trim().toLowerCase();
   const filtered = entries.filter(
     (entry) =>
       (!term ||
-        [entry.description, entry.category, entry.payment_method].some((value) =>
-          value?.toLowerCase().includes(term),
-        )) &&
+        [
+          entry.description,
+          entry.category,
+          entry.payment_method,
+          entry.clients?.name,
+          entry.professionals?.name,
+          entry.products?.name,
+        ].some((value) => value?.toLowerCase().includes(term))) &&
       (type === "all" || entry.entry_type === type) &&
-      (status === "all" || entry.status === status),
+      (status === "all" || entry.status === status) &&
+      (origin === "all" || (entry.origin ?? "other") === origin) &&
+      (month === "all" || mesDe(entry) === month),
   );
+
   const totals = useMemo(
     () =>
-      entries.reduce(
+      filtered.reduce(
         (result, entry) => {
           if (entry.status === "paid")
             result[entry.entry_type === "income" ? "income" : "expense"] += entry.amount_cents;
@@ -65,8 +119,22 @@ function FinancePage() {
         },
         { income: 0, expense: 0, pending: 0 },
       ),
-    [entries],
+    [filtered],
   );
+
+  const porOrigem = useMemo(() => {
+    const mapa = new Map<string, { income: number; expense: number }>();
+    for (const entry of filtered) {
+      if (entry.status !== "paid") continue;
+      const chave = entry.origin ?? "other";
+      const atual = mapa.get(chave) ?? { income: 0, expense: 0 };
+      atual[entry.entry_type === "income" ? "income" : "expense"] += entry.amount_cents;
+      mapa.set(chave, atual);
+    }
+    return [...mapa.entries()].sort(
+      (a, b) => b[1].income + b[1].expense - (a[1].income + a[1].expense),
+    );
+  }, [filtered]);
 
   return (
     <div>
@@ -74,7 +142,7 @@ function FinancePage() {
       <PageHeader
         eyebrow="Controle financeiro"
         title="Financeiro"
-        description="Registre receitas e despesas, acompanhe pendências e exporte seus dados."
+        description="Receitas e despesas por competência, com origem e vínculo real da operação."
         action={
           <Button className="rounded-full" onClick={() => setEditing(null)}>
             <Plus className="h-4 w-4" /> Novo lançamento
@@ -88,27 +156,56 @@ function FinancePage() {
         <Metric title="Saldo pendente" value={brl(totals.pending)} />
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
         <SearchField
           value={search}
           onChange={setSearch}
-          placeholder="Buscar descrição, categoria ou forma"
+          placeholder="Buscar descrição, categoria, cliente ou profissional"
         />
+        <select
+          aria-label="Filtrar competência"
+          value={month}
+          onChange={(event) => setMonth(event.target.value)}
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+        >
+          <option value="all">Todas as competências</option>
+          {meses.map((item) => (
+            <option key={item} value={item}>
+              {new Date(item + "-01T12:00:00").toLocaleDateString("pt-BR", {
+                month: "long",
+                year: "numeric",
+              })}
+            </option>
+          ))}
+        </select>
         <select
           aria-label="Filtrar tipo"
           value={type}
           onChange={(event) => setType(event.target.value)}
-          className="h-10 rounded-md border bg-background px-3 text-sm"
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
         >
           <option value="all">Receitas e despesas</option>
           <option value="income">Receitas</option>
           <option value="expense">Despesas</option>
         </select>
         <select
+          aria-label="Filtrar origem"
+          value={origin}
+          onChange={(event) => setOrigin(event.target.value)}
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+        >
+          <option value="all">Todas as origens</option>
+          {origens.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+        <select
           aria-label="Filtrar status"
           value={status}
           onChange={(event) => setStatus(event.target.value)}
-          className="h-10 rounded-md border bg-background px-3 text-sm"
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
         >
           <option value="all">Todos os status</option>
           <option value="pending">Pendente</option>
@@ -119,6 +216,26 @@ function FinancePage() {
           <Download className="h-4 w-4" /> Exportar CSV
         </Button>
       </div>
+
+      {porOrigem.length > 0 ? (
+        <Card className="mt-6 gap-3 p-5">
+          <p className="text-eyebrow">Realizado por origem</p>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {porOrigem.map(([chave, valores]) => (
+              <div
+                key={chave}
+                className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2 text-sm"
+              >
+                <span className="truncate">{origemLabel(chave)}</span>
+                <span className="whitespace-nowrap">
+                  <span className="text-success">+{brl(valores.income)}</span>{" "}
+                  <span className="text-destructive">-{brl(valores.expense)}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
 
       {filtered.length === 0 ? (
         <EmptyState
@@ -133,12 +250,29 @@ function FinancePage() {
                 <p className="truncate font-medium">{entry.description}</p>
                 <p className="text-sm text-muted-foreground">
                   {entry.category || "Sem categoria"} · vencimento{" "}
-                  {new Date(entry.due_date + "T12:00:00").toLocaleDateString("pt-BR")}
+                  {new Date(entry.due_date + "T12:00:00").toLocaleDateString("pt-BR")} ·
+                  competência{" "}
+                  {new Date((entry.competence_date ?? entry.due_date) + "T12:00:00").toLocaleDateString(
+                    "pt-BR",
+                    { month: "2-digit", year: "numeric" },
+                  )}
                 </p>
+                {entry.clients?.name || entry.professionals?.name || entry.products?.name ? (
+                  <p className="mt-1 truncate text-sm text-muted-foreground">
+                    {[
+                      entry.clients?.name && `Cliente: ${entry.clients.name}`,
+                      entry.professionals?.name && `Profissional: ${entry.professionals.name}`,
+                      entry.products?.name && `Produto: ${entry.products.name}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                ) : null}
                 <div className="mt-2 flex flex-wrap gap-2">
                   <Badge variant={entry.entry_type === "income" ? "secondary" : "outline"}>
                     {entry.entry_type === "income" ? "Receita" : "Despesa"}
                   </Badge>
+                  <Badge variant="outline">{origemLabel(entry.origin ?? "other")}</Badge>
                   <Badge variant={entry.status === "cancelled" ? "destructive" : "outline"}>
                     {statusLabel(entry.status)}
                   </Badge>
@@ -171,31 +305,49 @@ function FinancePage() {
         </Card>
       )}
       {editing !== undefined ? (
-        <FinanceDialog entry={editing} onClose={() => setEditing(undefined)} />
+        <FinanceDialog
+          entry={editing}
+          options={options}
+          onClose={() => setEditing(undefined)}
+        />
       ) : null}
     </div>
   );
 }
 
-function FinanceDialog({ entry, onClose }: { entry: FinancialEntry | null; onClose: () => void }) {
+function FinanceDialog({
+  entry,
+  options,
+  onClose,
+}: {
+  entry: FinancialEntryWithLinks | null;
+  options: LinkOptions;
+  onClose: () => void;
+}) {
   const save = useServerFn(saveFinancialEntry);
   const action = useMvpAction();
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const texto = (name: string) => String(form.get(name) ?? "");
     const ok = await action.run(
       () =>
         save({
           data: {
             id: entry?.id,
-            entryType: String(form.get("entryType")) as "income" | "expense",
-            description: String(form.get("description")),
-            category: String(form.get("category")),
-            amountCents: centsFromInput(String(form.get("amount"))),
-            dueDate: String(form.get("dueDate")),
-            status: String(form.get("status")) as "pending" | "paid" | "cancelled",
-            paymentMethod: String(form.get("paymentMethod")),
-            notes: String(form.get("notes")),
+            entryType: texto("entryType") as "income" | "expense",
+            origin: texto("origin") || "other",
+            description: texto("description"),
+            category: texto("category"),
+            amountCents: centsFromInput(texto("amount")),
+            dueDate: texto("dueDate"),
+            competenceDate: texto("competenceDate") || texto("dueDate"),
+            status: texto("status") as "pending" | "paid" | "cancelled",
+            paymentMethod: texto("paymentMethod"),
+            clientId: texto("clientId") || undefined,
+            professionalId: texto("professionalId") || undefined,
+            productId: texto("productId") || undefined,
+            notes: texto("notes"),
           },
         }),
       entry ? "Lançamento atualizado." : "Lançamento criado.",
@@ -211,10 +363,19 @@ function FinanceDialog({ entry, onClose }: { entry: FinancialEntry | null; onClo
           <DialogDescription>Informe os dados financeiros reais da operação.</DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="grid gap-4">
-          <SelectField label="Tipo" name="entryType" defaultValue={entry?.entry_type ?? "income"}>
-            <option value="income">Receita</option>
-            <option value="expense">Despesa</option>
-          </SelectField>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SelectField label="Tipo" name="entryType" defaultValue={entry?.entry_type ?? "income"}>
+              <option value="income">Receita</option>
+              <option value="expense">Despesa</option>
+            </SelectField>
+            <SelectField label="Origem" name="origin" defaultValue={entry?.origin ?? "service"}>
+              {origens.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </SelectField>
+          </div>
           <Field
             label="Descrição"
             name="description"
@@ -239,17 +400,61 @@ function FinanceDialog({ entry, onClose }: { entry: FinancialEntry | null; onClo
               defaultValue={entry?.due_date ?? new Date().toISOString().slice(0, 10)}
               required
             />
+            <Field
+              label="Competência"
+              name="competenceDate"
+              type="date"
+              defaultValue={
+                entry?.competence_date ?? entry?.due_date ?? new Date().toISOString().slice(0, 10)
+              }
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
             <SelectField label="Status" name="status" defaultValue={entry?.status ?? "pending"}>
               <option value="pending">Pendente</option>
               <option value="paid">Pago</option>
               <option value="cancelled">Cancelado</option>
             </SelectField>
+            <Field
+              label="Forma de pagamento"
+              name="paymentMethod"
+              defaultValue={entry?.payment_method ?? ""}
+            />
           </div>
-          <Field
-            label="Forma de pagamento"
-            name="paymentMethod"
-            defaultValue={entry?.payment_method ?? ""}
-          />
+          <SelectField label="Cliente (opcional)" name="clientId" defaultValue={entry?.client_id ?? ""}>
+            <option value="">Sem vínculo</option>
+            {options.clients.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </SelectField>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SelectField
+              label="Profissional (opcional)"
+              name="professionalId"
+              defaultValue={entry?.professional_id ?? ""}
+            >
+              <option value="">Sem vínculo</option>
+              {options.professionals.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </SelectField>
+            <SelectField
+              label="Produto (opcional)"
+              name="productId"
+              defaultValue={entry?.product_id ?? ""}
+            >
+              <option value="">Sem vínculo</option>
+              {options.products.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </SelectField>
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="notes">Observações</Label>
             <Textarea id="notes" name="notes" defaultValue={entry?.notes ?? ""} />
@@ -306,7 +511,7 @@ function SelectField({
         id={name}
         name={name}
         defaultValue={defaultValue}
-        className="h-10 rounded-md border bg-background px-3 text-sm"
+        className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
       >
         {children}
       </select>
@@ -320,16 +525,33 @@ function statusLabel(status: string) {
     ] ?? status
   );
 }
-function exportCsv(entries: FinancialEntry[]) {
+function exportCsv(entries: FinancialEntryWithLinks[]) {
   const rows = [
-    ["Tipo", "Descrição", "Categoria", "Valor", "Vencimento", "Status"],
+    [
+      "Tipo",
+      "Origem",
+      "Descrição",
+      "Categoria",
+      "Valor",
+      "Vencimento",
+      "Competência",
+      "Status",
+      "Cliente",
+      "Profissional",
+      "Produto",
+    ],
     ...entries.map((entry) => [
       entry.entry_type,
+      origemLabel(entry.origin ?? "other"),
       entry.description,
       entry.category ?? "",
       (entry.amount_cents / 100).toFixed(2),
       entry.due_date,
+      entry.competence_date ?? entry.due_date,
       entry.status,
+      entry.clients?.name ?? "",
+      entry.professionals?.name ?? "",
+      entry.products?.name ?? "",
     ]),
   ];
   const csv = rows
