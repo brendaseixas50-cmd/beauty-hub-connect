@@ -1,11 +1,15 @@
 import { useEffect, type ReactNode } from "react";
 
-/** Produto ativo que define a identidade visual de toda a área interna. */
-export type ProdutoTema = "beauty" | "barber";
+/**
+ * Produto ativo que define a identidade visual de toda a área interna.
+ * "portal" é a base neutra do portal Lu IA Studio (sem identidade de produto).
+ */
+export type ProdutoTema = "beauty" | "barber" | "portal";
 
 const classes: Record<ProdutoTema, string> = {
   beauty: "tema-beleza",
   barber: "tema-barbearia",
+  portal: "tema-portal",
 };
 
 export function classeTema(produto: ProdutoTema) {
