@@ -1203,7 +1203,7 @@ function StoreCatalog({ page }: { page: PageData }) {
                     key={product.id}
                     className="flex items-center justify-between gap-3 rounded-xl border p-3"
                   >
-                    <span>
+                    <span className="min-w-0 break-words">
                       <strong className="block">{product.name}</strong>
                       <small>
                         {quantity} × {brl(product.priceCents)}
