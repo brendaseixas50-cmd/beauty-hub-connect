@@ -80,7 +80,7 @@ function CommissionsPage() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const amount = centsFromInput(String(form.get("amount") ?? "0"));
-    await action.run(
+    const ok = await action.run(
       () =>
         saveProfessionalLedgerEntry({
           data: {
@@ -92,14 +92,16 @@ function CommissionsPage() {
             notes: String(form.get("notes") ?? "") || undefined,
           },
         }),
-      { success: "Movimentação registrada.", onSuccess: () => setDialogFor(null) },
+      "Movimentação registrada.",
     );
+    if (ok) setDialogFor(null);
   }
 
   return (
     <div className="space-y-6">
-      <LuviContextBridge tela="Comissões e repasses" />
+      <LuviContextBridge facts={{ financialEntries: data.entries.length }} />
       <PageHeader
+        eyebrow="Equipe e repasses"
         title="Comissões e repasses"
         description={
           data.commissionTrigger === "paid"
