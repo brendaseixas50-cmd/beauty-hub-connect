@@ -303,14 +303,22 @@
 
 
 /* Campos sempre legíveis no tema escuro (texto escuro sobre o campo claro). */
-.tema-barbearia
-  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select) {
+.tema-barbearia :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea) {
   color: var(--color-card-foreground);
   caret-color: var(--color-card-foreground);
 }
 .tema-barbearia :is(input, textarea)::placeholder {
   color: #6f6f6f;
 }
+/* Listas suspensas nativas: sobre o fundo escuro o texto precisa ser claro. */
+.tema-barbearia select {
+  color: #ffffff;
+}
+.tema-barbearia select option {
+  color: #161616;
+  background-color: #ffffff;
+}
+
 
 .tema-barbearia h1,
 .tema-barbearia h2,
@@ -717,32 +725,30 @@
   overflow: hidden;
   border: 2px solid var(--luvi-border);
   border-radius: 999px;
-  background: var(--luvi-surface);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-card) 70%, transparent);
+  background: #17141f;
 }
-/* Enquadramento fechado no rosto para a Luvi ficar nítida mesmo pequena. */
+/* A arte da Luvi já vem enquadrada em formato quadrado: basta preencher a bolinha. */
 .luvi-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 16%;
-  image-rendering: auto;
-  transform: scale(1.35);
-  transform-origin: 50% 20%;
+  object-position: 50% 50%;
 }
 
+
 .luvi-avatar-small {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
 }
 .luvi-avatar-medium {
-  width: 3rem;
-  height: 3rem;
-}
-.luvi-avatar-floating {
   width: 3.25rem;
   height: 3.25rem;
 }
+.luvi-avatar-floating {
+  width: 3.75rem;
+  height: 3.75rem;
+}
+
 .luvi-status-star {
   position: absolute;
   right: -0.2rem;
@@ -824,9 +830,10 @@
     min-height: 2.75rem;
   }
   .luvi-avatar-floating {
-    width: 3rem;
-    height: 3rem;
+    width: 3.5rem;
+    height: 3.5rem;
   }
+
 
 }
 
@@ -875,4 +882,64 @@
     color-mix(in oklab, var(--color-accent) 35%, var(--color-background)),
     var(--color-background)
   );
+}
+
+/* ---------------------------------------------------------------
+   LuBarber: legibilidade de etiquetas e atalhos sobre card claro
+   --------------------------------------------------------------- */
+
+/* Etiquetas de contorno usam a cor global do tema (branca) e desapareciam
+   dentro dos cards brancos do LuBarber. */
+.tema-barbearia main [data-slot="card"] .text-foreground,
+.tema-barbearia [data-slot="card"] .text-foreground {
+  color: #161616;
+}
+.tema-barbearia main [data-slot="card"] .border {
+  border-color: #d8d8d8;
+}
+.tema-barbearia main [data-slot="card"] .text-destructive {
+  color: #a01f18;
+}
+
+/* ---------------------------------------------------------------
+   Janela da Luvi: superfície clara exige texto escuro
+   --------------------------------------------------------------- */
+.luvi-chat {
+  color: var(--color-card-foreground);
+}
+.luvi-chip {
+  color: inherit;
+  background: transparent;
+}
+.tema-barbearia .luvi-chat .text-muted-foreground {
+  color: #4a4a4a;
+}
+.tema-barbearia .luvi-chat-header,
+.tema-barbearia .luvi-chat-header .text-muted-foreground {
+  color: #ffffff;
+}
+.tema-barbearia .luvi-chat-header .text-muted-foreground {
+  color: #d8d8d8;
+}
+.tema-barbearia .luvi-chat-msg-luvi {
+  background: #f4f4f4;
+  border-color: #d8d8d8;
+  color: #161616;
+}
+.tema-barbearia .luvi-chat-msg-luvi .text-muted-foreground {
+  color: #4a4a4a;
+}
+.tema-barbearia .luvi-chat-icon {
+  color: #ffffff;
+}
+
+.tema-barbearia .luvi-chip {
+  border-color: var(--luvi-gold);
+  color: #161616;
+}
+.tema-barbearia .luvi-chat [data-slot="card"] {
+  color: #161616;
+}
+.tema-barbearia .luvi-chat [data-slot="card"] .text-muted-foreground {
+  color: #4a4a4a;
 }

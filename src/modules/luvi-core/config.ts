@@ -1,15 +1,17 @@
-import luviFaceBarber from "@/modules/luvi-core/assets/luvi-face-barber.png";
-import luviFaceDefault from "@/modules/luvi-core/assets/luvi-face-default.png";
+import luviFaceRobot from "@/assets/luvi-face.png.asset.json";
 import luviFullBarber from "@/modules/luvi-core/assets/luvi-full-barber.png";
 import luviFullDefault from "@/modules/luvi-core/assets/luvi-full-default.png";
 import type { LuviProductId, LuviTheme, LuviToolDefinition } from "@/modules/luvi-core/types";
+
+/** Rosto oficial da Luvi, igual nos dois produtos. */
+const faceAsset = luviFaceRobot.url;
 
 const themes: Record<LuviProductId, LuviTheme> = {
   beauty: {
     product: "beauty",
     label: "LuBeauty Pro",
     className: "luvi-theme-beauty",
-    faceAsset: luviFaceDefault,
+    faceAsset,
     fullAsset: luviFullDefault,
     tone: "welcoming",
   },
@@ -17,7 +19,7 @@ const themes: Record<LuviProductId, LuviTheme> = {
     product: "barber",
     label: "LuBarber Pro",
     className: "luvi-theme-barber",
-    faceAsset: luviFaceBarber,
+    faceAsset,
     fullAsset: luviFullBarber,
     tone: "confident",
   },
@@ -25,11 +27,12 @@ const themes: Record<LuviProductId, LuviTheme> = {
     product: "default",
     label: "Lu IA Studio",
     className: "luvi-theme-default",
-    faceAsset: luviFaceDefault,
+    faceAsset,
     fullAsset: luviFullDefault,
     tone: "welcoming",
   },
 };
+
 
 export function getLuviTheme(product: LuviProductId) {
   return themes[product] ?? themes.default;
