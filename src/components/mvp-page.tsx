@@ -31,7 +31,7 @@ export function PageHeader({
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
         <p className="text-eyebrow">{eyebrow}</p>
-        <h1 className="mt-1 text-3xl">{title}</h1>
+        <h1 className="mt-1 break-words text-2xl sm:text-3xl">{title}</h1>
         {description ? (
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{description}</p>
         ) : null}
