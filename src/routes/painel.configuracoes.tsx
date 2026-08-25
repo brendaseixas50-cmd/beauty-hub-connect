@@ -280,6 +280,10 @@ function BookingSettings({
             mercadoPago: mercadoPago.connected && form.get("mercadoPago") === "on",
           },
           publicStoreEnabled: form.get("publicStoreEnabled") === "on",
+          completionPermission:
+            String(form.get("completionPermission")) === "management_professional"
+              ? "management_professional"
+              : "management",
         },
       });
       if (result.locationWarning) toast.warning(result.locationWarning);
