@@ -901,6 +901,14 @@
   color: #a01f18;
 }
 
+/* Etiquetas em maiúsculas (eyebrow) herdam o tom suave pensado para o fundo
+   escuro; dentro dos cards brancos precisam de cinza-escuro legível. */
+.tema-barbearia main [data-slot="card"] .text-eyebrow,
+.tema-barbearia [data-slot="card"] .text-eyebrow,
+.tema-barbearia .luvi-chat .text-eyebrow {
+  color: #4a4a4a;
+}
+
 /* ---------------------------------------------------------------
    Janela da Luvi: superfície clara exige texto escuro
    --------------------------------------------------------------- */
