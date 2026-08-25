@@ -73,10 +73,10 @@ function Dashboard() {
       </div>
 
       <section className="mt-10">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-2xl">Agenda de hoje</h2>
-          <Button asChild variant="outline" size="sm" className="rounded-full">
-            <Link to="/painel/agenda">Ver agenda completa</Link>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between sm:gap-4">
+          <h2 className="min-w-0 truncate text-xl sm:text-2xl">Agenda de hoje</h2>
+          <Button asChild variant="outline" size="sm" className="shrink-0 rounded-full">
+            <Link to="/painel/agenda">Ver agenda</Link>
           </Button>
         </div>
 
