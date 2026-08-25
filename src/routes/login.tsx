@@ -15,6 +15,7 @@ import { startGoogleSignIn } from "@/modules/auth/google-sign-in";
 import { login, switchCompany } from "@/modules/auth/server";
 import { cacheSession, clearSessionCache, peekSession } from "@/modules/auth/session-query";
 import { useTemaProduto } from "@/components/tema-produto";
+import { useProdutoDaJornada } from "@/lib/produto-preferido";
 
 const safeRedirect = z
   .string()
@@ -42,7 +43,10 @@ function LoginPage() {
   const switchFn = useServerFn(switchCompany);
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
-  const tipo = search.produto === "barber" ? "barbearia" : "beleza";
+  // A identidade do login vem da URL e, quando ausente (ex.: redirect do Painel
+  // Profissional), do último produto usado — nunca do padrão LuBeauty.
+  const produtoAtivo = useProdutoDaJornada(search.produto);
+  const tipo = produtoAtivo === "barber" ? "barbearia" : "beleza";
 
   useEffect(() => {
     const session = peekSession(queryClient);
@@ -50,8 +54,8 @@ function LoginPage() {
     let active = true;
     void (async () => {
       try {
-        const preferred = search.produto
-          ? session.user.companies.find((company) => company.productType === search.produto)
+        const preferred = produtoAtivo
+          ? session.user.companies.find((company) => company.productType === produtoAtivo)
           : undefined;
         const nextSession =
           preferred && preferred.tenantId !== session.user.tenantId
@@ -67,7 +71,7 @@ function LoginPage() {
     return () => {
       active = false;
     };
-  }, [navigate, queryClient, search.produto, search.redirect, switchFn]);
+  }, [navigate, produtoAtivo, queryClient, search.redirect, switchFn]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
