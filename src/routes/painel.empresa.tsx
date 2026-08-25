@@ -303,6 +303,57 @@ function CompanyPage() {
               ))}
             </select>
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="bookingHorizonDays">Abrir agenda com até (dias)</Label>
+              <Input
+                id="bookingHorizonDays"
+                name="bookingHorizonDays"
+                type="number"
+                min={1}
+                max={365}
+                defaultValue={company.booking_horizon_days ?? 60}
+              />
+              <p className="text-xs text-muted-foreground">
+                A página pública só oferece horários dentro desse limite.
+              </p>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="rescheduleDeadlineHours">
+                Antecedência mínima para cancelar/remarcar (horas)
+              </Label>
+              <Input
+                id="rescheduleDeadlineHours"
+                name="rescheduleDeadlineHours"
+                type="number"
+                min={0}
+                max={720}
+                defaultValue={company.reschedule_deadline_hours ?? 24}
+              />
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  name="rescheduleDeadlineEnabled"
+                  type="checkbox"
+                  className="h-4 w-4"
+                  defaultChecked={company.reschedule_deadline_enabled === true}
+                />
+                Aplicar essa regra nos cancelamentos e remarcações online
+              </label>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="commissionTrigger">Gerar comissão do profissional</Label>
+              <select
+                id="commissionTrigger"
+                name="commissionTrigger"
+                defaultValue={company.commission_trigger ?? "completed"}
+                className="h-11 rounded-xl border bg-background px-3 text-sm"
+              >
+                <option value="completed">Ao concluir o atendimento</option>
+                <option value="paid">Somente após a receita ser paga</option>
+              </select>
+            </div>
+          </div>
+
           <label className="flex items-start gap-3 rounded-xl border p-4">
             <input
               name="publicPageEnabled"
