@@ -165,6 +165,7 @@ function CommissionsPage() {
                   <Button
                     size="sm"
                     variant="outline"
+                    className="shrink-0"
                     onClick={() => {
                       setKind("payment");
                       setDialogFor(item.id);
