@@ -76,14 +76,18 @@ function ProfessionalHours() {
         </p>
       </div>
 
-      <Card className="flex items-center justify-between gap-4 p-4">
-        <div>
+      <Card className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 p-4">
+        <div className="min-w-0">
           <p className="text-sm font-medium">Seguir o horário da empresa</p>
           <p className="text-sm text-muted-foreground">
             Desative para definir seus próprios dias, horários e intervalos.
           </p>
         </div>
-        <Switch checked={followCompany} onCheckedChange={setFollowCompany} />
+        <Switch
+          className="shrink-0"
+          checked={followCompany}
+          onCheckedChange={setFollowCompany}
+        />
       </Card>
 
       {!followCompany ? (
@@ -92,9 +96,9 @@ function ProfessionalHours() {
             const day = days[weekday]!;
             return (
               <Card key={label} className="gap-3 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-medium">{label}</p>
-                  <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                  <p className="min-w-0 truncate font-medium">{label}</p>
+                  <label className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
                     Atendo neste dia
                     <Switch
                       checked={!day.dayOff}

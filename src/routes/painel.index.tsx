@@ -73,10 +73,10 @@ function Dashboard() {
       </div>
 
       <section className="mt-10">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-2xl">Agenda de hoje</h2>
-          <Button asChild variant="outline" size="sm" className="rounded-full">
-            <Link to="/painel/agenda">Ver agenda completa</Link>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between sm:gap-4">
+          <h2 className="min-w-0 truncate text-xl sm:text-2xl">Agenda de hoje</h2>
+          <Button asChild variant="outline" size="sm" className="shrink-0 rounded-full">
+            <Link to="/painel/agenda">Ver agenda</Link>
           </Button>
         </div>
 
@@ -113,9 +113,9 @@ function Dashboard() {
 
       {data.notifications.length ? (
         <section className="mt-10">
-          <div className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-primary" />
-            <h2 className="text-2xl">Novos agendamentos e notificações</h2>
+          <div className="flex min-w-0 items-center gap-2">
+            <Bell className="h-5 w-5 shrink-0 text-primary" />
+            <h2 className="min-w-0 text-xl sm:text-2xl">Novos agendamentos e notificações</h2>
           </div>
           <Card className="mt-4 divide-y p-0">
             {data.notifications.map((notification) => (
