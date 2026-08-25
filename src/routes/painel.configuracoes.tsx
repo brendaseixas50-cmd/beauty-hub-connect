@@ -340,6 +340,26 @@ function BookingSettings({
             maxLength={500}
           />
         </div>
+        <div className="grid gap-2">
+          <Label htmlFor="completionPermission">Quem pode concluir atendimentos?</Label>
+          <select
+            id="completionPermission"
+            name="completionPermission"
+            defaultValue={
+              company.completion_permission === "management_professional"
+                ? "management_professional"
+                : "management"
+            }
+            className="h-11 rounded-xl border bg-card px-3"
+          >
+            <option value="management">Somente gestão</option>
+            <option value="management_professional">Gestão + profissional responsável</option>
+          </select>
+          <p className="text-sm text-muted-foreground">
+            Em “Somente gestão”, o profissional visualiza o atendimento na agenda, mas não pode
+            concluí-lo. Na outra opção, cada profissional conclui apenas os próprios atendimentos.
+          </p>
+        </div>
       </Card>
 
       <Card className="grid gap-5 p-5 sm:p-6">
