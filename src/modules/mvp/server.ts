@@ -427,7 +427,16 @@ export const updateCompany = createServerFn({ method: "POST" })
               public_store_enabled: data.bookingPolicy.publicStoreEnabled,
             }
           : {}),
+        ...(data.bookingRules
+          ? {
+              booking_horizon_days: data.bookingRules.bookingHorizonDays,
+              reschedule_deadline_enabled: data.bookingRules.rescheduleDeadlineEnabled,
+              reschedule_deadline_hours: data.bookingRules.rescheduleDeadlineHours,
+              commission_trigger: data.bookingRules.commissionTrigger,
+            }
+          : {}),
         ...publicValues,
+
       })
       .eq("id", tenantId)
       .select()
