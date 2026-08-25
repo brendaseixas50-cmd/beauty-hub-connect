@@ -303,14 +303,22 @@
 
 
 /* Campos sempre legíveis no tema escuro (texto escuro sobre o campo claro). */
-.tema-barbearia
-  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select) {
+.tema-barbearia :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea) {
   color: var(--color-card-foreground);
   caret-color: var(--color-card-foreground);
 }
 .tema-barbearia :is(input, textarea)::placeholder {
   color: #6f6f6f;
 }
+/* Listas suspensas nativas: sobre o fundo escuro o texto precisa ser claro. */
+.tema-barbearia select {
+  color: #ffffff;
+}
+.tema-barbearia select option {
+  color: #161616;
+  background-color: #ffffff;
+}
+
 
 .tema-barbearia h1,
 .tema-barbearia h2,
