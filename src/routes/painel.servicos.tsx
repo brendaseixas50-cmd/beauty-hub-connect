@@ -435,13 +435,16 @@ function ServiceDialog({
                         <input
                           type="checkbox"
                           checked={addonForServiceIds.includes(item.id)}
-                          onChange={(event) =>
+                          onChange={(event) => {
+                            // Lemos o valor antes do updater: o evento do React é
+                            // reciclado e currentTarget fica null dentro do callback.
+                            const { checked } = event.currentTarget;
                             setAddonForServiceIds((current) =>
-                              event.currentTarget.checked
-                                ? [...current, item.id]
+                              checked
+                                ? [...new Set([...current, item.id])]
                                 : current.filter((id) => id !== item.id),
-                            )
-                          }
+                            );
+                          }}
                         />
                         <span className="truncate">{item.name}</span>
                         {item.is_combo ? (
@@ -481,13 +484,14 @@ function ServiceDialog({
                         <input
                           type="checkbox"
                           checked={comboServiceIds.includes(item.id)}
-                          onChange={(event) =>
+                          onChange={(event) => {
+                            const { checked } = event.currentTarget;
                             setComboServiceIds((current) =>
-                              event.currentTarget.checked
-                                ? [...current, item.id]
+                              checked
+                                ? [...new Set([...current, item.id])]
                                 : current.filter((id) => id !== item.id),
-                            )
-                          }
+                            );
+                          }}
                         />
                         <span className="truncate">{item.name}</span>
                         <span className="ml-auto text-xs text-muted-foreground">
