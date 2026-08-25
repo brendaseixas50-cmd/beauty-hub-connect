@@ -135,8 +135,31 @@ function ReportsPage() {
           )}
         </section>
         <section>
+          <h2 className="text-2xl">Resultado por origem</h2>
+          {byOrigin.length === 0 ? (
+            <EmptyState
+              title="Sem lançamentos pagos no período"
+              description="Registre receitas e despesas no Financeiro para ver este relatório."
+            />
+          ) : (
+            <Card className="mt-4 gap-3 p-5">
+              {byOrigin.map(([name, value]) => (
+                <div
+                  key={name}
+                  className="flex items-center justify-between gap-4 border-b border-border pb-2 text-sm last:border-0 last:pb-0"
+                >
+                  <span className="truncate">{name}</span>
+                  <span className={value >= 0 ? "text-success" : "text-destructive"}>
+                    {brl(value)}
+                  </span>
+                </div>
+              ))}
+            </Card>
+          )}
+        </section>
+        <section className="lg:col-span-2">
           <h2 className="text-2xl">Estoque</h2>
-          <Card className="mt-4 gap-4 p-5">
+          <Card className="mt-4 gap-4 p-5 sm:grid sm:grid-cols-3">
             <div>
               <p className="text-sm text-muted-foreground">Valor estimado pelo custo</p>
               <p className="font-display text-3xl">{brl(stockValue)}</p>
