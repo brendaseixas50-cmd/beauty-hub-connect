@@ -491,6 +491,7 @@ const publicSettingsSchema = z.object({
     mercadoPago: z.boolean(),
   }),
   publicStoreEnabled: z.boolean(),
+  completionPermission: z.enum(["management", "management_professional"]),
 });
 
 export const updatePublicSettings = createServerFn({ method: "POST" })
@@ -544,6 +545,7 @@ export const updatePublicSettings = createServerFn({ method: "POST" })
         deposit_value_cents: data.depositValueCents,
         payment_methods: data.paymentMethods,
         public_store_enabled: data.publicStoreEnabled,
+        completion_permission: data.completionPermission,
       })
       .eq("id", tenantId)
       .select("*")
