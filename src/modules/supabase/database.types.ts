@@ -14,6 +14,7 @@ export type Database = {
           created_at: string;
           ends_at: string;
           id: string;
+          manage_token: string;
           notes: string | null;
           price_cents: number;
           professional_id: string;
@@ -31,6 +32,7 @@ export type Database = {
           created_at?: string;
           ends_at: string;
           id?: string;
+          manage_token?: string;
           notes?: string | null;
           price_cents?: number;
           professional_id: string;
@@ -48,6 +50,7 @@ export type Database = {
           created_at?: string;
           ends_at?: string;
           id?: string;
+          manage_token?: string;
           notes?: string | null;
           price_cents?: number;
           professional_id?: string;
@@ -686,6 +689,54 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      professional_ledger_entries: {
+        Row: {
+          amount_cents: number;
+          appointment_id: string | null;
+          competence_date: string;
+          created_at: string;
+          created_by: string | null;
+          description: string;
+          financial_entry_id: string | null;
+          id: string;
+          kind: string;
+          notes: string | null;
+          professional_id: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          amount_cents: number;
+          appointment_id?: string | null;
+          competence_date?: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          financial_entry_id?: string | null;
+          id?: string;
+          kind: string;
+          notes?: string | null;
+          professional_id: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount_cents?: number;
+          appointment_id?: string | null;
+          competence_date?: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          financial_entry_id?: string | null;
+          id?: string;
+          kind?: string;
+          notes?: string | null;
+          professional_id?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       professionals: {
         Row: {
