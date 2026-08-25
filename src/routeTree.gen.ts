@@ -25,6 +25,7 @@ import { Route as PainelIndexRouteImport } from './routes/painel.index'
 import { Route as PainelAdminAcessosRouteImport } from './routes/painel.admin-acessos'
 import { Route as PainelAgendaRouteImport } from './routes/painel.agenda'
 import { Route as PainelClientesRouteImport } from './routes/painel.clientes'
+import { Route as PainelComissoesRouteImport } from './routes/painel.comissoes'
 import { Route as PainelConfiguracoesRouteImport } from './routes/painel.configuracoes'
 import { Route as PainelEmpresaRouteImport } from './routes/painel.empresa'
 import { Route as PainelEstoqueRouteImport } from './routes/painel.estoque'
@@ -121,6 +122,11 @@ const PainelAgendaRoute = PainelAgendaRouteImport.update({
 const PainelClientesRoute = PainelClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
+  getParentRoute: () => PainelRoute,
+} as any)
+const PainelComissoesRoute = PainelComissoesRouteImport.update({
+  id: '/comissoes',
+  path: '/comissoes',
   getParentRoute: () => PainelRoute,
 } as any)
 const PainelConfiguracoesRoute = PainelConfiguracoesRouteImport.update({
@@ -227,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/painel/admin-acessos': typeof PainelAdminAcessosRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
+  '/painel/comissoes': typeof PainelComissoesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
   '/painel/empresa': typeof PainelEmpresaRoute
   '/painel/estoque': typeof PainelEstoqueRoute
@@ -260,6 +267,7 @@ export interface FileRoutesByTo {
   '/painel/admin-acessos': typeof PainelAdminAcessosRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
+  '/painel/comissoes': typeof PainelComissoesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
   '/painel/empresa': typeof PainelEmpresaRoute
   '/painel/estoque': typeof PainelEstoqueRoute
@@ -296,6 +304,7 @@ export interface FileRoutesById {
   '/painel/admin-acessos': typeof PainelAdminAcessosRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
+  '/painel/comissoes': typeof PainelComissoesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
   '/painel/empresa': typeof PainelEmpresaRoute
   '/painel/estoque': typeof PainelEstoqueRoute
@@ -333,6 +342,7 @@ export interface FileRouteTypes {
     | '/painel/admin-acessos'
     | '/painel/agenda'
     | '/painel/clientes'
+    | '/painel/comissoes'
     | '/painel/configuracoes'
     | '/painel/empresa'
     | '/painel/estoque'
@@ -366,6 +376,7 @@ export interface FileRouteTypes {
     | '/painel/admin-acessos'
     | '/painel/agenda'
     | '/painel/clientes'
+    | '/painel/comissoes'
     | '/painel/configuracoes'
     | '/painel/empresa'
     | '/painel/estoque'
@@ -401,6 +412,7 @@ export interface FileRouteTypes {
     | '/painel/admin-acessos'
     | '/painel/agenda'
     | '/painel/clientes'
+    | '/painel/comissoes'
     | '/painel/configuracoes'
     | '/painel/empresa'
     | '/painel/estoque'
@@ -553,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PainelClientesRouteImport
       parentRoute: typeof PainelRoute
     }
+    '/painel/comissoes': {
+      id: '/painel/comissoes'
+      path: '/comissoes'
+      fullPath: '/painel/comissoes'
+      preLoaderRoute: typeof PainelComissoesRouteImport
+      parentRoute: typeof PainelRoute
+    }
     '/painel/configuracoes': {
       id: '/painel/configuracoes'
       path: '/configuracoes'
@@ -679,6 +698,7 @@ interface PainelRouteChildren {
   PainelAdminAcessosRoute: typeof PainelAdminAcessosRoute
   PainelAgendaRoute: typeof PainelAgendaRoute
   PainelClientesRoute: typeof PainelClientesRoute
+  PainelComissoesRoute: typeof PainelComissoesRoute
   PainelConfiguracoesRoute: typeof PainelConfiguracoesRoute
   PainelEmpresaRoute: typeof PainelEmpresaRoute
   PainelEstoqueRoute: typeof PainelEstoqueRoute
@@ -696,6 +716,7 @@ const PainelRouteChildren: PainelRouteChildren = {
   PainelAdminAcessosRoute: PainelAdminAcessosRoute,
   PainelAgendaRoute: PainelAgendaRoute,
   PainelClientesRoute: PainelClientesRoute,
+  PainelComissoesRoute: PainelComissoesRoute,
   PainelConfiguracoesRoute: PainelConfiguracoesRoute,
   PainelEmpresaRoute: PainelEmpresaRoute,
   PainelEstoqueRoute: PainelEstoqueRoute,
