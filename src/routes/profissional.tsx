@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, CalendarDays, Clock, LogOut, ShieldAlert } from "lucide-react";
+import { ArrowLeft, CalendarDays, Clock, HandCoins, LogOut, ShieldAlert } from "lucide-react";
 
 import { InstalarApp } from "@/components/instalar-app";
 import { Button } from "@/components/ui/button";
@@ -142,6 +142,11 @@ function ProfessionalLayout() {
         </div>
         <nav className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-3 pb-2">
           <TabLink to="/profissional" icon={<CalendarDays className="h-4 w-4" />} label="Agenda" />
+          <TabLink
+            to="/profissional/ganhos"
+            icon={<HandCoins className="h-4 w-4" />}
+            label="Meus ganhos"
+          />
           <TabLink
             to="/profissional/horarios"
             icon={<Clock className="h-4 w-4" />}

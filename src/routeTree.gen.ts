@@ -25,6 +25,7 @@ import { Route as PainelIndexRouteImport } from './routes/painel.index'
 import { Route as PainelAdminAcessosRouteImport } from './routes/painel.admin-acessos'
 import { Route as PainelAgendaRouteImport } from './routes/painel.agenda'
 import { Route as PainelClientesRouteImport } from './routes/painel.clientes'
+import { Route as PainelComissoesRouteImport } from './routes/painel.comissoes'
 import { Route as PainelConfiguracoesRouteImport } from './routes/painel.configuracoes'
 import { Route as PainelEmpresaRouteImport } from './routes/painel.empresa'
 import { Route as PainelEstoqueRouteImport } from './routes/painel.estoque'
@@ -37,6 +38,7 @@ import { Route as PainelRelatoriosRouteImport } from './routes/painel.relatorios
 import { Route as PainelServicosRouteImport } from './routes/painel.servicos'
 import { Route as ProfissionalIndexRouteImport } from './routes/profissional.index'
 import { Route as ProfissionalBloqueiosRouteImport } from './routes/profissional.bloqueios'
+import { Route as ProfissionalGanhosRouteImport } from './routes/profissional.ganhos'
 import { Route as ProfissionalHorariosRouteImport } from './routes/profissional.horarios'
 import { Route as ApiMercadoPagoWebhookRouteImport } from './routes/api.mercado-pago.webhook'
 import { Route as IntegracoesMercadoPagoRetornoRouteImport } from './routes/integracoes.mercado-pago.retorno'
@@ -122,6 +124,11 @@ const PainelClientesRoute = PainelClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => PainelRoute,
 } as any)
+const PainelComissoesRoute = PainelComissoesRouteImport.update({
+  id: '/comissoes',
+  path: '/comissoes',
+  getParentRoute: () => PainelRoute,
+} as any)
 const PainelConfiguracoesRoute = PainelConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
@@ -182,6 +189,11 @@ const ProfissionalBloqueiosRoute = ProfissionalBloqueiosRouteImport.update({
   path: '/bloqueios',
   getParentRoute: () => ProfissionalRoute,
 } as any)
+const ProfissionalGanhosRoute = ProfissionalGanhosRouteImport.update({
+  id: '/ganhos',
+  path: '/ganhos',
+  getParentRoute: () => ProfissionalRoute,
+} as any)
 const ProfissionalHorariosRoute = ProfissionalHorariosRouteImport.update({
   id: '/horarios',
   path: '/horarios',
@@ -221,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/painel/admin-acessos': typeof PainelAdminAcessosRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
+  '/painel/comissoes': typeof PainelComissoesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
   '/painel/empresa': typeof PainelEmpresaRoute
   '/painel/estoque': typeof PainelEstoqueRoute
@@ -232,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
   '/profissional/bloqueios': typeof ProfissionalBloqueiosRoute
+  '/profissional/ganhos': typeof ProfissionalGanhosRoute
   '/profissional/horarios': typeof ProfissionalHorariosRoute
   '/painel/': typeof PainelIndexRoute
   '/profissional/': typeof ProfissionalIndexRoute
@@ -253,6 +267,7 @@ export interface FileRoutesByTo {
   '/painel/admin-acessos': typeof PainelAdminAcessosRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
+  '/painel/comissoes': typeof PainelComissoesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
   '/painel/empresa': typeof PainelEmpresaRoute
   '/painel/estoque': typeof PainelEstoqueRoute
@@ -264,6 +279,7 @@ export interface FileRoutesByTo {
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
   '/profissional/bloqueios': typeof ProfissionalBloqueiosRoute
+  '/profissional/ganhos': typeof ProfissionalGanhosRoute
   '/profissional/horarios': typeof ProfissionalHorariosRoute
   '/painel': typeof PainelIndexRoute
   '/profissional': typeof ProfissionalIndexRoute
@@ -288,6 +304,7 @@ export interface FileRoutesById {
   '/painel/admin-acessos': typeof PainelAdminAcessosRoute
   '/painel/agenda': typeof PainelAgendaRoute
   '/painel/clientes': typeof PainelClientesRoute
+  '/painel/comissoes': typeof PainelComissoesRoute
   '/painel/configuracoes': typeof PainelConfiguracoesRoute
   '/painel/empresa': typeof PainelEmpresaRoute
   '/painel/estoque': typeof PainelEstoqueRoute
@@ -299,6 +316,7 @@ export interface FileRoutesById {
   '/painel/relatorios': typeof PainelRelatoriosRoute
   '/painel/servicos': typeof PainelServicosRoute
   '/profissional/bloqueios': typeof ProfissionalBloqueiosRoute
+  '/profissional/ganhos': typeof ProfissionalGanhosRoute
   '/profissional/horarios': typeof ProfissionalHorariosRoute
   '/painel/': typeof PainelIndexRoute
   '/profissional/': typeof ProfissionalIndexRoute
@@ -324,6 +342,7 @@ export interface FileRouteTypes {
     | '/painel/admin-acessos'
     | '/painel/agenda'
     | '/painel/clientes'
+    | '/painel/comissoes'
     | '/painel/configuracoes'
     | '/painel/empresa'
     | '/painel/estoque'
@@ -335,6 +354,7 @@ export interface FileRouteTypes {
     | '/painel/relatorios'
     | '/painel/servicos'
     | '/profissional/bloqueios'
+    | '/profissional/ganhos'
     | '/profissional/horarios'
     | '/painel/'
     | '/profissional/'
@@ -356,6 +376,7 @@ export interface FileRouteTypes {
     | '/painel/admin-acessos'
     | '/painel/agenda'
     | '/painel/clientes'
+    | '/painel/comissoes'
     | '/painel/configuracoes'
     | '/painel/empresa'
     | '/painel/estoque'
@@ -367,6 +388,7 @@ export interface FileRouteTypes {
     | '/painel/relatorios'
     | '/painel/servicos'
     | '/profissional/bloqueios'
+    | '/profissional/ganhos'
     | '/profissional/horarios'
     | '/painel'
     | '/profissional'
@@ -390,6 +412,7 @@ export interface FileRouteTypes {
     | '/painel/admin-acessos'
     | '/painel/agenda'
     | '/painel/clientes'
+    | '/painel/comissoes'
     | '/painel/configuracoes'
     | '/painel/empresa'
     | '/painel/estoque'
@@ -401,6 +424,7 @@ export interface FileRouteTypes {
     | '/painel/relatorios'
     | '/painel/servicos'
     | '/profissional/bloqueios'
+    | '/profissional/ganhos'
     | '/profissional/horarios'
     | '/painel/'
     | '/profissional/'
@@ -541,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PainelClientesRouteImport
       parentRoute: typeof PainelRoute
     }
+    '/painel/comissoes': {
+      id: '/painel/comissoes'
+      path: '/comissoes'
+      fullPath: '/painel/comissoes'
+      preLoaderRoute: typeof PainelComissoesRouteImport
+      parentRoute: typeof PainelRoute
+    }
     '/painel/configuracoes': {
       id: '/painel/configuracoes'
       path: '/configuracoes'
@@ -625,6 +656,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfissionalBloqueiosRouteImport
       parentRoute: typeof ProfissionalRoute
     }
+    '/profissional/ganhos': {
+      id: '/profissional/ganhos'
+      path: '/ganhos'
+      fullPath: '/profissional/ganhos'
+      preLoaderRoute: typeof ProfissionalGanhosRouteImport
+      parentRoute: typeof ProfissionalRoute
+    }
     '/profissional/horarios': {
       id: '/profissional/horarios'
       path: '/horarios'
@@ -660,6 +698,7 @@ interface PainelRouteChildren {
   PainelAdminAcessosRoute: typeof PainelAdminAcessosRoute
   PainelAgendaRoute: typeof PainelAgendaRoute
   PainelClientesRoute: typeof PainelClientesRoute
+  PainelComissoesRoute: typeof PainelComissoesRoute
   PainelConfiguracoesRoute: typeof PainelConfiguracoesRoute
   PainelEmpresaRoute: typeof PainelEmpresaRoute
   PainelEstoqueRoute: typeof PainelEstoqueRoute
@@ -677,6 +716,7 @@ const PainelRouteChildren: PainelRouteChildren = {
   PainelAdminAcessosRoute: PainelAdminAcessosRoute,
   PainelAgendaRoute: PainelAgendaRoute,
   PainelClientesRoute: PainelClientesRoute,
+  PainelComissoesRoute: PainelComissoesRoute,
   PainelConfiguracoesRoute: PainelConfiguracoesRoute,
   PainelEmpresaRoute: PainelEmpresaRoute,
   PainelEstoqueRoute: PainelEstoqueRoute,
@@ -695,12 +735,14 @@ const PainelRouteWithChildren =
 
 interface ProfissionalRouteChildren {
   ProfissionalBloqueiosRoute: typeof ProfissionalBloqueiosRoute
+  ProfissionalGanhosRoute: typeof ProfissionalGanhosRoute
   ProfissionalHorariosRoute: typeof ProfissionalHorariosRoute
   ProfissionalIndexRoute: typeof ProfissionalIndexRoute
 }
 
 const ProfissionalRouteChildren: ProfissionalRouteChildren = {
   ProfissionalBloqueiosRoute: ProfissionalBloqueiosRoute,
+  ProfissionalGanhosRoute: ProfissionalGanhosRoute,
   ProfissionalHorariosRoute: ProfissionalHorariosRoute,
   ProfissionalIndexRoute: ProfissionalIndexRoute,
 }

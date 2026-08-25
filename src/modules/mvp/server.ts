@@ -3,6 +3,14 @@ import { z } from "zod";
 
 import { resolveOperationalContext } from "@/modules/auth/session.server";
 import { resolveAddressWithGoogleMaps } from "@/modules/maps/google-maps.server";
+import { syncAppointmentFinancials } from "@/modules/finance/comissoes.server";
+import {
+  isLedgerKind,
+  summarizeLedger,
+  type LedgerEntry,
+  type LedgerSummary,
+} from "@/modules/finance/comissoes";
+
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 import type { Json } from "@/modules/supabase/database.types";
 import { parseWorkingHours, professionalSlotBlockReason } from "./agenda-disponibilidade";
@@ -1797,7 +1805,8 @@ export const getAgenda = createServerFn({ method: "GET" }).handler(async () => {
 export const saveAppointment = createServerFn({ method: "POST" })
   .validator(appointmentSchema)
   .handler(async ({ data }): Promise<Appointment> => {
-    const { supabase, tenantId } = await tenantContext();
+    const { supabase, tenantId, user } = await tenantContext();
+
     const { data: service, error: serviceError } = await supabase
       .from("services")
       .select("duration_minutes, price_cents, active")
@@ -1839,8 +1848,14 @@ export const saveAppointment = createServerFn({ method: "POST" })
       .select("*, clients(name, phone), services(name, duration_minutes), professionals(name)")
       .single();
     if (error || !saved) databaseError(error, "Não foi possível salvar o agendamento.");
+    await syncAppointmentFinancials({
+      tenantId,
+      appointmentId: saved.id,
+      createdBy: user.id,
+    });
     return saved as Appointment;
   });
+
 
 export const deleteAppointment = createServerFn({ method: "POST" })
   .validator(idSchema)
@@ -1968,6 +1983,124 @@ export const saveFinancialEntry = createServerFn({ method: "POST" })
     if (error || !saved) databaseError(error, "Não foi possível salvar o lançamento.");
     return saved;
   });
+
+type LedgerRow = {
+  id: string;
+  kind: string;
+  amount_cents: number;
+  competence_date: string;
+  description: string;
+  notes: string | null;
+  created_at: string;
+  appointment_id: string | null;
+  professional_id: string;
+  professionals: { name: string } | null;
+};
+
+function toLedgerEntry(row: LedgerRow): LedgerEntry {
+  return {
+    id: row.id,
+    kind: isLedgerKind(row.kind) ? row.kind : "adjustment",
+    amountCents: row.amount_cents,
+    competenceDate: row.competence_date,
+    description: row.description,
+    notes: row.notes,
+    createdAt: row.created_at,
+    appointmentId: row.appointment_id,
+    professionalId: row.professional_id,
+    professionalName: row.professionals?.name ?? null,
+  };
+}
+
+export type ProfessionalLedgerResult = {
+  entries: LedgerEntry[];
+  professionals: { id: string; name: string; commissionPercent: number; active: boolean }[];
+  summaryByProfessional: Record<string, LedgerSummary>;
+  total: LedgerSummary;
+  commissionTrigger: string;
+};
+
+/** Comissões, vales e pagamentos de toda a equipe — exclusivo da gestão. */
+export const listProfessionalLedger = createServerFn({ method: "GET" }).handler(
+  async (): Promise<ProfessionalLedgerResult> => {
+    const { supabase, tenantId, role } = await tenantContext();
+    requireManager(role);
+    const [entriesResult, professionalsResult, tenantResult] = await Promise.all([
+      supabase
+        .from("professional_ledger_entries")
+        .select(
+          "id, kind, amount_cents, competence_date, description, notes, created_at, appointment_id, professional_id, professionals(name)",
+        )
+        .eq("tenant_id", tenantId)
+        .order("competence_date", { ascending: false })
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("professionals")
+        .select("id, name, commission_percent, active")
+        .eq("tenant_id", tenantId)
+        .order("name"),
+      supabase.from("tenants").select("commission_trigger").eq("id", tenantId).maybeSingle(),
+    ]);
+    const error = entriesResult.error ?? professionalsResult.error;
+    if (error) databaseError(error, "Não foi possível carregar as comissões.");
+    const entries = ((entriesResult.data ?? []) as unknown as LedgerRow[]).map(toLedgerEntry);
+    const summaryByProfessional: Record<string, LedgerSummary> = {};
+    for (const professional of professionalsResult.data ?? []) {
+      summaryByProfessional[professional.id] = summarizeLedger(
+        entries.filter((entry) => entry.professionalId === professional.id),
+      );
+    }
+    return {
+      entries,
+      professionals: (professionalsResult.data ?? []).map((professional) => ({
+        id: professional.id,
+        name: professional.name,
+        commissionPercent: Number(professional.commission_percent ?? 0),
+        active: professional.active,
+      })),
+      summaryByProfessional,
+      total: summarizeLedger(entries),
+      commissionTrigger: tenantResult.data?.commission_trigger ?? "completed",
+    };
+  },
+);
+
+/**
+ * Registra vale, pagamento ou ajuste. Histórico imutável: não há edição nem
+ * exclusão — correções entram como ajuste (valor negativo quando necessário).
+ */
+export const saveProfessionalLedgerEntry = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      professionalId: z.string().uuid(),
+      kind: z.enum(["advance", "payment", "adjustment"]),
+      amountCents: z.number().int(),
+      competenceDate: z.string().date(),
+      description: z.string().trim().min(2).max(160),
+      notes: optionalText,
+    }),
+  )
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role, user } = await tenantContext();
+    requireManager(role);
+    if (data.amountCents === 0) throw new Error("Informe um valor diferente de zero.");
+    if (data.kind !== "adjustment" && data.amountCents < 0)
+      throw new Error("Vales e pagamentos devem ter valor positivo.");
+    const { error } = await supabase.from("professional_ledger_entries").insert({
+      tenant_id: tenantId,
+      professional_id: data.professionalId,
+      kind: data.kind,
+      amount_cents: data.amountCents,
+      competence_date: data.competenceDate,
+      description: data.description,
+      notes: data.notes,
+      created_by: user.id,
+    });
+    if (error) databaseError(error, "Não foi possível registrar a movimentação.");
+    return { success: true } as const;
+  });
+
+
 
 export const deleteFinancialEntry = createServerFn({ method: "POST" })
   .validator(idSchema)
