@@ -922,11 +922,17 @@
   color: #d8d8d8;
 }
 .tema-barbearia .luvi-chat-msg-luvi {
-  color: #ffffff;
+  background: #f4f4f4;
+  border-color: #d8d8d8;
+  color: #161616;
 }
 .tema-barbearia .luvi-chat-msg-luvi .text-muted-foreground {
-  color: #d8d8d8;
+  color: #4a4a4a;
 }
+.tema-barbearia .luvi-chat-icon {
+  color: #ffffff;
+}
+
 .tema-barbearia .luvi-chip {
   border-color: var(--luvi-gold);
   color: #161616;
