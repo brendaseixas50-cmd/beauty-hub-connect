@@ -1,6 +1,4 @@
-import type { createSupabaseServerClient } from "@/modules/supabase/server-client";
-
-type SupabaseServerClient = ReturnType<typeof createSupabaseServerClient>;
+import { createSupabaseAdminClient } from "@/modules/supabase/admin-client";
 
 /**
  * Sincroniza receita do serviço e comissão do profissional a partir do status
@@ -17,13 +15,16 @@ type SupabaseServerClient = ReturnType<typeof createSupabaseServerClient>;
  *   reconciliado na próxima alteração de status.
  */
 export async function syncAppointmentFinancials(input: {
-  supabase: SupabaseServerClient;
   tenantId: string;
   appointmentId: string;
   createdBy?: string | null;
 }): Promise<void> {
-  const { supabase, tenantId, appointmentId } = input;
+  const { tenantId, appointmentId } = input;
   try {
+    // Escrita sempre pelo cliente administrativo: o profissional não possui
+    // (e não deve possuir) permissão de escrita no financeiro da empresa.
+    // O escopo por empresa é aplicado explicitamente em cada consulta.
+    const supabase = createSupabaseAdminClient();
     const { data: appointment } = await supabase
       .from("appointments")
       .select("id, status, price_cents, starts_at, professional_id, client_id, services(name)")
