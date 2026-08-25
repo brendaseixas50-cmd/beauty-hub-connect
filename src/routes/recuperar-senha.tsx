@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { requestPasswordReset } from "@/modules/auth/server";
+import { useTemaProduto } from "@/components/tema-produto";
+import { useProdutoDaJornada } from "@/lib/produto-preferido";
 
 export const Route = createFileRoute("/recuperar-senha")({
   head: () => ({ meta: [{ title: "Recuperar senha — Lu IA Studio" }] }),
@@ -20,6 +22,7 @@ function RecuperarSenha() {
   const [enviado, setEnviado] = useState(false);
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
+  const tema = useTemaProduto(useProdutoDaJornada());
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,7 +41,7 @@ function RecuperarSenha() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-secondary/40 px-4 py-12">
+    <main className={`${tema} flex min-h-screen items-center justify-center bg-secondary/40 px-4 py-12`}>
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           {enviado ? (

@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { ArrowLeft, CalendarDays, Clock, HandCoins, LogOut, ShieldAlert } from "lucide-react";
 
 import { InstalarApp } from "@/components/instalar-app";
