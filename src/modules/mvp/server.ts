@@ -1839,8 +1839,15 @@ export const saveAppointment = createServerFn({ method: "POST" })
       .select("*, clients(name, phone), services(name, duration_minutes), professionals(name)")
       .single();
     if (error || !saved) databaseError(error, "Não foi possível salvar o agendamento.");
+    await syncAppointmentFinancials({
+      supabase,
+      tenantId,
+      appointmentId: saved.id,
+      createdBy: user.id,
+    });
     return saved as Appointment;
   });
+
 
 export const deleteAppointment = createServerFn({ method: "POST" })
   .validator(idSchema)
