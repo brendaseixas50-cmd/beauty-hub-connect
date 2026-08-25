@@ -1,6 +1,6 @@
 # Correção visual — botões ilegíveis e bolinha da Luvi (somente LuBarber)
 
-O LuBeauty não será alterado em nada. Todas as mudanças ficam restritas ao tema do LuBarber e ao avatar da Luvi no LuBarber.
+No LuBeauty muda apenas a imagem da Luvi (a robô nova na bolinha). As correções de cor/texto de botões ficam restritas ao LuBarber.
 
 ## O que está acontecendo
 
