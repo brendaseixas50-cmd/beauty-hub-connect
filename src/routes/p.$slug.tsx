@@ -374,20 +374,44 @@ function BookingWizard({
       ) : null}
       {step === 3 ? (
         <div className="grid gap-4">
-          <Input
-            type="date"
-            min={today}
-            max={maxDate}
-            value={date}
-            onChange={(event) => {
-              const value = event.currentTarget.value;
-              setDate(value);
-              void loadSlots(value);
-            }}
-          />
+          <div className="grid gap-2">
+            <Label htmlFor="booking-date">Data do atendimento</Label>
+            {/* O campo nunca aparece vazio: o input nativo fica transparente
+                sobre um rótulo sempre visível ("Selecionar uma data"). */}
+            <div className="relative">
+              <div className="flex min-h-12 items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium">
+                <CalendarDays className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+                <span className={date ? "flex-1" : "flex-1 opacity-70"}>
+                  {date ? formatDateLabel(date) : "Selecionar uma data"}
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+              </div>
+              <Input
+                id="booking-date"
+                type="date"
+                aria-label="Selecionar uma data"
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                min={today}
+                max={maxDate}
+                value={date}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  setDate(value);
+                  void loadSlots(value);
+                }}
+              />
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {pending ? (
-              <p className="col-span-full text-sm">Consultando horários…</p>
+              <p className="col-span-full rounded-xl bg-secondary p-4 text-sm">
+                Consultando horários disponíveis…
+              </p>
+            ) : error ? (
+              <p className="col-span-full rounded-xl bg-secondary p-4 text-sm">
+                Não foi possível carregar os horários agora. Escolha a data novamente em alguns
+                instantes.
+              </p>
             ) : slots.length ? (
               slots.map((slot) => (
                 <Button
