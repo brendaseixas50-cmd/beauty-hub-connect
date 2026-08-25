@@ -60,31 +60,60 @@ alter table public.financial_entries
   add column if not exists professional_id uuid,
   add column if not exists product_id uuid;
 
+-- FKs de coluna única com ON DELETE SET NULL (uma FK composta com tenant_id
+-- NOT NULL quebraria no momento da exclusão). O vínculo com a empresa é
+-- garantido pelo trigger de validação abaixo.
 do $$
 begin
-  if not exists (
-    select 1 from pg_constraint where conname = 'financial_entries_client_id_tenant_id_fkey'
-  ) then
+  if not exists (select 1 from pg_constraint where conname = 'financial_entries_client_id_fkey') then
     alter table public.financial_entries
-      add constraint financial_entries_client_id_tenant_id_fkey
-      foreign key (client_id, tenant_id) references public.clients (id, tenant_id) on delete set null;
+      add constraint financial_entries_client_id_fkey
+      foreign key (client_id) references public.clients (id) on delete set null;
   end if;
-  if not exists (
-    select 1 from pg_constraint where conname = 'financial_entries_professional_id_tenant_id_fkey'
-  ) then
+  if not exists (select 1 from pg_constraint where conname = 'financial_entries_professional_id_fkey') then
     alter table public.financial_entries
-      add constraint financial_entries_professional_id_tenant_id_fkey
-      foreign key (professional_id, tenant_id) references public.professionals (id, tenant_id) on delete set null;
+      add constraint financial_entries_professional_id_fkey
+      foreign key (professional_id) references public.professionals (id) on delete set null;
   end if;
-  if not exists (
-    select 1 from pg_constraint where conname = 'financial_entries_product_id_fkey'
-  ) then
+  if not exists (select 1 from pg_constraint where conname = 'financial_entries_product_id_fkey') then
     alter table public.financial_entries
       add constraint financial_entries_product_id_fkey
       foreign key (product_id) references public.products (id) on delete set null;
   end if;
 end;
 $$;
+
+-- Impede vínculo cruzado entre empresas (cliente/profissional/produto de outro tenant).
+create or replace function private.validate_financial_entry_tenant()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.client_id is not null and not exists (
+    select 1 from public.clients as c where c.id = new.client_id and c.tenant_id = new.tenant_id
+  ) then
+    raise exception 'Cliente inválido para esta empresa.';
+  end if;
+  if new.professional_id is not null and not exists (
+    select 1 from public.professionals as p where p.id = new.professional_id and p.tenant_id = new.tenant_id
+  ) then
+    raise exception 'Profissional inválido para esta empresa.';
+  end if;
+  if new.product_id is not null and not exists (
+    select 1 from public.products as pr where pr.id = new.product_id and pr.tenant_id = new.tenant_id
+  ) then
+    raise exception 'Produto inválido para esta empresa.';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists financial_entries_validate_tenant on public.financial_entries;
+create trigger financial_entries_validate_tenant
+before insert or update on public.financial_entries
+for each row execute function private.validate_financial_entry_tenant();
+
 
 -- Categorias/origens ficam livres (texto) para permitir categorias personalizadas.
 comment on column public.financial_entries.origin is
