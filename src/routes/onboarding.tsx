@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { readSession } from "@/modules/auth/session-query";
 import { centsFromInput } from "@/modules/mvp/domain";
 import {
+import { useTemaProduto } from "@/components/tema-produto";
   completeOnboarding,
   getOnboardingData,
   type ServiceSuggestion,
@@ -159,10 +160,9 @@ function OnboardingPage() {
   }
 
   const tipo = data.productType === "barber" ? "barbearia" : "beleza";
+  const tema = useTemaProduto(data.productType === "barber" ? "barber" : "beauty");
   return (
-    <main
-      className={`${tipo === "barbearia" ? "tema-barbearia" : "tema-beleza"} min-h-screen bg-secondary/30 px-4 py-8`}
-    >
+    <main className={`${tema} min-h-screen bg-secondary/30 px-4 py-8`}>
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between gap-4">
           <MarcaProduto tipo={tipo} />

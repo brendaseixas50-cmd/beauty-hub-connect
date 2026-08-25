@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { startGoogleSignIn } from "@/modules/auth/google-sign-in";
 import { login, switchCompany } from "@/modules/auth/server";
 import { cacheSession, clearSessionCache, peekSession } from "@/modules/auth/session-query";
+import { useTemaProduto } from "@/components/tema-produto";
 
 const safeRedirect = z
   .string()
@@ -91,9 +92,11 @@ function LoginPage() {
     }
   }
 
+  const tema = useTemaProduto(tipo === "barbearia" ? "barber" : "beauty");
+
   return (
     <main
-      className={`${tipo === "barbearia" ? "tema-barbearia" : "tema-beleza"} flex min-h-screen items-center justify-center bg-background px-4 py-12`}
+      className={`${tema} flex min-h-screen items-center justify-center bg-background px-4 py-12`}
     >
       <Card className="w-full max-w-md border-border/70 shadow-xl">
         <CardHeader className="space-y-4 text-center">

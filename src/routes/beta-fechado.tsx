@@ -11,6 +11,7 @@ import { logout } from "@/modules/auth/server";
 import { clearSessionCache, readSession } from "@/modules/auth/session-query";
 import { requestBetaAccess } from "@/modules/beta-access/server";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTemaProduto } from "@/components/tema-produto";
 
 export const Route = createFileRoute("/beta-fechado")({
   validateSearch: z.object({
@@ -65,10 +66,10 @@ function ClosedBetaPage() {
             nota: "Seus dados continuam preservados.",
           };
 
+  const tema = useTemaProduto(isBarber ? "barber" : "beauty");
+
   return (
-    <main
-      className={`${isBarber ? "tema-barbearia" : "tema-beleza"} grid min-h-screen place-items-center bg-background px-4 py-10`}
-    >
+    <main className={`${tema} grid min-h-screen place-items-center bg-background px-4 py-10`}>
       <Card className="w-full max-w-xl items-center gap-6 p-6 text-center shadow-xl sm:p-10">
         <MarcaProduto tipo={tipo} />
         <div className="grid h-16 w-16 place-items-center rounded-full bg-secondary text-primary">
