@@ -1797,7 +1797,8 @@ export const getAgenda = createServerFn({ method: "GET" }).handler(async () => {
 export const saveAppointment = createServerFn({ method: "POST" })
   .validator(appointmentSchema)
   .handler(async ({ data }): Promise<Appointment> => {
-    const { supabase, tenantId } = await tenantContext();
+    const { supabase, tenantId, user } = await tenantContext();
+
     const { data: service, error: serviceError } = await supabase
       .from("services")
       .select("duration_minutes, price_cents, active")
