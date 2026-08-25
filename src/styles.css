@@ -720,29 +720,30 @@
   background: var(--luvi-surface);
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-card) 70%, transparent);
 }
-/* Enquadramento fechado no rosto para a Luvi ficar nítida mesmo pequena. */
+/* Enquadramento centrado no rosto da robô: cabeça inteira visível mesmo pequena. */
 .luvi-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 16%;
+  object-position: 50% 44%;
   image-rendering: auto;
-  transform: scale(1.35);
-  transform-origin: 50% 20%;
+  transform: scale(1.02);
+  transform-origin: 50% 44%;
 }
 
 .luvi-avatar-small {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
 }
 .luvi-avatar-medium {
-  width: 3rem;
-  height: 3rem;
-}
-.luvi-avatar-floating {
   width: 3.25rem;
   height: 3.25rem;
 }
+.luvi-avatar-floating {
+  width: 3.75rem;
+  height: 3.75rem;
+}
+
 .luvi-status-star {
   position: absolute;
   right: -0.2rem;
