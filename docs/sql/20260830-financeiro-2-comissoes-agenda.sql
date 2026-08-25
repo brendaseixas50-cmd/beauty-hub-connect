@@ -151,8 +151,8 @@ create table if not exists public.professional_ledger_entries (
   updated_at timestamptz not null default now(),
   constraint professional_ledger_professional_tenant_fk
     foreign key (professional_id, tenant_id) references public.professionals (id, tenant_id) on delete cascade,
-  constraint professional_ledger_appointment_tenant_fk
-    foreign key (appointment_id, tenant_id) references public.appointments (id, tenant_id) on delete set null
+  constraint professional_ledger_appointment_fk
+    foreign key (appointment_id) references public.appointments (id) on delete set null
 );
 
 grant select, insert, update on public.professional_ledger_entries to authenticated;
@@ -182,6 +182,12 @@ begin
   end if;
   if new.amount_cents = 0 then
     raise exception 'O valor da movimentação não pode ser zero.';
+  end if;
+  if new.appointment_id is not null and not exists (
+    select 1 from public.appointments as a
+    where a.id = new.appointment_id and a.tenant_id = new.tenant_id
+  ) then
+    raise exception 'Agendamento inválido para esta empresa.';
   end if;
   new.updated_at := now();
   return new;
