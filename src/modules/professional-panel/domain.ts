@@ -50,6 +50,8 @@ export type ProfessionalPanelData = {
   blocks: ProfessionalBlock[];
   services: { id: string; name: string; durationMinutes: number; priceCents: number }[];
   clients: { id: string; name: string; phone: string | null }[];
+  /** Empresa autorizou o profissional a concluir os próprios atendimentos. */
+  canCompleteAppointments: boolean;
 };
 
 export type ProfessionalPanelResult =
