@@ -3,6 +3,14 @@ import { z } from "zod";
 
 import { resolveOperationalContext } from "@/modules/auth/session.server";
 import { resolveAddressWithGoogleMaps } from "@/modules/maps/google-maps.server";
+import { syncAppointmentFinancials } from "@/modules/finance/comissoes.server";
+import {
+  isLedgerKind,
+  summarizeLedger,
+  type LedgerEntry,
+  type LedgerSummary,
+} from "@/modules/finance/comissoes";
+
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 import type { Json } from "@/modules/supabase/database.types";
 import { parseWorkingHours, professionalSlotBlockReason } from "./agenda-disponibilidade";
