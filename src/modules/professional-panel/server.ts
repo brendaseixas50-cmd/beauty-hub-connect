@@ -2,6 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { parseWorkingHours } from "@/modules/mvp/agenda-disponibilidade";
+import { syncAppointmentFinancials } from "@/modules/finance/comissoes.server";
+import {
+  isLedgerKind,
+  summarizeLedger,
+  type LedgerEntry,
+  type LedgerSummary,
+} from "@/modules/finance/comissoes";
+
 import { professionalAvailabilityIssue } from "@/modules/mvp/server";
 import { createSupabaseServerClient } from "@/modules/supabase/server-client";
 import type { Json } from "@/modules/supabase/database.types";
