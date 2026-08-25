@@ -6,7 +6,7 @@ import logoBarber from "@/assets/brand/lubarber-logo-round.webp";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { marcasProduto, type TipoNegocio } from "@/products/catalog";
-import { useTemaProduto } from "@/components/tema-produto";
+import { classeTema, useTemaProduto } from "@/components/tema-produto";
 
 export const Route = createFileRoute("/")({
   head: () => ({
