@@ -164,6 +164,11 @@ export type Database = {
           amount_cents: number;
           appointment_id: string | null;
           category: string | null;
+          client_id: string | null;
+          competence_date: string;
+          origin: string;
+          product_id: string | null;
+          professional_id: string | null;
           created_at: string;
           description: string;
           due_date: string;
@@ -180,6 +185,11 @@ export type Database = {
           amount_cents: number;
           appointment_id?: string | null;
           category?: string | null;
+          client_id?: string | null;
+          competence_date?: string;
+          origin?: string;
+          product_id?: string | null;
+          professional_id?: string | null;
           created_at?: string;
           description: string;
           due_date?: string;
@@ -196,6 +206,11 @@ export type Database = {
           amount_cents?: number;
           appointment_id?: string | null;
           category?: string | null;
+          client_id?: string | null;
+          competence_date?: string;
+          origin?: string;
+          product_id?: string | null;
+          professional_id?: string | null;
           created_at?: string;
           description?: string;
           due_date?: string;
@@ -1320,6 +1335,10 @@ export type Database = {
           postal_code: string | null;
           primary_color: string;
           product_type: string;
+          booking_horizon_days: number;
+          reschedule_deadline_enabled: boolean;
+          reschedule_deadline_hours: number;
+          commission_trigger: string;
           public_information: string | null;
           public_store_enabled: boolean;
           show_public_location: boolean;
@@ -1379,6 +1398,10 @@ export type Database = {
           postal_code?: string | null;
           primary_color?: string;
           product_type?: string;
+          booking_horizon_days?: number;
+          reschedule_deadline_enabled?: boolean;
+          reschedule_deadline_hours?: number;
+          commission_trigger?: string;
           public_information?: string | null;
           public_store_enabled?: boolean;
           show_public_location?: boolean;
@@ -1438,6 +1461,10 @@ export type Database = {
           postal_code?: string | null;
           primary_color?: string;
           product_type?: string;
+          booking_horizon_days?: number;
+          reschedule_deadline_enabled?: boolean;
+          reschedule_deadline_hours?: number;
+          commission_trigger?: string;
           public_information?: string | null;
           public_store_enabled?: boolean;
           show_public_location?: boolean;
