@@ -307,7 +307,16 @@ const companySchema = z.object({
       ]),
     })
     .optional(),
+  bookingRules: z
+    .object({
+      bookingHorizonDays: z.number().int().min(1).max(365),
+      rescheduleDeadlineEnabled: z.boolean(),
+      rescheduleDeadlineHours: z.number().int().min(0).max(720),
+      commissionTrigger: z.enum(["completed", "paid"]),
+    })
+    .optional(),
 });
+
 
 export const getCompany = createServerFn({ method: "GET" }).handler(async (): Promise<Company> => {
   const { supabase, tenantId } = await tenantContext();
