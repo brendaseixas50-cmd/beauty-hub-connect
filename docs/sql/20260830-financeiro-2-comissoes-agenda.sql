@@ -218,4 +218,27 @@ comment on column public.appointments.manage_token is
 -- Nenhuma política nova para anon: o acesso público por token acontece apenas
 -- por funções security definer do backend, validando o token linha a linha.
 
+-- ---------------------------------------------------------------------------
+-- 5. Endurecimento: financeiro da empresa é exclusivo da gestão.
+-- ---------------------------------------------------------------------------
+-- Política RESTRITIVA: combina em AND com as políticas já existentes, portanto
+-- só pode restringir — nunca ampliar — o acesso atual. Garante que um
+-- profissional nunca leia o financeiro geral da empresa nem o de um colega.
+-- O profissional continua vendo os próprios ganhos por
+-- public.professional_ledger_entries.
+drop policy if exists "financial_entries_managers_only" on public.financial_entries;
+create policy "financial_entries_managers_only"
+on public.financial_entries
+as restrictive
+for all
+to authenticated
+using (
+  tenant_id = private.current_tenant_id()
+  and (select private.current_role()) in ('owner', 'admin')
+)
+with check (
+  tenant_id = private.current_tenant_id()
+  and (select private.current_role()) in ('owner', 'admin')
+);
+
 commit;
