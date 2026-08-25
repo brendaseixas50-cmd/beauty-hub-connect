@@ -154,9 +154,9 @@ function CommissionsPage() {
             const linhas = entries.filter((entry) => entry.professionalId === item.id);
             return (
               <Card key={item.id} className="gap-3 p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold">{item.name}</p>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{item.name}</p>
                     <p className="text-xs text-muted-foreground">
                       Comissão de {item.commissionPercent.toLocaleString("pt-BR")}%
                       {item.active ? "" : " — acesso desativado"}
