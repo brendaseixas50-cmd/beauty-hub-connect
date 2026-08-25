@@ -96,9 +96,9 @@ function ProfessionalHours() {
             const day = days[weekday]!;
             return (
               <Card key={label} className="gap-3 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-medium">{label}</p>
-                  <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                  <p className="min-w-0 truncate font-medium">{label}</p>
+                  <label className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
                     Atendo neste dia
                     <Switch
                       checked={!day.dayOff}
