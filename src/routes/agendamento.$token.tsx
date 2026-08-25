@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { CalendarClock, CheckCircle2, ShieldCheck, XCircle } from "lucide-react";
 import { useState } from "react";
@@ -42,7 +42,7 @@ export const Route = createFileRoute("/agendamento/$token")({
 function ManagePage() {
   const initial = Route.useLoaderData();
   const { token } = Route.useParams();
-  const router = Route.useRouter();
+  const router = useRouter();
   const cancelFn = useServerFn(cancelManagedBooking);
   const rescheduleFn = useServerFn(rescheduleManagedBooking);
   const availabilityFn = useServerFn(getPublicAvailability);
@@ -80,8 +80,8 @@ function ManagePage() {
         data: {
           slug: booking.company.slug,
           date: value,
-          serviceIds: [],
-          professionalId: null,
+          serviceIds: [booking.serviceId],
+          professionalId: booking.professionalId,
         },
       });
       setSlots(response.slots);
@@ -96,7 +96,10 @@ function ManagePage() {
     setPending(true);
     const result = await cancelFn({ data: { token } });
     setPending(false);
-    if (!result.ok) return toast.error(result.error ?? "Não foi possível cancelar.");
+    if (!result.ok) {
+      toast.error(result.error ?? "Não foi possível cancelar.");
+      return;
+    }
     toast.success("Agendamento cancelado.");
     await router.invalidate();
   }
@@ -105,7 +108,10 @@ function ManagePage() {
     setPending(true);
     const result = await rescheduleFn({ data: { token, startsAt } });
     setPending(false);
-    if (!result.ok) return toast.error(result.error ?? "Não foi possível remarcar.");
+    if (!result.ok) {
+      toast.error(result.error ?? "Não foi possível remarcar.");
+      return;
+    }
     toast.success("Agendamento remarcado.");
     setMode("view");
     await router.invalidate();

@@ -19,7 +19,9 @@ export type ManagedBooking = {
   endsAt: string;
   priceCents: number;
   clientName: string | null;
+  professionalId: string;
   professionalName: string | null;
+  serviceId: string;
   serviceName: string | null;
   company: {
     slug: string;
@@ -125,7 +127,9 @@ export const getManagedBooking = createServerFn({ method: "GET" })
       endsAt: appointment.ends_at,
       priceCents: appointment.price_cents ?? 0,
       clientName: loaded.clientName,
+      professionalId: appointment.professional_id,
       professionalName: loaded.professionalName,
+      serviceId: appointment.service_id,
       serviceName: loaded.serviceName,
       company: {
         slug: tenant.slug,
