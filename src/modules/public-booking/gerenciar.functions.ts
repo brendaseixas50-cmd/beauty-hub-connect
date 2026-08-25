@@ -9,7 +9,7 @@ import { z } from "zod";
  * Todas as leituras/escritas usam o cliente administrativo porque o visitante
  * não tem sessão — por isso cada consulta é sempre filtrada pelo token.
  */
-const tokenSchema = z.object({ token: z.string().trim().min(20).max(120) });
+const tokenSchema = z.object({ token: z.string().trim().min(1).max(200) });
 
 export type ManagedBooking = {
   ok: true;
