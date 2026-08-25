@@ -20,6 +20,8 @@ import {
   Users,
   UserCog,
   Wallet,
+  HandCoins,
+
   LogOut,
   Building2,
   BarChart3,
