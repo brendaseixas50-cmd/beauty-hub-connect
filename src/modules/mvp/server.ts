@@ -1855,32 +1855,85 @@ export const deleteAppointment = createServerFn({ method: "POST" })
     return { success: true } as const;
   });
 
+const optionalUuid = z
+  .string()
+  .trim()
+  .max(64)
+  .optional()
+  .transform((value) => (value ? value : null))
+  .refine((value) => value === null || /^[0-9a-fA-F-]{36}$/.test(value), "Vínculo inválido.");
+
 const financeSchema = z.object({
   id: z.string().uuid().optional(),
   entryType: z.enum(["income", "expense"]),
+  origin: z.string().trim().min(1).max(40).default("other"),
   description: z.string().trim().min(2).max(160),
   category: optionalShortText,
   amountCents: z.number().int().positive(),
   dueDate: z.string().date(),
+  competenceDate: z.string().date().optional(),
   status: z.enum(["pending", "paid", "cancelled"]),
   paymentMethod: optionalShortText,
+  clientId: optionalUuid,
+  professionalId: optionalUuid,
+  productId: optionalUuid,
   notes: optionalText,
 });
 
+/** Lançamento com os vínculos exibidos na tela (cliente, profissional, produto). */
+export type FinancialEntryWithLinks = FinancialEntry & {
+  clients: { name: string } | null;
+  professionals: { name: string } | null;
+  products: { name: string } | null;
+};
+
 export const listFinancialEntries = createServerFn({ method: "GET" }).handler(
-  async (): Promise<FinancialEntry[]> => {
+  async (): Promise<FinancialEntryWithLinks[]> => {
     const { supabase, tenantId, role } = await tenantContext();
     if (role === "professional" || role === "receptionist")
       throw new Error("Acesso financeiro não autorizado.");
     const { data, error } = await supabase
       .from("financial_entries")
-      .select("*")
+      .select("*, clients(name), professionals(name), products(name)")
       .eq("tenant_id", tenantId)
+      .order("competence_date", { ascending: false })
       .order("due_date", { ascending: false });
     if (error) databaseError(error, "Não foi possível carregar o financeiro.");
-    return data;
+    return data as unknown as FinancialEntryWithLinks[];
   },
 );
+
+/** Opções de vínculo do lançamento — apenas registros da própria empresa. */
+export const listFinanceLinkOptions = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabase, tenantId, role } = await tenantContext();
+  if (role === "professional" || role === "receptionist")
+    throw new Error("Acesso financeiro não autorizado.");
+  const [clients, professionals, products] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("id, name")
+      .eq("tenant_id", tenantId)
+      .eq("active", true)
+      .order("name"),
+    supabase
+      .from("professionals")
+      .select("id, name")
+      .eq("tenant_id", tenantId)
+      .eq("active", true)
+      .order("name"),
+    supabase
+      .from("products")
+      .select("id, name")
+      .eq("tenant_id", tenantId)
+      .eq("active", true)
+      .order("name"),
+  ]);
+  return {
+    clients: clients.data ?? [],
+    professionals: professionals.data ?? [],
+    products: products.data ?? [],
+  };
+});
 
 export const saveFinancialEntry = createServerFn({ method: "POST" })
   .validator(financeSchema)
@@ -1890,13 +1943,18 @@ export const saveFinancialEntry = createServerFn({ method: "POST" })
     const values = {
       tenant_id: tenantId,
       entry_type: data.entryType,
+      origin: data.origin,
       description: data.description,
       category: data.category,
       amount_cents: data.amountCents,
       due_date: data.dueDate,
+      competence_date: data.competenceDate ?? data.dueDate,
       status: data.status,
       paid_at: data.status === "paid" ? new Date().toISOString() : null,
       payment_method: data.paymentMethod,
+      client_id: data.clientId,
+      professional_id: data.professionalId,
+      product_id: data.productId,
       notes: data.notes,
     };
     const query = data.id
@@ -2020,7 +2078,9 @@ export const getReports = createServerFn({ method: "GET" }).handler(async () => 
       .gte("starts_at", from.toISOString()),
     supabase
       .from("financial_entries")
-      .select("entry_type, amount_cents, due_date, status")
+      .select(
+        "entry_type, amount_cents, due_date, competence_date, status, origin, category, professionals(name)",
+      )
       .eq("tenant_id", tenantId)
       .gte("due_date", from.toISOString().slice(0, 10)),
     supabase

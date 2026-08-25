@@ -16,6 +16,21 @@ export const Route = createFileRoute("/painel/relatorios")({
   component: ReportsPage,
 });
 
+/** Rótulos das origens financeiras usadas no Financeiro 2.0. */
+const originLabels: Record<string, string> = {
+  service: "Serviços",
+  product: "Produtos",
+  commission: "Comissões",
+  rent: "Aluguel / estrutura",
+  supply: "Insumos",
+  tax: "Impostos e taxas",
+  other: "Outros",
+};
+function originLabel(origin: string) {
+  return originLabels[origin] ?? "Outros";
+}
+
+
 function ReportsPage() {
   const data = Route.useLoaderData();
   const months = useMemo(() => {
@@ -29,13 +44,25 @@ function ReportsPage() {
   }, []);
   const [month, setMonth] = useState(months[0]!);
   const appointments = data.appointments.filter((item) => item.starts_at.startsWith(month));
-  const finances = data.finances.filter((item) => item.due_date.startsWith(month));
-  const income = finances
-    .filter((item) => item.status === "paid" && item.entry_type === "income")
+  // Relatório por competência (mês de referência), com fallback no vencimento.
+  const finances = data.finances.filter((item) =>
+    (item.competence_date ?? item.due_date).startsWith(month),
+  );
+  const paid = finances.filter((item) => item.status === "paid");
+  const income = paid
+    .filter((item) => item.entry_type === "income")
     .reduce((total, item) => total + item.amount_cents, 0);
-  const expense = finances
-    .filter((item) => item.status === "paid" && item.entry_type === "expense")
+  const expense = paid
+    .filter((item) => item.entry_type === "expense")
     .reduce((total, item) => total + item.amount_cents, 0);
+  const byOrigin = Object.entries(
+    paid.reduce<Record<string, number>>((result, item) => {
+      const key = originLabel(item.origin ?? "other");
+      result[key] =
+        (result[key] ?? 0) + (item.entry_type === "income" ? item.amount_cents : -item.amount_cents);
+      return result;
+    }, {}),
+  ).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
   const completed = appointments.filter((item) => item.status === "completed");
   const serviceCounts = completed.reduce<Record<string, number>>((result, item) => {
     const name = item.services?.name ?? "Serviço";
@@ -123,8 +150,31 @@ function ReportsPage() {
           )}
         </section>
         <section>
+          <h2 className="text-2xl">Resultado por origem</h2>
+          {byOrigin.length === 0 ? (
+            <EmptyState
+              title="Sem lançamentos pagos no período"
+              description="Registre receitas e despesas no Financeiro para ver este relatório."
+            />
+          ) : (
+            <Card className="mt-4 gap-3 p-5">
+              {byOrigin.map(([name, value]) => (
+                <div
+                  key={name}
+                  className="flex items-center justify-between gap-4 border-b border-border pb-2 text-sm last:border-0 last:pb-0"
+                >
+                  <span className="truncate">{name}</span>
+                  <span className={value >= 0 ? "text-success" : "text-destructive"}>
+                    {brl(value)}
+                  </span>
+                </div>
+              ))}
+            </Card>
+          )}
+        </section>
+        <section className="lg:col-span-2">
           <h2 className="text-2xl">Estoque</h2>
-          <Card className="mt-4 gap-4 p-5">
+          <Card className="mt-4 gap-4 p-5 sm:grid sm:grid-cols-3">
             <div>
               <p className="text-sm text-muted-foreground">Valor estimado pelo custo</p>
               <p className="font-display text-3xl">{brl(stockValue)}</p>

@@ -6,7 +6,7 @@ import logoBarber from "@/assets/brand/lubarber-logo-round.webp";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { marcasProduto, type TipoNegocio } from "@/products/catalog";
-import { useTemaProduto } from "@/components/tema-produto";
+import { classeTema, useTemaProduto } from "@/components/tema-produto";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -46,12 +46,13 @@ const features = [
 ];
 
 function Home() {
+  const temaPortal = useTemaProduto("portal");
   return (
-    <main className="min-h-screen bg-background">
-      <header className="border-b bg-card/80 px-5 py-4 backdrop-blur">
+    <main className={`${temaPortal} min-h-screen bg-background text-foreground`}>
+      <header className="border-b border-border bg-card px-5 py-4">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <div>
-            <p className="font-display text-xl">Lu IA Studio</p>
+            <p className="font-display text-xl font-semibold text-card-foreground">Lu IA Studio</p>
             <p className="text-xs text-muted-foreground">Soluções para profissionais</p>
           </div>
         </div>
@@ -99,7 +100,9 @@ function Home() {
 function ProductCard({ type }: { type: TipoNegocio }) {
   const brand = marcasProduto[type];
   const productType = type === "barbearia" ? "barber" : "beauty";
-  const theme = useTemaProduto(type === "barbearia" ? "barber" : "beauty");
+  // Cada card mantém a identidade do seu produto SEM alterar o tema da raiz do
+  // documento — o portal segue neutro e não sofre vazamento visual.
+  const theme = classeTema(productType);
 
   return (
     <article

@@ -14,6 +14,7 @@ export type Database = {
           created_at: string;
           ends_at: string;
           id: string;
+          manage_token: string;
           notes: string | null;
           price_cents: number;
           professional_id: string;
@@ -31,6 +32,7 @@ export type Database = {
           created_at?: string;
           ends_at: string;
           id?: string;
+          manage_token?: string;
           notes?: string | null;
           price_cents?: number;
           professional_id: string;
@@ -48,6 +50,7 @@ export type Database = {
           created_at?: string;
           ends_at?: string;
           id?: string;
+          manage_token?: string;
           notes?: string | null;
           price_cents?: number;
           professional_id?: string;
@@ -164,6 +167,11 @@ export type Database = {
           amount_cents: number;
           appointment_id: string | null;
           category: string | null;
+          client_id: string | null;
+          competence_date: string;
+          origin: string;
+          product_id: string | null;
+          professional_id: string | null;
           created_at: string;
           description: string;
           due_date: string;
@@ -180,6 +188,11 @@ export type Database = {
           amount_cents: number;
           appointment_id?: string | null;
           category?: string | null;
+          client_id?: string | null;
+          competence_date?: string;
+          origin?: string;
+          product_id?: string | null;
+          professional_id?: string | null;
           created_at?: string;
           description: string;
           due_date?: string;
@@ -196,6 +209,11 @@ export type Database = {
           amount_cents?: number;
           appointment_id?: string | null;
           category?: string | null;
+          client_id?: string | null;
+          competence_date?: string;
+          origin?: string;
+          product_id?: string | null;
+          professional_id?: string | null;
           created_at?: string;
           description?: string;
           due_date?: string;
@@ -671,6 +689,54 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      professional_ledger_entries: {
+        Row: {
+          amount_cents: number;
+          appointment_id: string | null;
+          competence_date: string;
+          created_at: string;
+          created_by: string | null;
+          description: string;
+          financial_entry_id: string | null;
+          id: string;
+          kind: string;
+          notes: string | null;
+          professional_id: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          amount_cents: number;
+          appointment_id?: string | null;
+          competence_date?: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          financial_entry_id?: string | null;
+          id?: string;
+          kind: string;
+          notes?: string | null;
+          professional_id: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount_cents?: number;
+          appointment_id?: string | null;
+          competence_date?: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          financial_entry_id?: string | null;
+          id?: string;
+          kind?: string;
+          notes?: string | null;
+          professional_id?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       professionals: {
         Row: {
@@ -1320,6 +1386,10 @@ export type Database = {
           postal_code: string | null;
           primary_color: string;
           product_type: string;
+          booking_horizon_days: number;
+          reschedule_deadline_enabled: boolean;
+          reschedule_deadline_hours: number;
+          commission_trigger: string;
           public_information: string | null;
           public_store_enabled: boolean;
           show_public_location: boolean;
@@ -1379,6 +1449,10 @@ export type Database = {
           postal_code?: string | null;
           primary_color?: string;
           product_type?: string;
+          booking_horizon_days?: number;
+          reschedule_deadline_enabled?: boolean;
+          reschedule_deadline_hours?: number;
+          commission_trigger?: string;
           public_information?: string | null;
           public_store_enabled?: boolean;
           show_public_location?: boolean;
@@ -1438,6 +1512,10 @@ export type Database = {
           postal_code?: string | null;
           primary_color?: string;
           product_type?: string;
+          booking_horizon_days?: number;
+          reschedule_deadline_enabled?: boolean;
+          reschedule_deadline_hours?: number;
+          commission_trigger?: string;
           public_information?: string | null;
           public_store_enabled?: boolean;
           show_public_location?: boolean;
