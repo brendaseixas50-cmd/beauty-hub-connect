@@ -203,11 +203,11 @@ alter table public.appointments
   add column if not exists manage_token text;
 
 update public.appointments
-set manage_token = encode(extensions.gen_random_bytes(24), 'hex')
+set manage_token = replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '')
 where manage_token is null;
 
 alter table public.appointments
-  alter column manage_token set default encode(extensions.gen_random_bytes(24), 'hex');
+  alter column manage_token set default replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
 
 create unique index if not exists appointments_manage_token_idx
   on public.appointments (manage_token);
