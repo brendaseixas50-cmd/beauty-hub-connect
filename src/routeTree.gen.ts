@@ -18,6 +18,7 @@ import { Route as PainelRouteImport } from './routes/painel'
 import { Route as ProfissionalRouteImport } from './routes/profissional'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
+import { Route as AgendamentoTokenRouteImport } from './routes/agendamento.$token'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AuthGoogleRouteImport } from './routes/auth.google'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
@@ -87,6 +88,11 @@ const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
 const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
   id: '/redefinir-senha',
   path: '/redefinir-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgendamentoTokenRoute = AgendamentoTokenRouteImport.update({
+  id: '/agendamento/$token',
+  path: '/agendamento/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthConfirmRoute = AuthConfirmRouteImport.update({
@@ -227,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/profissional': typeof ProfissionalRouteWithChildren
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/agendamento/$token': typeof AgendamentoTokenRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/google': typeof AuthGoogleRoute
   '/p/$slug': typeof PSlugRoute
@@ -261,6 +268,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/agendamento/$token': typeof AgendamentoTokenRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/google': typeof AuthGoogleRoute
   '/p/$slug': typeof PSlugRoute
@@ -298,6 +306,7 @@ export interface FileRoutesById {
   '/profissional': typeof ProfissionalRouteWithChildren
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/agendamento/$token': typeof AgendamentoTokenRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/google': typeof AuthGoogleRoute
   '/p/$slug': typeof PSlugRoute
@@ -336,6 +345,7 @@ export interface FileRouteTypes {
     | '/profissional'
     | '/recuperar-senha'
     | '/redefinir-senha'
+    | '/agendamento/$token'
     | '/auth/confirm'
     | '/auth/google'
     | '/p/$slug'
@@ -370,6 +380,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/recuperar-senha'
     | '/redefinir-senha'
+    | '/agendamento/$token'
     | '/auth/confirm'
     | '/auth/google'
     | '/p/$slug'
@@ -406,6 +417,7 @@ export interface FileRouteTypes {
     | '/profissional'
     | '/recuperar-senha'
     | '/redefinir-senha'
+    | '/agendamento/$token'
     | '/auth/confirm'
     | '/auth/google'
     | '/p/$slug'
@@ -443,6 +455,7 @@ export interface RootRouteChildren {
   ProfissionalRoute: typeof ProfissionalRouteWithChildren
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
+  AgendamentoTokenRoute: typeof AgendamentoTokenRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
   AuthGoogleRoute: typeof AuthGoogleRoute
   PSlugRoute: typeof PSlugRoute
@@ -514,6 +527,13 @@ declare module '@tanstack/react-router' {
       path: '/redefinir-senha'
       fullPath: '/redefinir-senha'
       preLoaderRoute: typeof RedefinirSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agendamento/$token': {
+      id: '/agendamento/$token'
+      path: '/agendamento/$token'
+      fullPath: '/agendamento/$token'
+      preLoaderRoute: typeof AgendamentoTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/confirm': {
@@ -761,6 +781,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfissionalRoute: ProfissionalRouteWithChildren,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
+  AgendamentoTokenRoute: AgendamentoTokenRoute,
   AuthConfirmRoute: AuthConfirmRoute,
   AuthGoogleRoute: AuthGoogleRoute,
   PSlugRoute: PSlugRoute,

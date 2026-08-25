@@ -307,7 +307,16 @@ const companySchema = z.object({
       ]),
     })
     .optional(),
+  bookingRules: z
+    .object({
+      bookingHorizonDays: z.number().int().min(1).max(365),
+      rescheduleDeadlineEnabled: z.boolean(),
+      rescheduleDeadlineHours: z.number().int().min(0).max(720),
+      commissionTrigger: z.enum(["completed", "paid"]),
+    })
+    .optional(),
 });
+
 
 export const getCompany = createServerFn({ method: "GET" }).handler(async (): Promise<Company> => {
   const { supabase, tenantId } = await tenantContext();
@@ -418,7 +427,16 @@ export const updateCompany = createServerFn({ method: "POST" })
               public_store_enabled: data.bookingPolicy.publicStoreEnabled,
             }
           : {}),
+        ...(data.bookingRules
+          ? {
+              booking_horizon_days: data.bookingRules.bookingHorizonDays,
+              reschedule_deadline_enabled: data.bookingRules.rescheduleDeadlineEnabled,
+              reschedule_deadline_hours: data.bookingRules.rescheduleDeadlineHours,
+              commission_trigger: data.bookingRules.commissionTrigger,
+            }
+          : {}),
         ...publicValues,
+
       })
       .eq("id", tenantId)
       .select()
