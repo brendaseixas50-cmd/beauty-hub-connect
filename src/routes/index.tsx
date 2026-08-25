@@ -100,7 +100,9 @@ function Home() {
 function ProductCard({ type }: { type: TipoNegocio }) {
   const brand = marcasProduto[type];
   const productType = type === "barbearia" ? "barber" : "beauty";
-  const theme = useTemaProduto(type === "barbearia" ? "barber" : "beauty");
+  // Cada card mantém a identidade do seu produto SEM alterar o tema da raiz do
+  // documento — o portal segue neutro e não sofre vazamento visual.
+  const theme = classeTema(productType);
 
   return (
     <article
