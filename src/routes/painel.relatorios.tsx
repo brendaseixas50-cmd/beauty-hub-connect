@@ -163,8 +163,10 @@ function ReportsPage() {
                   key={name}
                   className="flex items-center justify-between gap-4 border-b border-border pb-2 text-sm last:border-0 last:pb-0"
                 >
-                  <span className="truncate">{name}</span>
-                  <span className={value >= 0 ? "text-success" : "text-destructive"}>
+                  <span className="min-w-0 truncate">{name}</span>
+                  <span
+                    className={`shrink-0 whitespace-nowrap ${value >= 0 ? "text-success" : "text-destructive"}`}
+                  >
                     {brl(value)}
                   </span>
                 </div>
