@@ -69,13 +69,21 @@ Nova área em Configurações de Agendamento → "Lembretes aos clientes":
 
 Sem simulação de envio: enquanto não houver integração de WhatsApp capaz de disparar, a tela indica claramente que o envio depende dessa integração. "Confirmar", "Avisar cliente" e "Lembrete automático" ficam nomeados e explicados separadamente.
 
+## 6. Acabamento visual da página pública (já aprovado)
+
+- Paleta padrão por produto: LuBeauty mantém a atual; LuBarber nasce preto/grafite com dourado, eliminando os resquícios de rosa em empresas que nunca escolheram cores. Quem já personalizou não é sobrescrito.
+- Chips, abas Serviços/Combos, etiqueta "Combo", barra de progresso, resumo e botões passam a usar a paleta ativa.
+- Cards sem transbordo: o nome do serviço quebra em várias linhas dentro do cartão e o preço fica fixo à direita, sem encolher — vale para serviços, combos, adicionais e cartões de profissional.
+- Remoção do resumo duplicado ("120 min / R$ 140,00" aparecendo duas vezes) e do botão "Avançar" sobreposto ao resumo.
+- Revisão em 360px, 768px e desktop nos dois produtos.
+
 ## Detalhes técnicos
 
-- Migração `docs/sql/20260833-...`: `appointments.booking_group_id` + `group_position`, `appointment_services.professional_id`, `tenants.confirmation_permission`, campos de lembrete (`reminder_enabled`, `reminder_lead_minutes`, `reminder_template`), índices, RLS e grants no padrão das anteriores.
-- `get_public_booking_availability_v3`: particiona serviços por profissional apto e valida cada bloco contra horário de trabalho, intervalos, bloqueios e conflitos daquele profissional, permitindo blocos simultâneos.
+- Migração `docs/sql/20260833-...`: `appointments.booking_group_id` + `group_position`, `appointment_services.professional_id` e `execution_mode` ('auto' | 'parallel' | 'sequential'), modo de execução por item do combo, `tenants.confirmation_permission`, campos de lembrete (`reminder_enabled`, `reminder_lead_minutes`, `reminder_template`), índices, RLS e grants no padrão das anteriores.
+- `get_public_booking_availability_v3`: particiona serviços por profissional apto e valida cada bloco contra horário de trabalho, intervalos, bloqueios e conflitos daquele profissional, respeitando o modo de execução (paralelo quando cabe, sequencial como fallback).
 - `create_public_booking_v4`: cria os blocos do grupo em uma transação, conflito checado por bloco, código/token compartilhados. v2/v3 preservadas; fail-closed mantido em `disponibilidade.server.ts`.
 - Receita: `syncAppointmentFinancials` passa a lançar receita idempotente por `booking_group_id` (uma entrada por grupo) e comissões por bloco.
-- Front: `p.$slug.tsx`, `agendamento.$token.tsx` (grupo), `painel.agenda.tsx`, `painel.servicos.tsx`, `painel.empresa.tsx`/configurações, `profissional.index.tsx` (WhatsApp + confirmar). Link via `whatsappDigits` de `src/lib/telefone.ts`.
+- Front: `p.$slug.tsx`, `agendamento.$token.tsx` (grupo), `painel.agenda.tsx`, `painel.servicos.tsx`, `painel.empresa.tsx`/configurações, `profissional.index.tsx` (WhatsApp + aceitar/confirmar), `src/lib/cores-publicas.ts`. Link via `whatsappDigits` de `src/lib/telefone.ts`.
 
 ## Rodadas
 
