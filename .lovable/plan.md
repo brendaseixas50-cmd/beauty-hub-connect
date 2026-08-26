@@ -10,7 +10,8 @@ Solução: **um pedido (grupo) com blocos por profissional**.
 
 - Cada serviço é atribuído a um profissional apto (vínculo já existente entre serviço e profissional).
 - Serviços do mesmo profissional formam um bloco contínuo; serviços de outro profissional formam outro bloco.
-- **Blocos podem ser simultâneos ou sequenciais.** Simultâneo é o padrão quando as agendas permitem: em "Corte + Barba + Unha", barbeiro e manicure podem iniciar às 14h, cada um ocupando só o próprio tempo. Só vira sequencial quando o mesmo profissional executa mais de um serviço ou quando não há encaixe simultâneo.
+- **Modo de execução explícito e previsível:** cada item/bloco do combo pode ser configurado pela gestão como **simultâneo** ou **sequencial**. Itens sem configuração específica, quando executados por profissionais diferentes, usam simultâneo se houver disponibilidade compatível; caso não haja, caem para sequencial. Serviços do mesmo profissional são sempre sequenciais.
+- Exemplo real: em "Corte + Barba + Unha", barbeiro e manicure iniciam às 14h, cada um ocupando só o próprio tempo.
 - Todos os blocos compartilham `booking_group_id`, código e token: para o cliente é **um** agendamento.
 - Um único profissional fazendo tudo → um único agendamento, comportamento atual intacto.
 
