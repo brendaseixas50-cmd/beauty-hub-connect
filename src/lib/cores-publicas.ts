@@ -65,15 +65,29 @@ export function derivarPaleta(cores: CoresPublicas) {
   };
 }
 
+/** Paleta inicial de cada produto: LuBeauty rosado, LuBarber grafite/dourado. */
+export const coresPublicasPorProduto: Record<"beauty" | "barber", CoresPublicas> = {
+  beauty: coresPublicasPadrao,
+  barber: { fundo: "#ffffff", destaque: "#161616", texto: "#161616" },
+};
+
 /** Lê as 3 cores simples de um registro já salvo com a paleta completa. */
-export function coresDaEmpresa(company: {
-  background_color?: string | null;
-  primary_color?: string | null;
-  text_color?: string | null;
-}): CoresPublicas {
+export function coresDaEmpresa(
+  company: {
+    background_color?: string | null;
+    primary_color?: string | null;
+    text_color?: string | null;
+  },
+  produto: "beauty" | "barber" = "beauty",
+): CoresPublicas {
+  const padrao = coresPublicasPorProduto[produto] ?? coresPublicasPadrao;
+  const herdadoDeBeleza =
+    produto === "barber" &&
+    (company.primary_color ?? "").toLowerCase() === coresPublicasPadrao.destaque;
   return {
-    fundo: company.background_color || coresPublicasPadrao.fundo,
-    destaque: company.primary_color || coresPublicasPadrao.destaque,
-    texto: company.text_color || coresPublicasPadrao.texto,
+    fundo: company.background_color || padrao.fundo,
+    destaque: herdadoDeBeleza ? padrao.destaque : company.primary_color || padrao.destaque,
+    texto: company.text_color || padrao.texto,
   };
 }
+
