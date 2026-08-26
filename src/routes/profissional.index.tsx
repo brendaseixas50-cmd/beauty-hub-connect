@@ -1,6 +1,6 @@
 import { createFileRoute, getRouteApi, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarPlus, ChevronLeft, ChevronRight, Phone } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { linkWhatsapp } from "@/lib/telefone";
 import { brl } from "@/modules/mvp/domain";
 import {
   appointmentStatusLabels,
@@ -199,13 +200,18 @@ function AgendaView({ data }: { data: ProfessionalPanelData }) {
                   ) : null}
                   <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                     <span>{brl(appointment.priceCents)}</span>
-                    {appointment.clientPhone ? (
+                    {linkWhatsapp(appointment.clientPhone) ? (
                       <a
                         className="inline-flex items-center gap-1 underline"
-                        href={`tel:${appointment.clientPhone.replace(/\D/g, "")}`}
+                        href={linkWhatsapp(appointment.clientPhone)!}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="Abrir conversa no WhatsApp"
                       >
-                        <Phone className="h-3.5 w-3.5" /> {appointment.clientPhone}
+                        <MessageCircle className="h-3.5 w-3.5" /> {appointment.clientPhone}
                       </a>
+                    ) : appointment.clientPhone ? (
+                      <span>{appointment.clientPhone}</span>
                     ) : null}
                   </div>
                   {appointment.notes ? (
@@ -221,7 +227,7 @@ function AgendaView({ data }: { data: ProfessionalPanelData }) {
                         disabled={pending}
                         onClick={() => void updateStatus(appointment, "confirmed")}
                       >
-                        Confirmar
+                        {data.canCompleteAppointments ? "Confirmar" : "Aceitar atendimento"}
                       </Button>
                     ) : null}
                     {data.canCompleteAppointments && appointment.status !== "completed" ? (

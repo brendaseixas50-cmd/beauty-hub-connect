@@ -1,3 +1,4 @@
+import { useTemaProduto } from "@/components/tema-produto";
 import { whatsappDigits } from "@/lib/telefone";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -77,9 +78,13 @@ export const Route = createFileRoute("/p/$slug")({
 function PublicBookingApp() {
   const { page, rules } = Route.useLoaderData();
   const [area, setArea] = useState<"booking" | "store">("booking");
+  // O tema do produto precisa valer também na raiz do documento: sem isso a
+  // página de uma barbearia herda os tokens do LuBeauty (resquícios de rosa).
+  useTemaProduto(page?.company.productType === "barber" ? "barber" : "beauty");
   if (!page) return <Unavailable />;
   const { company } = page;
   const theme = publicTheme(company);
+
   const style = {
     "--background": theme.background,
     "--foreground": theme.foreground,
@@ -532,6 +537,12 @@ function BookingWizard({
           {error}
         </p>
       ) : null}
+      {step === 1 && serviceIds.length ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-secondary p-3 text-sm">
+          <span>{duration} min</span>
+          <strong className="whitespace-nowrap">{brl(total)}</strong>
+        </div>
+      ) : null}
       <div className="grid grid-cols-2 gap-3">
         {step > 1 ? (
           <Button
@@ -559,12 +570,7 @@ function BookingWizard({
           </Button>
         ) : null}
       </div>
-      {step === 1 && serviceIds.length ? (
-        <div className="sticky bottom-3 flex justify-between rounded-2xl bg-card p-3 text-sm shadow-lg">
-          <span>{duration} min</span>
-          <strong>{brl(total)}</strong>
-        </div>
-      ) : null}
+
     </Card>
   );
 }
@@ -627,7 +633,7 @@ function StepServices({
             selected={selected.includes(service.id)}
             onClick={() => onToggle(service.id)}
           >
-            <span className="flex min-w-0 items-center gap-3">
+            <span className="flex min-w-0 flex-1 items-center gap-3">
               {service.imageUrl ? (
                 <img
                   src={service.imageUrl}
@@ -636,22 +642,23 @@ function StepServices({
                   className="h-12 w-12 shrink-0 rounded-lg object-cover"
                 />
               ) : null}
-              <span className="min-w-0">
-                <strong className="block">
+              <span className="min-w-0 break-words">
+                <strong className="block break-words">
                   {service.name}
                   {service.isCombo ? (
-                    <em className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-[11px] not-italic">
+                    <em className="ml-2 inline-block rounded-full bg-secondary px-2 py-0.5 text-[11px] not-italic">
                       Combo
                     </em>
                   ) : null}
                 </strong>
                 <small className="block text-muted-foreground">{service.durationMinutes} min</small>
                 {service.isCombo && service.comboServices.length ? (
-                  <small className="block text-muted-foreground">
+                  <small className="block break-words text-muted-foreground">
                     Inclui: {service.comboServices.join(" + ")}
                   </small>
                 ) : null}
               </span>
+
             </span>
             <strong>{brl(service.priceCents)}</strong>
           </Choice>
@@ -673,7 +680,7 @@ function StepServices({
               selected={selected.includes(addon.id)}
               onClick={() => onToggle(addon.id)}
             >
-              <span className="flex min-w-0 items-center gap-3">
+              <span className="flex min-w-0 flex-1 items-center gap-3">
                 {addon.imageUrl ? (
                   <img
                     src={addon.imageUrl}
@@ -682,8 +689,8 @@ function StepServices({
                     className="h-10 w-10 shrink-0 rounded-lg object-cover"
                   />
                 ) : null}
-                <span className="min-w-0">
-                  <strong className="block">{addon.name}</strong>
+                <span className="min-w-0 break-words">
+                  <strong className="block break-words">{addon.name}</strong>
                   <small className="block text-muted-foreground">
                     +{addon.durationMinutes} min
                   </small>
@@ -695,10 +702,6 @@ function StepServices({
         </div>
       ) : null}
 
-      <div className="flex justify-between rounded-xl bg-secondary p-3 text-sm">
-        <span>{duration} min</span>
-        <strong>{brl(total)}</strong>
-      </div>
     </div>
   );
 }
@@ -722,7 +725,7 @@ function StepProfessionals({
           selected={value === professional.id}
           onClick={() => onChange(professional.id)}
         >
-          <span className="flex items-center gap-3">
+          <span className="flex min-w-0 flex-1 items-center gap-3">
             {professional.photoUrl ? (
               <img
                 src={professional.photoUrl}
@@ -732,9 +735,9 @@ function StepProfessionals({
             ) : (
               <UserRound className="h-5 w-5" />
             )}
-            <span>
-              <strong className="block">{professional.name}</strong>
-              <small>{professional.specialty}</small>
+            <span className="min-w-0 break-words">
+              <strong className="block break-words">{professional.name}</strong>
+              <small className="block break-words">{professional.specialty}</small>
             </span>
           </span>
         </Choice>
@@ -755,15 +758,16 @@ function Choice({
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3 text-left ${selected ? "border-primary bg-primary/10" : "border-border bg-card"}`}
+      className={`flex min-h-14 w-full items-start gap-2 overflow-hidden rounded-2xl border-2 px-4 py-3 text-left ${selected ? "border-primary bg-primary/10" : "border-border bg-card"}`}
     >
-      <span className="flex min-w-0 items-center gap-2">
-        {selected ? <Check className="h-5 w-5 shrink-0 text-primary" /> : null}
+      {selected ? <Check className="mt-0.5 h-5 w-5 shrink-0 text-primary" /> : null}
+      <span className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-1 [&>strong]:shrink-0 [&>strong]:whitespace-nowrap">
         {children}
       </span>
     </button>
   );
 }
+
 function Summary({
   services,
   professional,
@@ -1480,20 +1484,34 @@ function contrast(hex: string) {
   return (r * 299 + g * 587 + b * 114) / 1000 > 145 ? "#161616" : "#ffffff";
 }
 
+/** Tons de beleza que nunca devem aparecer numa barbearia que não escolheu cores. */
+const coresDeBelezaHerdadas = [
+  "#7c3aed",
+  "#8b5e67",
+  "#a66ef2",
+  "#ec78a8",
+  "#c9b8ff",
+  "#f5e7ea",
+  "#f9e7ef",
+  "#fdf6f7",
+  "#fff5f7",
+];
+
 function publicTheme(company: PageData["company"]) {
   const barber = company.productType === "barber";
+  const isLegacy = (color: string | null | undefined) =>
+    Boolean(color) && coresDeBelezaHerdadas.includes(String(color).toLowerCase());
   const legacyWrongColor =
-    barber &&
-    [company.primaryColor, company.secondaryColor].some((color) =>
-      ["#7c3aed", "#8b5e67", "#a66ef2", "#ec78a8", "#c9b8ff", "#f5e7ea", "#f9e7ef"].includes(
-        color.toLowerCase(),
-      ),
-    );
+    barber && [company.primaryColor, company.secondaryColor].some((color) => isLegacy(color));
   const primary = legacyWrongColor ? "#161616" : company.primaryColor;
   const secondaryBase = legacyWrongColor ? "#c9a227" : company.secondaryColor;
-  const background = /^#[0-9a-f]{6}$/i.test(company.backgroundColor ?? "")
-    ? company.backgroundColor
-    : "#ffffff";
+  const background =
+    barber && isLegacy(company.backgroundColor)
+      ? "#ffffff"
+      : /^#[0-9a-f]{6}$/i.test(company.backgroundColor ?? "")
+        ? company.backgroundColor
+        : "#ffffff";
+
   const darkBackground = luminance(background) < 0.5;
   const foreground = textOnBackground(company.textColor, background);
   return {

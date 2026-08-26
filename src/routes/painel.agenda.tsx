@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarPlus, Pencil } from "lucide-react";
+import { CalendarPlus, MessageCircle, Pencil } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 
 import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
+import { formatarTelefone, linkWhatsapp } from "@/lib/telefone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -238,7 +239,20 @@ function AgendaPage() {
                     minute: "2-digit",
                   })}
                 </span>
+                {linkWhatsapp(appointment.clients?.phone) ? (
+                  <a
+                    className="inline-flex items-center gap-1 underline"
+                    href={linkWhatsapp(appointment.clients?.phone)!}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Abrir conversa no WhatsApp"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    {formatarTelefone(appointment.clients?.phone)}
+                  </a>
+                ) : null}
               </div>
+
               {appointment.notes ? (
                 <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
                   {appointment.notes}

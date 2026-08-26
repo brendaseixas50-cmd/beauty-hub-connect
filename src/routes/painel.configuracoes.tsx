@@ -237,7 +237,7 @@ function BookingSettings({
   const action = useMvpAction();
   const connect = useServerFn(startMercadoPagoConnection);
   const disconnect = useServerFn(disconnectMercadoPago);
-  const cores = coresDaEmpresa(company);
+  const cores = coresDaEmpresa(company, company.product_type === "barber" ? "barber" : "beauty");
   const payments = (company.payment_methods ?? {
     pix: false,
     card: false,

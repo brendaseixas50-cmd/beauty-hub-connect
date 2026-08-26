@@ -32,3 +32,16 @@ export function whatsappDigits(value: string | null | undefined) {
   const local = telefoneLocal(value);
   return local ? `55${local}` : "";
 }
+
+/**
+ * Link de conversa no WhatsApp (app no celular e WhatsApp Web no desktop).
+ * A mensagem é apenas pré-preenchida: nada é enviado automaticamente.
+ * Devolve null quando o número não é utilizável, para a interface esconder a ação.
+ */
+export function linkWhatsapp(value: string | null | undefined, mensagem?: string) {
+  const digits = whatsappDigits(value);
+  if (digits.length < 12) return null;
+  const texto = mensagem?.trim();
+  return `https://wa.me/${digits}${texto ? `?text=${encodeURIComponent(texto)}` : ""}`;
+}
+

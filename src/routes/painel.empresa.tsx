@@ -47,7 +47,7 @@ function CompanyPage() {
   const [bannerUrl, setBannerUrl] = useState(company.banner_url ?? "");
   const [uploading, setUploading] = useState<"logo" | "banner">();
   const [copied, setCopied] = useState(false);
-  const iniciais = coresDaEmpresa(company);
+  const iniciais = coresDaEmpresa(company, company.product_type === "barber" ? "barber" : "beauty");
   const [fundo, setFundo] = useState(iniciais.fundo);
   const [destaque, setDestaque] = useState(iniciais.destaque);
   const [texto, setTexto] = useState(iniciais.texto);
