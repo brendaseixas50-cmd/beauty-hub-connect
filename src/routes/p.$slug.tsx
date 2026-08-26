@@ -1,3 +1,4 @@
+import { useTemaProduto } from "@/components/tema-produto";
 import { whatsappDigits } from "@/lib/telefone";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
