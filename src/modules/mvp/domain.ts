@@ -27,6 +27,20 @@ export type ProductWithUsage = Product & { movements: number; deletable: boolean
 export type Professional = Tables<"professionals">;
 export type ProfessionalWithServices = Professional & { serviceIds: string[] };
 export type Service = Tables<"services">;
+/** Como cada item de um combo é executado: por quem e junto ou depois. */
+export type ComboItemConfig = {
+  serviceId: string;
+  professionalId: string | null;
+  executionMode: "sequential" | "parallel";
+};
+/** Linha crua da composição do combo, com as colunas de execução. */
+export type ComboItemRow = {
+  combo_service_id: string;
+  service_id: string;
+  position: number;
+  assigned_professional_id: string | null;
+  execution_mode: string | null;
+};
 /** Serviço com os vínculos que precisam ser preservados antes de excluir. */
 export type ServiceWithUsage = Service & {
   appointments: number;
@@ -34,9 +48,11 @@ export type ServiceWithUsage = Service & {
   linkedToProfessionals: boolean;
   deletable: boolean;
   comboServiceIds: string[];
+  comboItems: ComboItemConfig[];
   /** Serviços/combos que oferecem este serviço na seção "Adicionar também". */
   addonForServiceIds: string[];
 };
+
 
 
 
