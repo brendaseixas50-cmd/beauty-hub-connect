@@ -627,7 +627,7 @@ function StepServices({
             selected={selected.includes(service.id)}
             onClick={() => onToggle(service.id)}
           >
-            <span className="flex min-w-0 items-center gap-3">
+            <span className="flex min-w-0 flex-1 items-center gap-3">
               {service.imageUrl ? (
                 <img
                   src={service.imageUrl}
@@ -674,7 +674,7 @@ function StepServices({
               selected={selected.includes(addon.id)}
               onClick={() => onToggle(addon.id)}
             >
-              <span className="flex min-w-0 items-center gap-3">
+              <span className="flex min-w-0 flex-1 items-center gap-3">
                 {addon.imageUrl ? (
                   <img
                     src={addon.imageUrl}
@@ -683,8 +683,8 @@ function StepServices({
                     className="h-10 w-10 shrink-0 rounded-lg object-cover"
                   />
                 ) : null}
-                <span className="min-w-0">
-                  <strong className="block">{addon.name}</strong>
+                <span className="min-w-0 break-words">
+                  <strong className="block break-words">{addon.name}</strong>
                   <small className="block text-muted-foreground">
                     +{addon.durationMinutes} min
                   </small>
@@ -696,10 +696,6 @@ function StepServices({
         </div>
       ) : null}
 
-      <div className="flex justify-between rounded-xl bg-secondary p-3 text-sm">
-        <span>{duration} min</span>
-        <strong>{brl(total)}</strong>
-      </div>
     </div>
   );
 }
@@ -723,7 +719,7 @@ function StepProfessionals({
           selected={value === professional.id}
           onClick={() => onChange(professional.id)}
         >
-          <span className="flex items-center gap-3">
+          <span className="flex min-w-0 flex-1 items-center gap-3">
             {professional.photoUrl ? (
               <img
                 src={professional.photoUrl}
@@ -733,9 +729,9 @@ function StepProfessionals({
             ) : (
               <UserRound className="h-5 w-5" />
             )}
-            <span>
-              <strong className="block">{professional.name}</strong>
-              <small>{professional.specialty}</small>
+            <span className="min-w-0 break-words">
+              <strong className="block break-words">{professional.name}</strong>
+              <small className="block break-words">{professional.specialty}</small>
             </span>
           </span>
         </Choice>
