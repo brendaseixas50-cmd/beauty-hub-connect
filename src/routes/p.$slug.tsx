@@ -755,15 +755,16 @@ function Choice({
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3 text-left ${selected ? "border-primary bg-primary/10" : "border-border bg-card"}`}
+      className={`flex min-h-14 w-full items-start gap-2 overflow-hidden rounded-2xl border-2 px-4 py-3 text-left ${selected ? "border-primary bg-primary/10" : "border-border bg-card"}`}
     >
-      <span className="flex min-w-0 items-center gap-2">
-        {selected ? <Check className="h-5 w-5 shrink-0 text-primary" /> : null}
+      {selected ? <Check className="mt-0.5 h-5 w-5 shrink-0 text-primary" /> : null}
+      <span className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-1 [&>strong]:shrink-0 [&>strong]:whitespace-nowrap">
         {children}
       </span>
     </button>
   );
 }
+
 function Summary({
   services,
   professional,
