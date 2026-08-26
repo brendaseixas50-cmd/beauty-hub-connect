@@ -53,9 +53,10 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
       p_service_ids: data.serviceIds,
       p_professional_id: data.professionalId,
     };
-    const rpc: RpcCall = (name, params) =>
-      (supabase.rpc as unknown as RpcCall).call(supabase, name, params);
+    const rpc: RpcCall = async (name, params) =>
+      await (supabase as unknown as { rpc: RpcCall }).rpc(name, params);
     let { data: availability, error } = await rpc("get_public_booking_availability_v3", args);
+
     if (error) {
       // Fallback de continuidade: se a função por blocos ainda não estiver
       // disponível no banco, a agenda pública continua funcionando na v2.
