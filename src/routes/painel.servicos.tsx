@@ -19,9 +19,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { brl, centsFromInput, type ServiceWithUsage } from "@/modules/mvp/domain";
+import {
+  brl,
+  centsFromInput,
+  type ComboItemConfig,
+  type ProfessionalWithServices,
+  type ServiceWithUsage,
+} from "@/modules/mvp/domain";
 import {
   deleteService,
+  listProfessionals,
   listServices,
   saveService,
   setServiceActive,
@@ -33,13 +40,17 @@ import { LuviContextBridge } from "@/modules/luvi-core/context";
 
 export const Route = createFileRoute("/painel/servicos")({
   staleTime: 60_000,
-  loader: () => listServices(),
+  loader: async () => {
+    // Os profissionais alimentam a definição de quem executa cada item do combo.
+    const [services, professionals] = await Promise.all([listServices(), listProfessionals()]);
+    return { services, professionals };
+  },
   head: () => ({ meta: [{ title: "Serviços — Beauty Hub Connect" }] }),
   component: ServicesPage,
 });
 
 function ServicesPage() {
-  const services = Route.useLoaderData();
+  const { services, professionals } = Route.useLoaderData();
   const remove = useServerFn(deleteService);
   const toggleActive = useServerFn(setServiceActive);
   const action = useMvpAction();
@@ -224,6 +235,7 @@ function ServicesPage() {
         <ServiceDialog
           service={editing}
           services={services}
+          professionals={professionals}
           onClose={() => setEditing(undefined)}
         />
       ) : null}
@@ -234,10 +246,12 @@ function ServicesPage() {
 function ServiceDialog({
   service,
   services,
+  professionals,
   onClose,
 }: {
   service: ServiceWithUsage | null;
   services: ServiceWithUsage[];
+  professionals: ProfessionalWithServices[];
   onClose: () => void;
 }) {
   const save = useServerFn(saveService);
@@ -260,8 +274,35 @@ function ServiceDialog({
   );
   /** Serviços principais e combos que podem oferecer este adicional. */
   const addonParentOptions = services.filter((item) => item.id !== service?.id && !item.is_addon);
+  const [comboItems, setComboItems] = useState<ComboItemConfig[]>(service?.comboItems ?? []);
+  /** Configuração de um item, com o padrão sequencial e sem responsável fixo. */
+  function itemConfig(serviceId: string): ComboItemConfig {
+    return (
+      comboItems.find((item) => item.serviceId === serviceId) ?? {
+        serviceId,
+        professionalId: null,
+        executionMode: "sequential",
+      }
+    );
+  }
+  function updateItem(serviceId: string, patch: Partial<ComboItemConfig>) {
+    setComboItems((current) => {
+      const base = current.filter((item) => item.serviceId !== serviceId);
+      return [...base, { ...itemConfig(serviceId), ...patch }];
+    });
+  }
   const combined = options.filter((item) => comboServiceIds.includes(item.id));
-  const comboMinutes = combined.reduce((total, item) => total + item.duration_minutes, 0);
+  /**
+   * Duração real: itens simultâneos ocupam a mesma janela do item anterior,
+   * então não somam tempo — só o mais longo dos dois conta.
+   */
+  const comboMinutes = combined.reduce((total, item, index) => {
+    if (index > 0 && itemConfig(item.id).executionMode === "parallel") {
+      const previous = combined[index - 1]!;
+      return total + Math.max(0, item.duration_minutes - previous.duration_minutes);
+    }
+    return total + item.duration_minutes;
+  }, 0);
   const comboCents = combined.reduce((total, item) => total + item.price_cents, 0);
 
   async function onImage(event: ChangeEvent<HTMLInputElement>) {
@@ -318,6 +359,7 @@ function ServiceDialog({
             isCombo,
             requiresProfessional,
             comboServiceIds: isCombo ? comboServiceIds : [],
+            comboItems: isCombo ? comboServiceIds.map((id) => itemConfig(id)) : [],
             isAddon: isCombo ? false : isAddon,
             addonForServiceIds: !isCombo && isAddon ? addonForServiceIds : [],
           },
@@ -502,9 +544,67 @@ function ServiceDialog({
                   )}
                 </div>
                 {combined.length > 0 ? (
-                  <p className="text-xs text-muted-foreground">
-                    Total da composição: {formatDuration(comboMinutes)} · {brl(comboCents)}
-                  </p>
+                  <div className="grid gap-2 rounded-xl border p-3">
+                    <p className="text-sm font-medium">Quem executa cada serviço</p>
+                    <p className="text-xs text-muted-foreground">
+                      Cada serviço ocupa apenas a agenda do profissional responsável, e a comissão
+                      vai para ele. O cliente continua vendo um único agendamento.
+                    </p>
+                    {combined.map((item, index) => {
+                      const config = itemConfig(item.id);
+                      const habilitados = professionals.filter(
+                        (professional) =>
+                          professional.active &&
+                          (professional.serviceIds.length === 0 ||
+                            professional.serviceIds.includes(item.id)),
+                      );
+                      return (
+                        <div key={item.id} className="grid gap-2 border-t pt-2 first:border-0 first:pt-0">
+                          <span className="text-sm">{item.name}</span>
+                          <select
+                            aria-label={`Profissional responsável por ${item.name}`}
+                            value={config.professionalId ?? ""}
+                            onChange={(event) =>
+                              updateItem(item.id, {
+                                professionalId: event.target.value || null,
+                              })
+                            }
+                            className="h-10 rounded-md border bg-background px-3 text-sm"
+                          >
+                            <option value="">Qualquer profissional disponível</option>
+                            {habilitados.map((professional) => (
+                              <option key={professional.id} value={professional.id}>
+                                {professional.name}
+                              </option>
+                            ))}
+                          </select>
+                          {index > 0 ? (
+                            <label className="flex items-center gap-2 text-xs">
+                              <input
+                                type="checkbox"
+                                checked={config.executionMode === "parallel"}
+                                onChange={(event) =>
+                                  updateItem(item.id, {
+                                    executionMode: event.currentTarget.checked
+                                      ? "parallel"
+                                      : "sequential",
+                                  })
+                                }
+                              />
+                              Ao mesmo tempo que o serviço anterior
+                            </label>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              Este serviço inicia o atendimento.
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <p className="text-xs text-muted-foreground">
+                      Duração real do atendimento: {formatDuration(comboMinutes)} · {brl(comboCents)}
+                    </p>
+                  </div>
                 ) : null}
               </div>
             ) : null}
