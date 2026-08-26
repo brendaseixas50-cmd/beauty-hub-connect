@@ -47,14 +47,23 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
   .validator(availabilityInput)
   .handler(async ({ data }): Promise<Availability> => {
     const supabase = createSupabaseServerClient();
-    const { data: availability, error } = await (supabase.rpc as unknown as RpcCall)("get_public_booking_availability_v3", {
+    const args = {
       p_slug: data.slug,
       p_date: data.date,
       p_service_ids: data.serviceIds,
       p_professional_id: data.professionalId,
-    });
-    if (error) throw new Error("Não foi possível consultar os horários.");
+    };
+    const rpc = supabase.rpc as unknown as RpcCall;
+    let { data: availability, error } = await rpc("get_public_booking_availability_v3", args);
+    if (error) {
+      // Fallback de continuidade: se a função por blocos ainda não estiver
+      // disponível no banco, a agenda pública continua funcionando na v2.
+      const legacy = await rpc("get_public_booking_availability_v2", args);
+      if (legacy.error) throw new Error("Não foi possível consultar os horários.");
+      availability = legacy.data;
+    }
     const parsed = availabilitySchema.parse(availability ?? { date: data.date, slots: [] });
+
     const { filterSlotsByProfessionalAgenda } = await import("./disponibilidade.server");
     return { ...parsed, slots: await filterSlotsByProfessionalAgenda(data.slug, parsed.slots) };
   });
