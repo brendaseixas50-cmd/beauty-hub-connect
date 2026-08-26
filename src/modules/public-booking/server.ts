@@ -65,17 +65,15 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
       availability = legacy.data;
     }
 
+    const parsed = availabilitySchema.parse(availability ?? { date: data.date, slots: [] });
+    const { filterSlotsByProfessionalAgenda } = await import("./disponibilidade.server");
     try {
-      availabilitySchema.parse(availability ?? { date: data.date, slots: [] });
+      return { ...parsed, slots: await filterSlotsByProfessionalAgenda(data.slug, parsed.slots) };
     } catch (cause) {
-      console.error("[debug availability]", JSON.stringify(availability)?.slice(0, 500), cause);
+      console.error("[debug availability]", cause);
       throw cause;
     }
-    const parsed = availabilitySchema.parse(availability ?? { date: data.date, slots: [] });
 
-
-    const { filterSlotsByProfessionalAgenda } = await import("./disponibilidade.server");
-    return { ...parsed, slots: await filterSlotsByProfessionalAgenda(data.slug, parsed.slots) };
   });
 
 const bookingInput = availabilityInput.omit({ date: true, professionalId: true }).extend({
