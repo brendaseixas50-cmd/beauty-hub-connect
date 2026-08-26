@@ -55,8 +55,8 @@ Hoje o número no card do Painel Profissional usa `tel:`, o que abre o discador/
 
 Nova opção nas Configurações da empresa: **"Permitir que profissionais confirmem agendamentos com o cliente"** — padrão desativado.
 
-- Desativada: gestão/recepção confirma oficialmente; o profissional não confirma oficialmente nem abre a mensagem ao cliente, apenas registra uma confirmação interna do atendimento (sem mudar o status oficial).
-- Ativada: o profissional confirma oficialmente **apenas os próprios atendimentos** e pode usar "Avisar cliente no WhatsApp".
+- Desativada: gestão/recepção confirma oficialmente; o profissional não confirma oficialmente nem abre a mensagem ao cliente. A ação dele no card passa a se chamar **"Aceitar atendimento"** (registro interno de ciência), nunca "Confirmar", para não se confundir com a confirmação oficial enviada ao cliente.
+- Ativada: o profissional vê **"Confirmar"** e confirma oficialmente **apenas os próprios atendimentos**, podendo então usar "Avisar cliente no WhatsApp".
 - Gestão/recepção confirma qualquer agendamento. Em grupos, a confirmação oficial é única para o pedido.
 - Validação no servidor, não só na interface.
 
