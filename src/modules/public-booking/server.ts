@@ -65,7 +65,14 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
       availability = legacy.data;
     }
 
+    try {
+      availabilitySchema.parse(availability ?? { date: data.date, slots: [] });
+    } catch (cause) {
+      console.error("[debug availability]", JSON.stringify(availability)?.slice(0, 500), cause);
+      throw cause;
+    }
     const parsed = availabilitySchema.parse(availability ?? { date: data.date, slots: [] });
+
 
     const { filterSlotsByProfessionalAgenda } = await import("./disponibilidade.server");
     return { ...parsed, slots: await filterSlotsByProfessionalAgenda(data.slug, parsed.slots) };
