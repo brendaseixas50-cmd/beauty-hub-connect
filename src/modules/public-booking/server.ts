@@ -38,7 +38,7 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
   .validator(availabilityInput)
   .handler(async ({ data }): Promise<Availability> => {
     const supabase = createSupabaseServerClient();
-    const { data: availability, error } = await supabase.rpc("get_public_booking_availability_v2", {
+    const { data: availability, error } = await supabase.rpc("get_public_booking_availability_v3", {
       p_slug: data.slug,
       p_date: data.date,
       p_service_ids: data.serviceIds,
@@ -87,7 +87,7 @@ export const createSimplePublicBooking = createServerFn({ method: "POST" })
       startsAt: data.startsAt,
     });
     if (blocked) return { ok: false, error: blocked };
-    const { data: result, error } = await supabase.rpc("create_public_booking_v3", {
+    const { data: result, error } = await supabase.rpc("create_public_booking_v4", {
       p_slug: data.slug,
       p_service_ids: data.serviceIds,
       p_professional_id: data.professionalId,
