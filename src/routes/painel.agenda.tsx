@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarPlus, Pencil } from "lucide-react";
+import { CalendarPlus, MessageCircle, Pencil } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 
 import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
