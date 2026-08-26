@@ -1484,20 +1484,34 @@ function contrast(hex: string) {
   return (r * 299 + g * 587 + b * 114) / 1000 > 145 ? "#161616" : "#ffffff";
 }
 
+/** Tons de beleza que nunca devem aparecer numa barbearia que não escolheu cores. */
+const coresDeBelezaHerdadas = [
+  "#7c3aed",
+  "#8b5e67",
+  "#a66ef2",
+  "#ec78a8",
+  "#c9b8ff",
+  "#f5e7ea",
+  "#f9e7ef",
+  "#fdf6f7",
+  "#fff5f7",
+];
+
 function publicTheme(company: PageData["company"]) {
   const barber = company.productType === "barber";
+  const isLegacy = (color: string | null | undefined) =>
+    Boolean(color) && coresDeBelezaHerdadas.includes(String(color).toLowerCase());
   const legacyWrongColor =
-    barber &&
-    [company.primaryColor, company.secondaryColor].some((color) =>
-      ["#7c3aed", "#8b5e67", "#a66ef2", "#ec78a8", "#c9b8ff", "#f5e7ea", "#f9e7ef"].includes(
-        color.toLowerCase(),
-      ),
-    );
+    barber && [company.primaryColor, company.secondaryColor].some((color) => isLegacy(color));
   const primary = legacyWrongColor ? "#161616" : company.primaryColor;
   const secondaryBase = legacyWrongColor ? "#c9a227" : company.secondaryColor;
-  const background = /^#[0-9a-f]{6}$/i.test(company.backgroundColor ?? "")
-    ? company.backgroundColor
-    : "#ffffff";
+  const background =
+    barber && isLegacy(company.backgroundColor)
+      ? "#ffffff"
+      : /^#[0-9a-f]{6}$/i.test(company.backgroundColor ?? "")
+        ? company.backgroundColor
+        : "#ffffff";
+
   const darkBackground = luminance(background) < 0.5;
   const foreground = textOnBackground(company.textColor, background);
   return {
