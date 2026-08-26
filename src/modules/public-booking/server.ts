@@ -16,6 +16,15 @@ import {
 
 const slugSchema = z.object({ slug: z.string().trim().toLowerCase().min(3).max(80) });
 
+/**
+ * As funções v3/v4 de agenda multiprofissional vivem no banco de produção e
+ * ainda não estão no arquivo de tipos gerado, então a chamada é feita por aqui.
+ */
+type RpcCall = (
+  name: string,
+  args: Record<string, unknown>,
+) => Promise<{ data: unknown; error: { message: string } | null }>;
+
 export const getPublicCompanyPage = createServerFn({ method: "GET" })
   .validator(slugSchema)
   .handler(async ({ data }): Promise<PublicPage | null> => {
@@ -38,7 +47,7 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
   .validator(availabilityInput)
   .handler(async ({ data }): Promise<Availability> => {
     const supabase = createSupabaseServerClient();
-    const { data: availability, error } = await supabase.rpc("get_public_booking_availability_v3", {
+    const { data: availability, error } = await (supabase.rpc as unknown as RpcCall)("get_public_booking_availability_v3", {
       p_slug: data.slug,
       p_date: data.date,
       p_service_ids: data.serviceIds,
@@ -87,7 +96,7 @@ export const createSimplePublicBooking = createServerFn({ method: "POST" })
       startsAt: data.startsAt,
     });
     if (blocked) return { ok: false, error: blocked };
-    const { data: result, error } = await supabase.rpc("create_public_booking_v4", {
+    const { data: result, error } = await (supabase.rpc as unknown as RpcCall)("create_public_booking_v4", {
       p_slug: data.slug,
       p_service_ids: data.serviceIds,
       p_professional_id: data.professionalId,
