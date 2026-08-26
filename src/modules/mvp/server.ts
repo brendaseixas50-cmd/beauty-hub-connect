@@ -30,8 +30,8 @@ import type {
   ProfessionalWithServices,
   Service,
   ServiceWithUsage,
-  type ComboItemConfig,
-  type ComboItemRow,
+  ComboItemConfig,
+  ComboItemRow,
 } from "./domain";
 
 const idSchema = z.object({ id: z.string().uuid() });
@@ -1416,7 +1416,7 @@ export const listServices = createServerFn({ method: "GET" }).handler(
     }
     const combos = new Map<string, string[]>();
     const comboItems = new Map<string, ComboItemConfig[]>();
-    for (const item of (comboResult.data ?? []) as ComboItemRow[]) {
+    for (const item of (comboResult.data ?? []) as unknown as ComboItemRow[]) {
       const current = combos.get(item.combo_service_id) ?? [];
       current.push(item.service_id);
       combos.set(item.combo_service_id, current);
