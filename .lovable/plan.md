@@ -1,64 +1,86 @@
-# Acabamento da página pública + combos/adicionais com vários profissionais
+# Combos multiprofissionais + WhatsApp do cliente + confirmação e lembretes
 
-## Problema 1 — visual da página pública
+Vale para LuBeauty e LuBarber. Nada do que funciona hoje é removido: combo executado por um único profissional continua exatamente como está.
 
-**Resquícios de rosa**: quando a empresa não escolhe cores, o sistema aplica a paleta padrão de beleza (destaque rosado `#8b5e67` e creme derivado), inclusive em barbearias. Não é bug de tema, é o padrão salvo.
+## 1. Combos/adicionais com profissionais diferentes
 
-Correção:
-- Paleta padrão por produto: LuBeauty mantém a rosa atual; LuBarber passa a nascer preto/grafite com dourado.
-- Empresas LuBarber que nunca personalizaram as cores passam a exibir o padrão do produto (não sobrescreve quem já escolheu cores próprias).
-- Chips, abas ("Serviços/Combos"), etiqueta "Combo", barra de progresso, resumo e botões passam a usar as cores da paleta ativa, sem tons fixos de beleza.
+Hoje um agendamento tem um profissional e uma duração única: o combo "Corte + Barba + Unha" trava o tempo total na agenda do barbeiro e, quando ninguém faz todos os serviços, não sobra horário nenhum.
 
-**Cards saindo da margem** (visível no print): o cartão de serviço envolve nome e preço no mesmo bloco, então o preço é empurrado para fora e o nome não quebra linha.
+Solução: **um pedido (grupo) com blocos por profissional**.
 
-Correção:
-- Nome do serviço quebra em várias linhas automaticamente, sempre dentro do cartão; preço fica fixo à direita, sem encolher.
-- Vale para serviços, combos, adicionais e cartões de profissional.
-- Remoção da duplicação do resumo "120 min / R$ 140,00" (hoje aparece duas vezes na etapa 1) e do botão "Avançar" sobreposto ao resumo.
-- Revisão em 360px, 768px e desktop nos dois produtos.
+- Cada serviço é atribuído a um profissional apto (vínculo já existente entre serviço e profissional).
+- Serviços do mesmo profissional formam um bloco contínuo; serviços de outro profissional formam outro bloco.
+- **Blocos podem ser simultâneos ou sequenciais.** Simultâneo é o padrão quando as agendas permitem: em "Corte + Barba + Unha", barbeiro e manicure podem iniciar às 14h, cada um ocupando só o próprio tempo. Só vira sequencial quando o mesmo profissional executa mais de um serviço ou quando não há encaixe simultâneo.
+- Todos os blocos compartilham `booking_group_id`, código e token: para o cliente é **um** agendamento.
+- Um único profissional fazendo tudo → um único agendamento, comportamento atual intacto.
 
-## Problema 2 — combo/adicional com serviços de profissionais diferentes
+### Financeiro sem duplicar receita
 
-Hoje um agendamento tem **um** profissional e **uma** duração total: o combo "unha + corte + barba" trava o tempo inteiro na agenda do barbeiro, e quando nenhum profissional faz todos os serviços simplesmente não sobra horário.
+- A receita é registrada **uma única vez por grupo** (valor pago pelo cliente), vinculada ao bloco principal/ao grupo, nunca uma cópia por profissional.
+- Comissão e participação continuam por bloco/profissional, calculadas sobre o valor dos serviços daquele bloco.
+- Relatórios de receita passam a somar por grupo; comissões seguem por profissional.
 
-### O que sugiro
+### Fluxo do cliente (sem mudança perceptível)
 
-Um agendamento por profissional, agrupados como um único pedido do cliente:
-
-- Cada serviço do combo/adicional é atribuído a um profissional apto (quem a gestão vinculou ao serviço em Serviços/Profissionais).
-- Serviços do mesmo profissional viram um bloco contínuo; serviços de outro profissional viram outro bloco, encaixado em seguida na agenda **dele**.
-- Todos os blocos compartilham um mesmo grupo/código de reserva: para o cliente é um único agendamento, com uma confirmação e um único link de gerenciamento.
-- Se um único profissional faz tudo (situação de hoje), continua sendo um único agendamento — nada muda no comportamento atual.
-
-Ganhos diretos: cada agenda consome só o tempo do que aquela pessoa executa, o horário volta a existir quando os serviços se dividem entre duas pessoas, e a comissão já cai para o profissional correto porque a regra atual calcula comissão por agendamento/profissional.
-
-### Fluxo do cliente (sem mudar o que ele já conhece)
-
-- Continua escolhendo o profissional principal normalmente.
-- Serviços do combo/adicional que o principal executa ficam com ele automaticamente.
-- Serviço que o principal não executa: se só uma pessoa faz, é atribuída em silêncio (aparece apenas como informação "Unha com Maria"); se mais de uma faz, aparece uma escolha curta só para aquele serviço.
-- Horários oferecidos passam a considerar a agenda de cada profissional envolvido — só aparece horário em que o conjunto realmente cabe.
+- Escolhe o profissional principal normalmente.
+- Serviços que o principal executa ficam com ele automaticamente.
+- Serviço que ele não executa: com um único apto, atribuição silenciosa (só informa "Unha com Maria"); com mais de um apto, aparece uma escolha curta apenas para aquele serviço.
+- Horários oferecidos consideram a agenda de todos os envolvidos, com encaixe simultâneo quando possível.
+- **Cancelar/remarcar age no grupo inteiro por padrão, com um único link/token.**
 
 ### Gestão
 
-- Em Serviços, cada serviço ganha "quem executa" (profissionais aptos) e um profissional preferencial opcional, usado para a atribuição automática.
-- Na agenda administrativa, os blocos do mesmo pedido aparecem identificados como parte do mesmo atendimento do cliente (mesmo código), cada um na coluna/linha do seu profissional.
-- Financeiro, receita, comissões, repasses, "Meus ganhos", cancelamento/remarcação e permissão de conclusão continuam com as regras atuais, aplicadas por bloco.
+- Em Serviços: "quem executa" e profissional preferencial opcional (usado na atribuição automática).
+- Agenda administrativa: blocos do mesmo pedido identificados pelo mesmo código, cada um na agenda do seu profissional.
+
+## 2. Telefone do cliente abre o WhatsApp
+
+Hoje o número no card do Painel Profissional usa `tel:`, o que abre o discador/Zoom.
+
+- Clique no número/ícone abre a conversa do cliente no WhatsApp (`wa.me`), funcionando em celular e WhatsApp Web no desktop.
+- Número normalizado apenas para o link (55 + DDD + número), sem alterar o valor armazenado nem o exibido.
+- Nenhuma mensagem enviada automaticamente: abre a conversa vazia.
+- Ícone de telefone substituído por ícone de WhatsApp.
+- Aplicado no Painel Profissional e nos cards/detalhes de agendamento da Agenda Administrativa. Onde já existir ação específica de ligar, ela é mantida em separado; o clique principal prioriza WhatsApp.
+
+## 3. Confirmação com aviso ao cliente
+
+- "Confirmar" continua atualizando o status oficial, respeitando permissões atuais.
+- Após confirmar, aparece a ação **"Avisar cliente no WhatsApp"**, que abre a conversa com mensagem pronta usando dados reais: "Olá, {nome}! 😊 Seu agendamento de {serviço} foi confirmado para {data}, às {horário}. Esperamos você!"
+- Nada é enviado automaticamente — o profissional/gestão toca em Enviar.
+- Grupo/combo multiprofissional: **uma única confirmação e uma única mensagem** com o resumo do atendimento, sem mensagem por profissional.
+
+## 4. Permissão de confirmação
+
+Nova opção nas Configurações da empresa: **"Permitir que profissionais confirmem agendamentos com o cliente"** — padrão desativado.
+
+- Desativada: gestão/recepção confirma oficialmente; o profissional não confirma oficialmente nem abre a mensagem ao cliente, apenas registra uma confirmação interna do atendimento (sem mudar o status oficial).
+- Ativada: o profissional confirma oficialmente **apenas os próprios atendimentos** e pode usar "Avisar cliente no WhatsApp".
+- Gestão/recepção confirma qualquer agendamento. Em grupos, a confirmação oficial é única para o pedido.
+- Validação no servidor, não só na interface.
+
+## 5. Lembretes aos clientes (preparado)
+
+Nova área em Configurações de Agendamento → "Lembretes aos clientes":
+
+- ativar/desativar; antecedência (24h, 12h, 2h); texto padrão editável;
+- variáveis: nome do cliente, serviço, data, horário e nome da empresa.
+
+Sem simulação de envio: enquanto não houver integração de WhatsApp capaz de disparar, a tela indica claramente que o envio depende dessa integração. "Confirmar", "Avisar cliente" e "Lembrete automático" ficam nomeados e explicados separadamente.
 
 ## Detalhes técnicos
 
-- Migração nova `docs/sql/20260833-...`: `appointments.booking_group_id`, `appointments.group_position`, `appointment_services.professional_id`, índices e RLS/grants no mesmo padrão das anteriores; nada removido.
-- Nova RPC `get_public_booking_availability_v3`: em vez de exigir um profissional que faça todos os serviços, particiona os serviços por profissional apto e valida cada bloco contra a agenda daquele profissional (horário de trabalho, intervalos, bloqueios, conflitos). A v2 continua existindo.
-- Nova RPC `create_public_booking_v4`: cria os agendamentos do grupo em uma única transação, com validação de conflito por bloco; devolve o mesmo código e token de gerenciamento para o grupo. Fail-closed mantido em `disponibilidade.server.ts`.
-- `src/modules/public-booking/*`, `p.$slug.tsx`, `painel.agenda.tsx`, `painel.servicos.tsx` e o portal `agendamento.$token.tsx` passam a tratar grupo de agendamentos; cancelar/remarcar age no grupo.
-- Comissões: `syncAppointmentFinancials` roda por agendamento do grupo, sem alteração de regra.
-- Cores: `src/lib/cores-publicas.ts` ganha padrão por produto; `p.$slug.tsx` e `painel.pagina-publica.tsx` usam esse padrão.
+- Migração `docs/sql/20260833-...`: `appointments.booking_group_id` + `group_position`, `appointment_services.professional_id`, `tenants.confirmation_permission`, campos de lembrete (`reminder_enabled`, `reminder_lead_minutes`, `reminder_template`), índices, RLS e grants no padrão das anteriores.
+- `get_public_booking_availability_v3`: particiona serviços por profissional apto e valida cada bloco contra horário de trabalho, intervalos, bloqueios e conflitos daquele profissional, permitindo blocos simultâneos.
+- `create_public_booking_v4`: cria os blocos do grupo em uma transação, conflito checado por bloco, código/token compartilhados. v2/v3 preservadas; fail-closed mantido em `disponibilidade.server.ts`.
+- Receita: `syncAppointmentFinancials` passa a lançar receita idempotente por `booking_group_id` (uma entrada por grupo) e comissões por bloco.
+- Front: `p.$slug.tsx`, `agendamento.$token.tsx` (grupo), `painel.agenda.tsx`, `painel.servicos.tsx`, `painel.empresa.tsx`/configurações, `profissional.index.tsx` (WhatsApp + confirmar). Link via `whatsappDigits` de `src/lib/telefone.ts`.
 
 ## Rodadas
 
-1. Migração + disponibilidade e criação de reserva por grupo (backend).
-2. Fluxo público: atribuição automática, escolha só quando houver mais de um apto, horários por grupo.
-3. Gestão: agenda agrupada, "quem executa" em Serviços, validação de comissões.
-4. Acabamento visual: paleta padrão por produto e cards sem transbordo.
+1. Migração + disponibilidade/criação por grupo (backend) e receita única por grupo.
+2. Fluxo público: atribuição automática, escolha quando houver mais de um apto, horários simultâneos, cancelar/remarcar em grupo.
+3. Gestão/profissional: agenda agrupada, "quem executa", permissões de confirmação, validação de comissões.
+4. WhatsApp do cliente, "Avisar cliente no WhatsApp" e área de lembretes.
 
-Ao final informo se há SQL para executar manualmente (haverá: a migração da rodada 1).
+Ao final informo a SQL a executar manualmente (a migração da rodada 1).
