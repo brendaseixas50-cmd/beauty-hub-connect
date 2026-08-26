@@ -227,7 +227,7 @@ function AgendaView({ data }: { data: ProfessionalPanelData }) {
                         disabled={pending}
                         onClick={() => void updateStatus(appointment, "confirmed")}
                       >
-                        Confirmar
+                        {data.canCompleteAppointments ? "Confirmar" : "Aceitar atendimento"}
                       </Button>
                     ) : null}
                     {data.canCompleteAppointments && appointment.status !== "completed" ? (
