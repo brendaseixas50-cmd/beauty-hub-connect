@@ -56,11 +56,11 @@ begin
   select coalesce(jsonb_agg(jsonb_build_object('id', ordered.id, 'name', ordered.name)), '[]'::jsonb)
     into block_professionals
   from (
-    select distinct on (professional.id) professional.id, professional.name, min(block.offset_minutes) as first_offset
+    select professional.id, professional.name, min(block.offset_minutes) as first_offset
     from public.booking_blocks_plan(target_tenant.id, p_service_ids, p_professional_id) block
     join public.professionals professional on professional.id = block.professional_id
     group by professional.id, professional.name
-    order by professional.id, first_offset
+    order by first_offset, professional.name
   ) ordered;
 
   horizon_days := greatest(coalesce(target_tenant.booking_horizon_days, 60), 1);
