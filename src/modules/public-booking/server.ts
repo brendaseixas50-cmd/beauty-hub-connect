@@ -53,7 +53,8 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
       p_service_ids: data.serviceIds,
       p_professional_id: data.professionalId,
     };
-    const rpc = supabase.rpc as unknown as RpcCall;
+    const rpc: RpcCall = (name, params) =>
+      (supabase.rpc as unknown as RpcCall).call(supabase, name, params);
     let { data: availability, error } = await rpc("get_public_booking_availability_v3", args);
     if (error) {
       // Fallback de continuidade: se a função por blocos ainda não estiver
@@ -62,6 +63,7 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
       if (legacy.error) throw new Error("Não foi possível consultar os horários.");
       availability = legacy.data;
     }
+
     const parsed = availabilitySchema.parse(availability ?? { date: data.date, slots: [] });
 
     const { filterSlotsByProfessionalAgenda } = await import("./disponibilidade.server");
