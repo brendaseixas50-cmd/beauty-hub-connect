@@ -30,6 +30,8 @@ import type {
   ProfessionalWithServices,
   Service,
   ServiceWithUsage,
+  type ComboItemConfig,
+  type ComboItemRow,
 } from "./domain";
 
 const idSchema = z.object({ id: z.string().uuid() });
