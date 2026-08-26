@@ -89,7 +89,7 @@ Sem simulação de envio: enquanto não houver integração de WhatsApp capaz de
 
 1. Migração + disponibilidade/criação por grupo (backend) e receita única por grupo.
 2. Fluxo público: atribuição automática, escolha quando houver mais de um apto, horários simultâneos, cancelar/remarcar em grupo.
-3. Gestão/profissional: agenda agrupada, "quem executa", permissões de confirmação, validação de comissões.
-4. WhatsApp do cliente, "Avisar cliente no WhatsApp" e área de lembretes.
+3. Gestão/profissional: agenda agrupada, "quem executa", modo simultâneo/sequencial por item, permissões de confirmação ("Aceitar atendimento" x "Confirmar"), validação de comissões.
+4. WhatsApp do cliente, "Avisar cliente no WhatsApp", área de lembretes e acabamento visual dos cards da página pública.
 
 Ao final informo a SQL a executar manualmente (a migração da rodada 1).
