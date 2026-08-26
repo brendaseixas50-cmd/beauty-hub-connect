@@ -77,9 +77,13 @@ export const Route = createFileRoute("/p/$slug")({
 function PublicBookingApp() {
   const { page, rules } = Route.useLoaderData();
   const [area, setArea] = useState<"booking" | "store">("booking");
+  // O tema do produto precisa valer também na raiz do documento: sem isso a
+  // página de uma barbearia herda os tokens do LuBeauty (resquícios de rosa).
+  useTemaProduto(page?.company.productType === "barber" ? "barber" : "beauty");
   if (!page) return <Unavailable />;
   const { company } = page;
   const theme = publicTheme(company);
+
   const style = {
     "--background": theme.background,
     "--foreground": theme.foreground,
