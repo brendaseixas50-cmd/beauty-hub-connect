@@ -4,6 +4,7 @@ import { CalendarPlus, MessageCircle, Pencil } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 
 import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
+import { formatarTelefone, linkWhatsapp } from "@/lib/telefone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
