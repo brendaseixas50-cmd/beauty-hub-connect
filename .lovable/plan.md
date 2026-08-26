@@ -10,7 +10,8 @@ Solução: **um pedido (grupo) com blocos por profissional**.
 
 - Cada serviço é atribuído a um profissional apto (vínculo já existente entre serviço e profissional).
 - Serviços do mesmo profissional formam um bloco contínuo; serviços de outro profissional formam outro bloco.
-- **Blocos podem ser simultâneos ou sequenciais.** Simultâneo é o padrão quando as agendas permitem: em "Corte + Barba + Unha", barbeiro e manicure podem iniciar às 14h, cada um ocupando só o próprio tempo. Só vira sequencial quando o mesmo profissional executa mais de um serviço ou quando não há encaixe simultâneo.
+- **Modo de execução explícito e previsível:** cada item/bloco do combo pode ser configurado pela gestão como **simultâneo** ou **sequencial**. Itens sem configuração específica, quando executados por profissionais diferentes, usam simultâneo se houver disponibilidade compatível; caso não haja, caem para sequencial. Serviços do mesmo profissional são sempre sequenciais.
+- Exemplo real: em "Corte + Barba + Unha", barbeiro e manicure iniciam às 14h, cada um ocupando só o próprio tempo.
 - Todos os blocos compartilham `booking_group_id`, código e token: para o cliente é **um** agendamento.
 - Um único profissional fazendo tudo → um único agendamento, comportamento atual intacto.
 
@@ -54,8 +55,8 @@ Hoje o número no card do Painel Profissional usa `tel:`, o que abre o discador/
 
 Nova opção nas Configurações da empresa: **"Permitir que profissionais confirmem agendamentos com o cliente"** — padrão desativado.
 
-- Desativada: gestão/recepção confirma oficialmente; o profissional não confirma oficialmente nem abre a mensagem ao cliente, apenas registra uma confirmação interna do atendimento (sem mudar o status oficial).
-- Ativada: o profissional confirma oficialmente **apenas os próprios atendimentos** e pode usar "Avisar cliente no WhatsApp".
+- Desativada: gestão/recepção confirma oficialmente; o profissional não confirma oficialmente nem abre a mensagem ao cliente. A ação dele no card passa a se chamar **"Aceitar atendimento"** (registro interno de ciência), nunca "Confirmar", para não se confundir com a confirmação oficial enviada ao cliente.
+- Ativada: o profissional vê **"Confirmar"** e confirma oficialmente **apenas os próprios atendimentos**, podendo então usar "Avisar cliente no WhatsApp".
 - Gestão/recepção confirma qualquer agendamento. Em grupos, a confirmação oficial é única para o pedido.
 - Validação no servidor, não só na interface.
 
@@ -68,19 +69,27 @@ Nova área em Configurações de Agendamento → "Lembretes aos clientes":
 
 Sem simulação de envio: enquanto não houver integração de WhatsApp capaz de disparar, a tela indica claramente que o envio depende dessa integração. "Confirmar", "Avisar cliente" e "Lembrete automático" ficam nomeados e explicados separadamente.
 
+## 6. Acabamento visual da página pública (já aprovado)
+
+- Paleta padrão por produto: LuBeauty mantém a atual; LuBarber nasce preto/grafite com dourado, eliminando os resquícios de rosa em empresas que nunca escolheram cores. Quem já personalizou não é sobrescrito.
+- Chips, abas Serviços/Combos, etiqueta "Combo", barra de progresso, resumo e botões passam a usar a paleta ativa.
+- Cards sem transbordo: o nome do serviço quebra em várias linhas dentro do cartão e o preço fica fixo à direita, sem encolher — vale para serviços, combos, adicionais e cartões de profissional.
+- Remoção do resumo duplicado ("120 min / R$ 140,00" aparecendo duas vezes) e do botão "Avançar" sobreposto ao resumo.
+- Revisão em 360px, 768px e desktop nos dois produtos.
+
 ## Detalhes técnicos
 
-- Migração `docs/sql/20260833-...`: `appointments.booking_group_id` + `group_position`, `appointment_services.professional_id`, `tenants.confirmation_permission`, campos de lembrete (`reminder_enabled`, `reminder_lead_minutes`, `reminder_template`), índices, RLS e grants no padrão das anteriores.
-- `get_public_booking_availability_v3`: particiona serviços por profissional apto e valida cada bloco contra horário de trabalho, intervalos, bloqueios e conflitos daquele profissional, permitindo blocos simultâneos.
+- Migração `docs/sql/20260833-...`: `appointments.booking_group_id` + `group_position`, `appointment_services.professional_id` e `execution_mode` ('auto' | 'parallel' | 'sequential'), modo de execução por item do combo, `tenants.confirmation_permission`, campos de lembrete (`reminder_enabled`, `reminder_lead_minutes`, `reminder_template`), índices, RLS e grants no padrão das anteriores.
+- `get_public_booking_availability_v3`: particiona serviços por profissional apto e valida cada bloco contra horário de trabalho, intervalos, bloqueios e conflitos daquele profissional, respeitando o modo de execução (paralelo quando cabe, sequencial como fallback).
 - `create_public_booking_v4`: cria os blocos do grupo em uma transação, conflito checado por bloco, código/token compartilhados. v2/v3 preservadas; fail-closed mantido em `disponibilidade.server.ts`.
 - Receita: `syncAppointmentFinancials` passa a lançar receita idempotente por `booking_group_id` (uma entrada por grupo) e comissões por bloco.
-- Front: `p.$slug.tsx`, `agendamento.$token.tsx` (grupo), `painel.agenda.tsx`, `painel.servicos.tsx`, `painel.empresa.tsx`/configurações, `profissional.index.tsx` (WhatsApp + confirmar). Link via `whatsappDigits` de `src/lib/telefone.ts`.
+- Front: `p.$slug.tsx`, `agendamento.$token.tsx` (grupo), `painel.agenda.tsx`, `painel.servicos.tsx`, `painel.empresa.tsx`/configurações, `profissional.index.tsx` (WhatsApp + aceitar/confirmar), `src/lib/cores-publicas.ts`. Link via `whatsappDigits` de `src/lib/telefone.ts`.
 
 ## Rodadas
 
 1. Migração + disponibilidade/criação por grupo (backend) e receita única por grupo.
 2. Fluxo público: atribuição automática, escolha quando houver mais de um apto, horários simultâneos, cancelar/remarcar em grupo.
-3. Gestão/profissional: agenda agrupada, "quem executa", permissões de confirmação, validação de comissões.
-4. WhatsApp do cliente, "Avisar cliente no WhatsApp" e área de lembretes.
+3. Gestão/profissional: agenda agrupada, "quem executa", modo simultâneo/sequencial por item, permissões de confirmação ("Aceitar atendimento" x "Confirmar"), validação de comissões.
+4. WhatsApp do cliente, "Avisar cliente no WhatsApp", área de lembretes e acabamento visual dos cards da página pública.
 
 Ao final informo a SQL a executar manualmente (a migração da rodada 1).
