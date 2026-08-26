@@ -532,6 +532,12 @@ function BookingWizard({
           {error}
         </p>
       ) : null}
+      {step === 1 && serviceIds.length ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-secondary p-3 text-sm">
+          <span>{duration} min</span>
+          <strong className="whitespace-nowrap">{brl(total)}</strong>
+        </div>
+      ) : null}
       <div className="grid grid-cols-2 gap-3">
         {step > 1 ? (
           <Button
@@ -559,12 +565,7 @@ function BookingWizard({
           </Button>
         ) : null}
       </div>
-      {step === 1 && serviceIds.length ? (
-        <div className="sticky bottom-3 flex justify-between rounded-2xl bg-card p-3 text-sm shadow-lg">
-          <span>{duration} min</span>
-          <strong>{brl(total)}</strong>
-        </div>
-      ) : null}
+
     </Card>
   );
 }
