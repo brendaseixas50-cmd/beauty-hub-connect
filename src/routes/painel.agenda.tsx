@@ -238,7 +238,20 @@ function AgendaPage() {
                     minute: "2-digit",
                   })}
                 </span>
+                {linkWhatsapp(appointment.clients?.phone) ? (
+                  <a
+                    className="inline-flex items-center gap-1 underline"
+                    href={linkWhatsapp(appointment.clients?.phone)!}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Abrir conversa no WhatsApp"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    {formatarTelefone(appointment.clients?.phone)}
+                  </a>
+                ) : null}
               </div>
+
               {appointment.notes ? (
                 <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
                   {appointment.notes}
