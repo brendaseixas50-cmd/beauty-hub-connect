@@ -1362,6 +1362,17 @@ const serviceSchema = z.object({
   isAddon: z.boolean().default(false),
   requiresProfessional: z.boolean().default(true),
   comboServiceIds: z.array(z.string().uuid()).max(12).default([]),
+  /** Quem executa cada item do combo e se ele roda junto ou depois do anterior. */
+  comboItems: z
+    .array(
+      z.object({
+        serviceId: z.string().uuid(),
+        professionalId: z.string().uuid().nullable().default(null),
+        executionMode: z.enum(["sequential", "parallel"]).default("sequential"),
+      }),
+    )
+    .max(12)
+    .default([]),
   /** Serviços/combos que oferecem este serviço como adicional opcional. */
   addonForServiceIds: z.array(z.string().uuid()).max(60).default([]),
 });
@@ -1381,7 +1392,7 @@ export const listServices = createServerFn({ method: "GET" }).handler(
       supabase.from("professional_services").select("service_id").eq("tenant_id", tenantId),
       supabase
         .from("service_combo_items")
-        .select("combo_service_id, service_id, position")
+        .select("combo_service_id, service_id, position, assigned_professional_id, execution_mode")
         .eq("tenant_id", tenantId)
         .order("position"),
       supabase
@@ -1402,10 +1413,18 @@ export const listServices = createServerFn({ method: "GET" }).handler(
         upcoming.set(appointment.service_id, (upcoming.get(appointment.service_id) ?? 0) + 1);
     }
     const combos = new Map<string, string[]>();
-    for (const item of comboResult.data ?? []) {
+    const comboItems = new Map<string, ComboItemConfig[]>();
+    for (const item of (comboResult.data ?? []) as ComboItemRow[]) {
       const current = combos.get(item.combo_service_id) ?? [];
       current.push(item.service_id);
       combos.set(item.combo_service_id, current);
+      const config = comboItems.get(item.combo_service_id) ?? [];
+      config.push({
+        serviceId: item.service_id,
+        professionalId: item.assigned_professional_id ?? null,
+        executionMode: item.execution_mode === "parallel" ? "parallel" : "sequential",
+      });
+      comboItems.set(item.combo_service_id, config);
     }
     const addons = new Map<string, string[]>();
     for (const link of addonResult.data ?? []) {
@@ -1424,6 +1443,7 @@ export const listServices = createServerFn({ method: "GET" }).handler(
         linkedToProfessionals: linked.has(service.id),
         deletable: appointments === 0 && futureAppointments === 0,
         comboServiceIds: combos.get(service.id) ?? [],
+        comboItems: comboItems.get(service.id) ?? [],
         addonForServiceIds: addons.get(service.id) ?? [],
       };
     });
@@ -1487,12 +1507,20 @@ export const saveService = createServerFn({ method: "POST" })
       .eq("combo_service_id", saved.id);
     if (comboServiceIds.length > 0) {
       const { error: comboError } = await supabase.from("service_combo_items").insert(
-        comboServiceIds.map((serviceId, index) => ({
-          tenant_id: tenantId,
-          combo_service_id: saved.id,
-          service_id: serviceId,
-          position: index,
-        })),
+        comboServiceIds.map((serviceId, index) => {
+          const config = data.comboItems.find((item) => item.serviceId === serviceId);
+          return {
+            tenant_id: tenantId,
+            combo_service_id: saved.id,
+            service_id: serviceId,
+            position: index,
+            // Primeiro item sempre inicia o atendimento: "simultâneo" só faz
+            // sentido a partir do segundo item da composição.
+            assigned_professional_id: config?.professionalId ?? null,
+            execution_mode:
+              index > 0 && config?.executionMode === "parallel" ? "parallel" : "sequential",
+          };
+        }) as never,
       );
       if (comboError) databaseError(comboError, "Não foi possível salvar a composição do combo.");
     }
