@@ -636,22 +636,23 @@ function StepServices({
                   className="h-12 w-12 shrink-0 rounded-lg object-cover"
                 />
               ) : null}
-              <span className="min-w-0">
-                <strong className="block">
+              <span className="min-w-0 break-words">
+                <strong className="block break-words">
                   {service.name}
                   {service.isCombo ? (
-                    <em className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-[11px] not-italic">
+                    <em className="ml-2 inline-block rounded-full bg-secondary px-2 py-0.5 text-[11px] not-italic">
                       Combo
                     </em>
                   ) : null}
                 </strong>
                 <small className="block text-muted-foreground">{service.durationMinutes} min</small>
                 {service.isCombo && service.comboServices.length ? (
-                  <small className="block text-muted-foreground">
+                  <small className="block break-words text-muted-foreground">
                     Inclui: {service.comboServices.join(" + ")}
                   </small>
                 ) : null}
               </span>
+
             </span>
             <strong>{brl(service.priceCents)}</strong>
           </Choice>
