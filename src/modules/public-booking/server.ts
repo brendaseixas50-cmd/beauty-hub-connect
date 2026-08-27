@@ -46,7 +46,6 @@ const availabilityInput = slugSchema.extend({
 export const getPublicAvailability = createServerFn({ method: "GET" })
   .validator(availabilityInput)
   .handler(async ({ data }): Promise<Availability> => {
-   try {
     const supabase = createSupabaseServerClient();
     const args = {
       p_slug: data.slug,
@@ -57,7 +56,6 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
     const rpc: RpcCall = async (name, params) =>
       await (supabase as unknown as { rpc: RpcCall }).rpc(name, params);
     let { data: availability, error } = await rpc("get_public_booking_availability_v3", args);
-
     if (error) {
       // Fallback de continuidade: se a função por blocos ainda não estiver
       // disponível no banco, a agenda pública continua funcionando na v2.
@@ -65,15 +63,12 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
       if (legacy.error) throw new Error("Não foi possível consultar os horários.");
       availability = legacy.data;
     }
-
     const parsed = availabilitySchema.parse(availability ?? { date: data.date, slots: [] });
     const { filterSlotsByProfessionalAgenda } = await import("./disponibilidade.server");
     return { ...parsed, slots: await filterSlotsByProfessionalAgenda(data.slug, parsed.slots) };
-   } catch (cause) {
-     console.error("[debug availability]", cause);
-     throw cause;
-   }
   });
+
+
 
 
 const bookingInput = availabilityInput.omit({ date: true, professionalId: true }).extend({
