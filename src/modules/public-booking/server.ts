@@ -46,6 +46,7 @@ const availabilityInput = slugSchema.extend({
 export const getPublicAvailability = createServerFn({ method: "GET" })
   .validator(availabilityInput)
   .handler(async ({ data }): Promise<Availability> => {
+   try {
     const supabase = createSupabaseServerClient();
     const args = {
       p_slug: data.slug,
@@ -67,14 +68,13 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
 
     const parsed = availabilitySchema.parse(availability ?? { date: data.date, slots: [] });
     const { filterSlotsByProfessionalAgenda } = await import("./disponibilidade.server");
-    try {
-      return { ...parsed, slots: await filterSlotsByProfessionalAgenda(data.slug, parsed.slots) };
-    } catch (cause) {
-      console.error("[debug availability]", cause);
-      throw cause;
-    }
-
+    return { ...parsed, slots: await filterSlotsByProfessionalAgenda(data.slug, parsed.slots) };
+   } catch (cause) {
+     console.error("[debug availability]", cause);
+     throw cause;
+   }
   });
+
 
 const bookingInput = availabilityInput.omit({ date: true, professionalId: true }).extend({
   professionalId: z.string().uuid(),
