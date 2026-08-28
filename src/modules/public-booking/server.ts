@@ -71,6 +71,8 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
 
 
 
+
+
 const bookingInput = availabilityInput.omit({ date: true, professionalId: true }).extend({
   professionalId: z.string().uuid(),
   startsAt: z.string().datetime({ offset: true }),
