@@ -314,6 +314,18 @@ export const professionalSaveAppointment = createServerFn({ method: "POST" })
       });
       if (blocked) throw new Error(blocked);
     }
+    // Blocos de combo mantêm o preço rateado do pedido.
+    let priceCents = service.price_cents;
+    if (data.id) {
+      const { data: existing } = await supabase
+        .from("appointments")
+        .select("price_cents, booking_group_id")
+        .eq("id", data.id)
+        .eq("professional_id", identity.professionalId)
+        .maybeSingle();
+      const current = existing as { price_cents: number; booking_group_id: string | null } | null;
+      if (current?.booking_group_id) priceCents = current.price_cents;
+    }
     const values = {
       tenant_id: identity.tenantId,
       client_id: data.clientId,
@@ -321,7 +333,7 @@ export const professionalSaveAppointment = createServerFn({ method: "POST" })
       professional_id: identity.professionalId,
       starts_at: startsAt.toISOString(),
       ends_at: endsAt.toISOString(),
-      price_cents: service.price_cents,
+      price_cents: priceCents,
       status: data.status,
       notes: data.notes,
     };
