@@ -104,13 +104,17 @@ try {
   // 5) comissão por profissional
   const tenantRow = (await req("GET", `tenants?id=eq.${TENANT}&select=commission_trigger`))[0];
   await req("PATCH", `tenants?id=eq.${TENANT}`, { commission_trigger: "completed" });
-  for (const a of appts) await req("PATCH", `appointments?id=eq.${a.id}`, { status: "completed" });
+  const { syncAppointmentFinancials } = await import("../src/modules/finance/comissoes.server");
+  for (const a of appts) {
+    await req("PATCH", `appointments?id=eq.${a.id}`, { status: "completed" });
+    await syncAppointmentFinancials({ tenantId: TENANT, appointmentId: a.id });
+  }
   const ledger = await req("GET", `professional_ledger_entries?tenant_id=eq.${TENANT}&appointment_id=in.(${appts.map((a:any)=>a.id).join(",")})&select=*`);
   for (const l of ledger) created.push({ table: "professional_ledger_entries", id: l.id });
   const byProf = Object.fromEntries(ledger.map((l: any) => [l.professional_id, l.amount_cents]));
   check("comissão gerada para os 2 profissionais", ledger.length === 2, ledger);
-  check("comissão Alfa = 50% de 5000", byProf[profA.id] === 2500, byProf);
-  check("comissão Beta = 40% de 2000 (rateio do combo)", byProf[profB.id] !== undefined, byProf);
+  check("comissão Alfa = 50% do bloco rateado", byProf[profA.id] === Math.round(appts[0].price_cents * 0.5), { byProf, bloco: appts[0].price_cents });
+  check("comissão Beta = 40% do bloco rateado", byProf[profB.id] === Math.round(appts[1].price_cents * 0.4), { byProf, bloco: appts[1].price_cents });
   console.log("ledger detalhado", JSON.stringify(ledger.map((l:any)=>({p:l.professional_id===profA.id?"alfa":"beta",amount:l.amount_cents,kind:l.kind}))));
   console.log("blocos preço", JSON.stringify(appts.map((a:any)=>a.price_cents)));
   await req("PATCH", `tenants?id=eq.${TENANT}`, { commission_trigger: tenantRow.commission_trigger });
