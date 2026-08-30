@@ -118,7 +118,7 @@ export async function publicBookingBlockReason({
     if (!tenant) return "Empresa indisponível.";
     const { data: services, error: servicesError } = await supabase
       .from("services")
-      .select("duration_minutes")
+      .select("id, duration_minutes, is_addon")
       .eq("tenant_id", tenant.id)
       .eq("active", true)
       .in("id", serviceIds);
@@ -127,11 +127,16 @@ export async function publicBookingBlockReason({
     // para zero e o agendamento é recusado antes de chegar ao banco.
     if ((services ?? []).length !== serviceIds.length)
       return "Serviço indisponível. Escolha outro serviço.";
-    const totalMinutes = (services ?? []).reduce(
+    // O profissional escolhido responde apenas pelos serviços principais. Os
+    // adicionais têm executor próprio e são validados bloco a bloco no banco.
+    const mainServices = (services ?? []).filter((service) => !service.is_addon);
+    if (!mainServices.length) return "Serviço indisponível. Escolha outro serviço.";
+    const totalMinutes = mainServices.reduce(
       (total, service) => total + service.duration_minutes,
       0,
     );
     if (!totalMinutes) return "Serviço indisponível. Escolha outro serviço.";
+
     const endsAt = new Date(new Date(startsAt).getTime() + totalMinutes * 60_000).toISOString();
     const [professional, blocks, conflicts] = await Promise.all([
       supabase
