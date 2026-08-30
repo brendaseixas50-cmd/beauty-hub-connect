@@ -138,8 +138,14 @@ export const bookingResultSchema = z.object({
   services: z.array(z.string()).optional(),
   service: z.string().optional(),
   professional: z.string().optional(),
+  /** Quem executa cada serviço quando o pedido envolve mais de um profissional. */
+  assignments: z
+    .array(z.object({ service: z.string(), professional: z.string() }))
+    .optional(),
+  bookingGroupId: z.string().uuid().optional(),
   startsAt: z.string().optional(),
   endsAt: z.string().optional(),
+
   company: z.string().optional(),
   whatsapp: z.string().nullable().optional(),
   totalPriceCents: z.number().optional(),
