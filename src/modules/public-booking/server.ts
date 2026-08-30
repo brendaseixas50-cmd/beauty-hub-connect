@@ -37,10 +37,16 @@ export const getPublicCompanyPage = createServerFn({ method: "GET" })
     return publicPageSchema.parse(page);
   });
 
+/** Executor escolhido pelo cliente para cada serviço adicional. */
+const addonProfessionalsSchema = z
+  .record(z.string().uuid(), z.string().uuid())
+  .default({});
+
 const availabilityInput = slugSchema.extend({
   date: z.string().date(),
   serviceIds: z.array(z.string().uuid()).min(1).max(8),
   professionalId: z.string().uuid().nullable(),
+  addonProfessionals: addonProfessionalsSchema,
 });
 
 export const getPublicAvailability = createServerFn({ method: "GET" })
@@ -55,6 +61,15 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
     };
     const rpc: RpcCall = async (name, params) =>
       await (supabase as unknown as { rpc: RpcCall }).rpc(name, params);
+    // v4 valida cada bloco (principal e adicionais) na agenda real de quem
+    // executa, então não precisa da revalidação em TypeScript.
+    const modern = await rpc("get_public_booking_availability_v4", {
+      ...args,
+      p_addon_professionals: data.addonProfessionals,
+    });
+    if (!modern.error) {
+      return availabilitySchema.parse(modern.data ?? { date: data.date, slots: [] });
+    }
     let { data: availability, error } = await rpc("get_public_booking_availability_v3", args);
     if (error) {
       // Fallback de continuidade: se a função por blocos ainda não estiver
@@ -67,6 +82,7 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
     const { filterSlotsByProfessionalAgenda } = await import("./disponibilidade.server");
     return { ...parsed, slots: await filterSlotsByProfessionalAgenda(data.slug, parsed.slots) };
   });
+
 
 
 
