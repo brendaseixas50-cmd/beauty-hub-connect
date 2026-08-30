@@ -67,8 +67,14 @@ const serviceSchema = z.object({
   addonForServiceIds: z.array(z.string().uuid()).default([]),
   /** Falso quando a empresa organiza internamente quem executa o serviço. */
   requiresProfessional: z.boolean().default(true),
-
+  /** Profissionais vinculados/aptos a executar este serviço. */
+  eligibleProfessionalIds: z.array(z.string().uuid()).default([]),
+  /** Como o executor é definido quando o serviço é usado como adicional. */
+  addonProfessionalMode: z.enum(["any", "preferred", "client_choice"]).default("any"),
+  /** Profissional preferencial configurado pela gestão para o adicional. */
+  addonPreferredProfessionalId: z.string().uuid().nullable().default(null),
 });
+
 
 
 const professionalSchema = z.object({
