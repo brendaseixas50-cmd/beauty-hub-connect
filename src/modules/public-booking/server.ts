@@ -37,10 +37,16 @@ export const getPublicCompanyPage = createServerFn({ method: "GET" })
     return publicPageSchema.parse(page);
   });
 
+/** Executor escolhido pelo cliente para cada serviço adicional. */
+const addonProfessionalsSchema = z
+  .record(z.string().uuid(), z.string().uuid())
+  .default({});
+
 const availabilityInput = slugSchema.extend({
   date: z.string().date(),
   serviceIds: z.array(z.string().uuid()).min(1).max(8),
   professionalId: z.string().uuid().nullable(),
+  addonProfessionals: addonProfessionalsSchema,
 });
 
 export const getPublicAvailability = createServerFn({ method: "GET" })
@@ -55,6 +61,15 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
     };
     const rpc: RpcCall = async (name, params) =>
       await (supabase as unknown as { rpc: RpcCall }).rpc(name, params);
+    // v4 valida cada bloco (principal e adicionais) na agenda real de quem
+    // executa, então não precisa da revalidação em TypeScript.
+    const modern = await rpc("get_public_booking_availability_v4", {
+      ...args,
+      p_addon_professionals: data.addonProfessionals,
+    });
+    if (!modern.error) {
+      return availabilitySchema.parse(modern.data ?? { date: data.date, slots: [] });
+    }
     let { data: availability, error } = await rpc("get_public_booking_availability_v3", args);
     if (error) {
       // Fallback de continuidade: se a função por blocos ainda não estiver
@@ -67,6 +82,7 @@ export const getPublicAvailability = createServerFn({ method: "GET" })
     const { filterSlotsByProfessionalAgenda } = await import("./disponibilidade.server");
     return { ...parsed, slots: await filterSlotsByProfessionalAgenda(data.slug, parsed.slots) };
   });
+
 
 
 
@@ -110,7 +126,9 @@ export const createSimplePublicBooking = createServerFn({ method: "POST" })
       startsAt: data.startsAt,
     });
     if (blocked) return { ok: false, error: blocked };
-    const { data: result, error } = await (supabase.rpc as unknown as RpcCall)("create_public_booking_v4", {
+    const rpc: RpcCall = async (name, params) =>
+      await (supabase as unknown as { rpc: RpcCall }).rpc(name, params);
+    const args = {
       p_slug: data.slug,
       p_service_ids: data.serviceIds,
       p_professional_id: data.professionalId,
@@ -122,8 +140,20 @@ export const createSimplePublicBooking = createServerFn({ method: "POST" })
       p_payment_method: data.paymentMethod,
       p_payment_option: data.paymentOption,
       p_honeypot: data.website,
+    };
+    // v5 resolve o executor de cada adicional; v4 segue atendendo quem ainda
+    // não aplicou a migração.
+    let { data: result, error } = await rpc("create_public_booking_v5", {
+      ...args,
+      p_addon_professionals: data.addonProfessionals,
     });
-    if (error) throw new Error("Não foi possível concluir o agendamento. Tente novamente.");
+    if (error) {
+      const legacy = await rpc("create_public_booking_v4", args);
+      if (legacy.error)
+        throw new Error("Não foi possível concluir o agendamento. Tente novamente.");
+      result = legacy.data;
+    }
+
     const booking = bookingResultSchema.parse(result);
     if (booking.ok && data.paymentMethod === "mercado_pago" && booking.appointmentId) {
       try {

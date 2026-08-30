@@ -67,8 +67,14 @@ const serviceSchema = z.object({
   addonForServiceIds: z.array(z.string().uuid()).default([]),
   /** Falso quando a empresa organiza internamente quem executa o serviço. */
   requiresProfessional: z.boolean().default(true),
-
+  /** Profissionais vinculados/aptos a executar este serviço. */
+  eligibleProfessionalIds: z.array(z.string().uuid()).default([]),
+  /** Como o executor é definido quando o serviço é usado como adicional. */
+  addonProfessionalMode: z.enum(["any", "preferred", "client_choice"]).default("any"),
+  /** Profissional preferencial configurado pela gestão para o adicional. */
+  addonPreferredProfessionalId: z.string().uuid().nullable().default(null),
 });
+
 
 
 const professionalSchema = z.object({
@@ -132,8 +138,14 @@ export const bookingResultSchema = z.object({
   services: z.array(z.string()).optional(),
   service: z.string().optional(),
   professional: z.string().optional(),
+  /** Quem executa cada serviço quando o pedido envolve mais de um profissional. */
+  assignments: z
+    .array(z.object({ service: z.string(), professional: z.string() }))
+    .optional(),
+  bookingGroupId: z.string().uuid().optional(),
   startsAt: z.string().optional(),
   endsAt: z.string().optional(),
+
   company: z.string().optional(),
   whatsapp: z.string().nullable().optional(),
   totalPriceCents: z.number().optional(),
