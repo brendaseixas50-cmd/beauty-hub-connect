@@ -599,14 +599,20 @@ function BookingWizard({
 
 function StepServices({
   services,
+  professionals,
   selected,
   onToggle,
+  addonProfessionals,
+  onAddonProfessionalChange,
   total,
   duration,
 }: {
   services: Service[];
+  professionals: Professional[];
   selected: string[];
   onToggle: (id: string) => void;
+  addonProfessionals: Record<string, string>;
+  onAddonProfessionalChange: (addonId: string, professionalId: string) => void;
   total: number;
   duration: number;
 }) {
@@ -623,6 +629,14 @@ function StepServices({
       service.isAddon &&
       service.addonForServiceIds.some((parentId) => selectedMainIds.includes(parentId)),
   );
+  /** Somente profissionais vinculados àquele adicional. */
+  const addonOptions = (addon: Service) =>
+    professionals.filter(
+      (professional) =>
+        !addon.eligibleProfessionalIds.length ||
+        addon.eligibleProfessionalIds.includes(professional.id),
+    );
+
   return (
     <div className="grid gap-3">
       {combos.length ? (
