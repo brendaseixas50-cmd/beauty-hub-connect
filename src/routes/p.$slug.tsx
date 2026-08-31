@@ -308,7 +308,9 @@ function BookingWizard({
           slug: company.slug,
           serviceIds,
           professionalId: resolvedProfessionalId,
+          addonProfessionals,
           startsAt,
+
           customerName: name,
           customerPhone: phone,
           requestId: crypto.randomUUID(),
