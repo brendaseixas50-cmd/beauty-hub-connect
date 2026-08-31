@@ -224,24 +224,39 @@ function BookingWizard({
   const total = selectedServices.reduce((sum, service) => sum + service.priceCents, 0);
   const duration = selectedServices.reduce((sum, service) => sum + service.durationMinutes, 0);
   const signal = depositAmount(company, total);
-  /** Serviços da seleção em que o cliente precisa escolher um profissional. */
-  const servicesNeedingProfessional = selectedServices.filter(
+  /** Somente os serviços principais definem a etapa "Escolha o profissional". */
+  const selectedMainServices = selectedServices.filter((service) => !service.isAddon);
+  const selectedAddonServices = selectedServices.filter((service) => service.isAddon);
+  const servicesNeedingProfessional = selectedMainServices.filter(
     (service) => service.requiresProfessional,
   );
   const needsProfessionalChoice = servicesNeedingProfessional.length > 0;
   /**
-   * Compatibilidade serviço por serviço: o profissional aparece quando executa
-   * ao menos um dos serviços que exigem profissional (combos podem ser feitos
-   * por mais de uma pessoa, organizadas internamente pela empresa).
+   * O serviço principal manda: só aparecem profissionais aptos/vinculados a ele.
+   * Quem executa apenas um adicional nunca entra nesta lista, e "Qualquer
+   * profissional disponível" significa qualquer um dentre estes.
    */
-  const availableProfessionals = professionals.filter(
-    (professional) =>
-      !professional.serviceIds.length ||
-      !needsProfessionalChoice ||
-      servicesNeedingProfessional.some((service) =>
-        professional.serviceIds.includes(service.id),
-      ),
+  const availableProfessionals = professionals.filter((professional) =>
+    servicesNeedingProfessional.every(
+      (service) =>
+        !service.eligibleProfessionalIds.length ||
+        service.eligibleProfessionalIds.includes(professional.id),
+    ),
   );
+  /** Adicionais em que a empresa deixa o cliente escolher o executor. */
+  const addonChoices = selectedAddonServices
+    .map((addon) => ({
+      addon,
+      options: professionals.filter(
+        (professional) =>
+          !addon.eligibleProfessionalIds.length ||
+          addon.eligibleProfessionalIds.includes(professional.id),
+      ),
+    }))
+    .filter(
+      (entry) => entry.addon.addonProfessionalMode === "client_choice" && entry.options.length > 1,
+    );
+
   const chosenProfessional = professionals.find(
     (professional) => professional.id === resolvedProfessionalId,
   );
