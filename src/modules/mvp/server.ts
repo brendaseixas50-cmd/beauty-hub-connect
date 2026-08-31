@@ -1377,6 +1377,10 @@ const serviceSchema = z.object({
     .default([]),
   /** Serviços/combos que oferecem este serviço como adicional opcional. */
   addonForServiceIds: z.array(z.string().uuid()).max(60).default([]),
+  /** Quem executa este serviço quando ele entra como adicional. */
+  addonProfessionalMode: z.enum(["any", "preferred", "client_choice"]).default("any"),
+  addonPreferredProfessionalId: z.string().uuid().nullable().default(null),
+  addonPreferredFallback: z.enum(["any", "none"]).default("any"),
 });
 
 export const listServices = createServerFn({ method: "GET" }).handler(
@@ -1399,7 +1403,9 @@ export const listServices = createServerFn({ method: "GET" }).handler(
         .order("position"),
       supabase
         .from("service_addon_links")
-        .select("parent_service_id, addon_service_id, position")
+        .select(
+          "parent_service_id, addon_service_id, position, professional_mode, assigned_professional_id, preferred_fallback",
+        )
         .eq("tenant_id", tenantId)
         .order("position"),
       ]);
@@ -1429,10 +1435,24 @@ export const listServices = createServerFn({ method: "GET" }).handler(
       comboItems.set(item.combo_service_id, config);
     }
     const addons = new Map<string, string[]>();
-    for (const link of addonResult.data ?? []) {
+    /** Configuração de executor do adicional (vale para todos os pais dele). */
+    const addonConfig = new Map<
+      string,
+      { mode: "any" | "preferred" | "client_choice"; preferredId: string | null; fallback: "any" | "none" }
+    >();
+    for (const link of (addonResult.data ?? []) as unknown as AddonLinkRow[]) {
       const current = addons.get(link.addon_service_id) ?? [];
       current.push(link.parent_service_id);
       addons.set(link.addon_service_id, current);
+      if (!addonConfig.has(link.addon_service_id))
+        addonConfig.set(link.addon_service_id, {
+          mode:
+            link.professional_mode === "preferred" || link.professional_mode === "client_choice"
+              ? link.professional_mode
+              : "any",
+          preferredId: link.assigned_professional_id ?? null,
+          fallback: link.preferred_fallback === "none" ? "none" : "any",
+        });
     }
     const linked = new Set((linksResult.data ?? []).map((link) => link.service_id));
     return servicesResult.data.map((service) => {
@@ -1447,6 +1467,9 @@ export const listServices = createServerFn({ method: "GET" }).handler(
         comboServiceIds: combos.get(service.id) ?? [],
         comboItems: comboItems.get(service.id) ?? [],
         addonForServiceIds: addons.get(service.id) ?? [],
+        addonProfessionalMode: addonConfig.get(service.id)?.mode ?? "any",
+        addonPreferredProfessionalId: addonConfig.get(service.id)?.preferredId ?? null,
+        addonPreferredFallback: addonConfig.get(service.id)?.fallback ?? "any",
       };
     });
   },
@@ -1543,7 +1566,11 @@ export const saveService = createServerFn({ method: "POST" })
           parent_service_id: parentId,
           addon_service_id: saved.id,
           position: index,
-        })),
+          professional_mode: data.addonProfessionalMode,
+          assigned_professional_id:
+            data.addonProfessionalMode === "preferred" ? data.addonPreferredProfessionalId : null,
+          preferred_fallback: data.addonPreferredFallback,
+        })) as never,
       );
       if (addonError)
         databaseError(addonError, "Não foi possível salvar os adicionais deste serviço.");
