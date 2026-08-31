@@ -31,7 +31,9 @@ import type {
   Service,
   ServiceWithUsage,
   ComboItemConfig,
+  AddonLinkRow,
   ComboItemRow,
+
 } from "./domain";
 
 const idSchema = z.object({ id: z.string().uuid() });
