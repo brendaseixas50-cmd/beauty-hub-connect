@@ -269,6 +269,20 @@ function ServiceDialog({
   const [addonForServiceIds, setAddonForServiceIds] = useState<string[]>(
     service?.addonForServiceIds ?? [],
   );
+  /** Quem executa este serviço quando ele é escolhido como adicional. */
+  const [addonProfessionalMode, setAddonProfessionalMode] = useState<
+    "any" | "preferred" | "client_choice"
+  >(service?.addonProfessionalMode ?? "any");
+  const [addonPreferredProfessionalId, setAddonPreferredProfessionalId] = useState(
+    service?.addonPreferredProfessionalId ?? "",
+  );
+  const [addonPreferredFallback, setAddonPreferredFallback] = useState<"any" | "none">(
+    service?.addonPreferredFallback ?? "any",
+  );
+  /** Somente profissionais vinculados a este serviço podem executá-lo. */
+  const addonEligible = professionals.filter(
+    (item) => !service || !item.serviceIds.length || item.serviceIds.includes(service.id),
+  );
   const options = services.filter(
     (item) => item.id !== service?.id && !item.is_combo && !item.is_addon,
   );
@@ -362,6 +376,12 @@ function ServiceDialog({
             comboItems: isCombo ? comboServiceIds.map((id) => itemConfig(id)) : [],
             isAddon: isCombo ? false : isAddon,
             addonForServiceIds: !isCombo && isAddon ? addonForServiceIds : [],
+            addonProfessionalMode,
+            addonPreferredProfessionalId:
+              addonProfessionalMode === "preferred" && addonPreferredProfessionalId
+                ? addonPreferredProfessionalId
+                : null,
+            addonPreferredFallback,
           },
         }),
       service ? "Serviço atualizado." : "Serviço cadastrado.",
@@ -495,6 +515,57 @@ function ServiceDialog({
                       </label>
                     ))
                   )}
+                </div>
+                <div className="grid gap-2 rounded-xl border p-3">
+                  <strong className="text-sm">Quem executa este adicional?</strong>
+                  <select
+                    aria-label="Quem executa este adicional"
+                    className="min-h-10 rounded-lg border bg-background px-2 text-sm"
+                    value={addonProfessionalMode}
+                    onChange={(event) =>
+                      setAddonProfessionalMode(
+                        event.currentTarget.value as "any" | "preferred" | "client_choice",
+                      )
+                    }
+                  >
+                    <option value="any">Qualquer profissional disponível</option>
+                    <option value="preferred">Profissional preferencial</option>
+                    <option value="client_choice">O cliente escolhe</option>
+                  </select>
+                  {addonProfessionalMode === "preferred" ? (
+                    <>
+                      <select
+                        aria-label="Profissional preferencial"
+                        className="min-h-10 rounded-lg border bg-background px-2 text-sm"
+                        value={addonPreferredProfessionalId}
+                        onChange={(event) =>
+                          setAddonPreferredProfessionalId(event.currentTarget.value)
+                        }
+                      >
+                        <option value="">Selecionar profissional</option>
+                        {addonEligible.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.name}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        aria-label="Se o preferencial estiver indisponível"
+                        className="min-h-10 rounded-lg border bg-background px-2 text-sm"
+                        value={addonPreferredFallback}
+                        onChange={(event) =>
+                          setAddonPreferredFallback(event.currentTarget.value as "any" | "none")
+                        }
+                      >
+                        <option value="any">Se indisponível, usar outro profissional apto</option>
+                        <option value="none">Se indisponível, não oferecer o horário</option>
+                      </select>
+                    </>
+                  ) : null}
+                  <p className="text-xs text-muted-foreground">
+                    Somente profissionais vinculados a este serviço são considerados. O profissional
+                    do serviço principal não precisa executar o adicional.
+                  </p>
                 </div>
               </div>
             ) : null}
