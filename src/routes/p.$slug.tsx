@@ -187,7 +187,10 @@ function BookingWizard({
   const [step, setStep] = useState(1);
   const [serviceIds, setServiceIds] = useState<string[]>([]);
   const [professionalChoice, setProfessionalChoice] = useState("any");
+  /** Executor escolhido pelo cliente para cada adicional (quando permitido). */
+  const [addonProfessionals, setAddonProfessionals] = useState<Record<string, string>>({});
   const [resolvedProfessionalId, setResolvedProfessionalId] = useState("");
+
   const [date, setDate] = useState("");
   const [slots, setSlots] = useState<Awaited<ReturnType<typeof availabilityFn>>["slots"]>([]);
   const [startsAt, setStartsAt] = useState("");
