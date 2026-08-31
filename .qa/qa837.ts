@@ -4,12 +4,12 @@ const h={apikey:key,Authorization:`Bearer ${key}`,"Content-Type":"application/js
 const g=async(p:string)=>await (await fetch(`${url}/rest/v1/${p}`,{headers:h})).json();
 const rpc=async(fn:string,a:unknown)=>{const r=await fetch(`${url}/rest/v1/rpc/${fn}`,{method:"POST",headers:h,body:JSON.stringify(a)});return {s:r.status,d:await r.json().catch(()=>null)};};
 const t=(await g("tenants?slug=eq.top-barbers-277e3e0c&select=id"))[0];
-const pros=await g(`professionals?tenant_id=eq.${t.id}&select=id,name,is_active`);
-const svcs=await g(`services?tenant_id=eq.${t.id}&select=id,name,is_addon,is_active,duration_minutes,price_cents`);
+const pros=await g(`professionals?tenant_id=eq.${t.id}&select=id,name,active`);
+const svcs=await g(`services?tenant_id=eq.${t.id}&select=id,name,is_addon,active,duration_minutes,price_cents`);
 const ps=await g(`professional_services?select=professional_id,service_id`);
 const links=await g(`service_addon_links?select=*`);
 console.log("pros",pros);
-console.log("svcs",svcs.map((s:any)=>[s.id,s.name,s.is_addon,s.is_active,s.duration_minutes]));
+console.log("svcs",svcs.map((s:any)=>[s.id,s.name,s.is_addon,s.active,s.duration_minutes]));
 console.log("ps",ps);
 console.log("links",links);
 const page=(await rpc("get_public_company_page_v3",{p_slug:"top-barbers-277e3e0c"})).d;
