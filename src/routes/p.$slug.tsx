@@ -280,7 +280,9 @@ function BookingWizard({
           serviceIds,
           professionalId:
             !needsProfessionalChoice || professionalChoice === "any" ? null : professionalChoice,
+          addonProfessionals,
         },
+
       });
       setSlots(response.slots);
     } catch (cause) {
