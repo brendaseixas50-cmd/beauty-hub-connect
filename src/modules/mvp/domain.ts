@@ -41,6 +41,16 @@ export type ComboItemRow = {
   assigned_professional_id: string | null;
   execution_mode: string | null;
 };
+/** Linha crua do vínculo de adicional, com a configuração de executor. */
+export type AddonLinkRow = {
+  parent_service_id: string;
+  addon_service_id: string;
+  position: number;
+  professional_mode: string | null;
+  assigned_professional_id: string | null;
+  preferred_fallback: string | null;
+};
+
 /** Serviço com os vínculos que precisam ser preservados antes de excluir. */
 export type ServiceWithUsage = Service & {
   appointments: number;
@@ -51,6 +61,11 @@ export type ServiceWithUsage = Service & {
   comboItems: ComboItemConfig[];
   /** Serviços/combos que oferecem este serviço na seção "Adicionar também". */
   addonForServiceIds: string[];
+  /** Como o executor é escolhido quando este serviço é usado como adicional. */
+  addonProfessionalMode: "any" | "preferred" | "client_choice";
+  addonPreferredProfessionalId: string | null;
+  addonPreferredFallback: "any" | "none";
+
 };
 
 

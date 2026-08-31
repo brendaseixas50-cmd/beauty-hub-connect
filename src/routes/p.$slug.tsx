@@ -187,7 +187,10 @@ function BookingWizard({
   const [step, setStep] = useState(1);
   const [serviceIds, setServiceIds] = useState<string[]>([]);
   const [professionalChoice, setProfessionalChoice] = useState("any");
+  /** Executor escolhido pelo cliente para cada adicional (quando permitido). */
+  const [addonProfessionals, setAddonProfessionals] = useState<Record<string, string>>({});
   const [resolvedProfessionalId, setResolvedProfessionalId] = useState("");
+
   const [date, setDate] = useState("");
   const [slots, setSlots] = useState<Awaited<ReturnType<typeof availabilityFn>>["slots"]>([]);
   const [startsAt, setStartsAt] = useState("");
@@ -212,36 +215,57 @@ function BookingWizard({
       const mainIds = next.filter(
         (item) => !services.find((service) => service.id === item)?.isAddon,
       );
-      return next.filter((item) => {
+      const kept = next.filter((item) => {
         const service = services.find((entry) => entry.id === item);
         if (!service?.isAddon) return true;
         return service.addonForServiceIds.some((parentId) => mainIds.includes(parentId));
       });
+      // Executor escolhido para um adicional removido não pode continuar valendo.
+      setAddonProfessionals((assigned) =>
+        Object.fromEntries(Object.entries(assigned).filter(([addonId]) => kept.includes(addonId))),
+      );
+      return kept;
     });
   }
+
 
   const selectedServices = services.filter((service) => serviceIds.includes(service.id));
   const total = selectedServices.reduce((sum, service) => sum + service.priceCents, 0);
   const duration = selectedServices.reduce((sum, service) => sum + service.durationMinutes, 0);
   const signal = depositAmount(company, total);
-  /** Serviços da seleção em que o cliente precisa escolher um profissional. */
-  const servicesNeedingProfessional = selectedServices.filter(
+  /** Somente os serviços principais definem a etapa "Escolha o profissional". */
+  const selectedMainServices = selectedServices.filter((service) => !service.isAddon);
+  const selectedAddonServices = selectedServices.filter((service) => service.isAddon);
+  const servicesNeedingProfessional = selectedMainServices.filter(
     (service) => service.requiresProfessional,
   );
   const needsProfessionalChoice = servicesNeedingProfessional.length > 0;
   /**
-   * Compatibilidade serviço por serviço: o profissional aparece quando executa
-   * ao menos um dos serviços que exigem profissional (combos podem ser feitos
-   * por mais de uma pessoa, organizadas internamente pela empresa).
+   * O serviço principal manda: só aparecem profissionais aptos/vinculados a ele.
+   * Quem executa apenas um adicional nunca entra nesta lista, e "Qualquer
+   * profissional disponível" significa qualquer um dentre estes.
    */
-  const availableProfessionals = professionals.filter(
-    (professional) =>
-      !professional.serviceIds.length ||
-      !needsProfessionalChoice ||
-      servicesNeedingProfessional.some((service) =>
-        professional.serviceIds.includes(service.id),
-      ),
+  const availableProfessionals = professionals.filter((professional) =>
+    servicesNeedingProfessional.every(
+      (service) =>
+        !service.eligibleProfessionalIds.length ||
+        service.eligibleProfessionalIds.includes(professional.id),
+    ),
   );
+  /** Adicionais em que a empresa deixa o cliente escolher o executor. */
+  const addonChoices = selectedAddonServices
+    .map((addon) => ({
+      addon,
+      options: professionals.filter(
+        (professional) =>
+          !addon.eligibleProfessionalIds.length ||
+          addon.eligibleProfessionalIds.includes(professional.id),
+      ),
+    }))
+    .filter(
+      (entry) => entry.addon.addonProfessionalMode === "client_choice" && entry.options.length > 1,
+    );
+
   const chosenProfessional = professionals.find(
     (professional) => professional.id === resolvedProfessionalId,
   );
@@ -262,7 +286,9 @@ function BookingWizard({
           serviceIds,
           professionalId:
             !needsProfessionalChoice || professionalChoice === "any" ? null : professionalChoice,
+          addonProfessionals,
         },
+
       });
       setSlots(response.slots);
     } catch (cause) {
@@ -288,7 +314,9 @@ function BookingWizard({
           slug: company.slug,
           serviceIds,
           professionalId: resolvedProfessionalId,
+          addonProfessionals,
           startsAt,
+
           customerName: name,
           customerPhone: phone,
           requestId: crypto.randomUUID(),
@@ -356,12 +384,23 @@ function BookingWizard({
       {step === 1 ? (
         <StepServices
           services={services}
+          professionals={professionals}
           selected={serviceIds}
           onToggle={toggleService}
+          addonProfessionals={addonProfessionals}
+          onAddonProfessionalChange={(addonId, professionalId) =>
+            setAddonProfessionals((current) => {
+              const next = { ...current };
+              if (professionalId) next[addonId] = professionalId;
+              else delete next[addonId];
+              return next;
+            })
+          }
           total={total}
           duration={duration}
         />
       ) : null}
+
       {step === 2 ? (
         needsProfessionalChoice ? (
           <StepProfessionals
@@ -577,14 +616,20 @@ function BookingWizard({
 
 function StepServices({
   services,
+  professionals,
   selected,
   onToggle,
+  addonProfessionals,
+  onAddonProfessionalChange,
   total,
   duration,
 }: {
   services: Service[];
+  professionals: Professional[];
   selected: string[];
   onToggle: (id: string) => void;
+  addonProfessionals: Record<string, string>;
+  onAddonProfessionalChange: (addonId: string, professionalId: string) => void;
   total: number;
   duration: number;
 }) {
@@ -601,6 +646,14 @@ function StepServices({
       service.isAddon &&
       service.addonForServiceIds.some((parentId) => selectedMainIds.includes(parentId)),
   );
+  /** Somente profissionais vinculados àquele adicional. */
+  const addonOptions = (addon: Service) =>
+    professionals.filter(
+      (professional) =>
+        !addon.eligibleProfessionalIds.length ||
+        addon.eligibleProfessionalIds.includes(professional.id),
+    );
+
   return (
     <div className="grid gap-3">
       {combos.length ? (
@@ -675,30 +728,55 @@ function StepServices({
             <p className="text-xs text-muted-foreground">Opcional — você pode seguir sem escolher.</p>
           </div>
           {addons.map((addon) => (
-            <Choice
-              key={addon.id}
-              selected={selected.includes(addon.id)}
-              onClick={() => onToggle(addon.id)}
-            >
-              <span className="flex min-w-0 flex-1 items-center gap-3">
-                {addon.imageUrl ? (
-                  <img
-                    src={addon.imageUrl}
-                    alt={addon.name}
-                    loading="lazy"
-                    className="h-10 w-10 shrink-0 rounded-lg object-cover"
-                  />
-                ) : null}
-                <span className="min-w-0 break-words">
-                  <strong className="block break-words">{addon.name}</strong>
-                  <small className="block text-muted-foreground">
-                    +{addon.durationMinutes} min
-                  </small>
+            <div key={addon.id} className="grid gap-1">
+              <Choice
+                selected={selected.includes(addon.id)}
+                onClick={() => onToggle(addon.id)}
+              >
+                <span className="flex min-w-0 flex-1 items-center gap-3">
+                  {addon.imageUrl ? (
+                    <img
+                      src={addon.imageUrl}
+                      alt={addon.name}
+                      loading="lazy"
+                      className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                    />
+                  ) : null}
+                  <span className="min-w-0 break-words">
+                    <strong className="block break-words">{addon.name}</strong>
+                    <small className="block text-muted-foreground">
+                      +{addon.durationMinutes} min
+                    </small>
+                  </span>
                 </span>
-              </span>
-              <strong>+ {brl(addon.priceCents)}</strong>
-            </Choice>
+                <strong>+ {brl(addon.priceCents)}</strong>
+              </Choice>
+              {/* Seletor só aparece quando a empresa permite a escolha e existe
+                  mais de um profissional apto a este adicional. */}
+              {selected.includes(addon.id) &&
+              addon.addonProfessionalMode === "client_choice" &&
+              addonOptions(addon).length > 1 ? (
+                <label className="flex items-center gap-2 px-4 text-xs text-muted-foreground">
+                  Profissional:
+                  <select
+                    className="min-h-9 flex-1 rounded-lg border bg-card px-2 py-1 text-sm text-foreground"
+                    value={addonProfessionals[addon.id] ?? ""}
+                    onChange={(event) =>
+                      onAddonProfessionalChange(addon.id, event.currentTarget.value)
+                    }
+                  >
+                    <option value="">Qualquer profissional disponível</option>
+                    {addonOptions(addon).map((professional) => (
+                      <option key={professional.id} value={professional.id}>
+                        {professional.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+            </div>
           ))}
+
         </div>
       ) : null}
 
@@ -870,7 +948,20 @@ function BookingSuccess({
         {result.services?.map((service) => (
           <p key={service}>{service}</p>
         ))}
-        <p>{result.professional}</p>
+        {/* Um único agendamento: quando há mais de um executor, mostramos
+            discretamente quem faz cada serviço. */}
+        {result.assignments && result.assignments.length > 1 ? (
+          <div className="grid gap-0.5">
+            {result.assignments.map((item) => (
+              <p key={`${item.service}-${item.professional}`}>
+                {item.service} — <strong>{item.professional}</strong>
+              </p>
+            ))}
+          </div>
+        ) : (
+          <p>{result.professional}</p>
+        )}
+
         <p>{result.startsAt ? formatSlot(result.startsAt, timezone) : ""}</p>
         {result.totalPriceCents !== undefined ? (
           <p>
