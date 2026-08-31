@@ -51,6 +51,11 @@ export type ServiceWithUsage = Service & {
   comboItems: ComboItemConfig[];
   /** Serviços/combos que oferecem este serviço na seção "Adicionar também". */
   addonForServiceIds: string[];
+  /** Como o executor é escolhido quando este serviço é usado como adicional. */
+  addonProfessionalMode: "any" | "preferred" | "client_choice";
+  addonPreferredProfessionalId: string | null;
+  addonPreferredFallback: "any" | "none";
+
 };
 
 
