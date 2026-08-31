@@ -942,7 +942,20 @@ function BookingSuccess({
         {result.services?.map((service) => (
           <p key={service}>{service}</p>
         ))}
-        <p>{result.professional}</p>
+        {/* Um único agendamento: quando há mais de um executor, mostramos
+            discretamente quem faz cada serviço. */}
+        {result.assignments && result.assignments.length > 1 ? (
+          <div className="grid gap-0.5">
+            {result.assignments.map((item) => (
+              <p key={`${item.service}-${item.professional}`}>
+                {item.service} — <strong>{item.professional}</strong>
+              </p>
+            ))}
+          </div>
+        ) : (
+          <p>{result.professional}</p>
+        )}
+
         <p>{result.startsAt ? formatSlot(result.startsAt, timezone) : ""}</p>
         {result.totalPriceCents !== undefined ? (
           <p>
