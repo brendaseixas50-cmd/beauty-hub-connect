@@ -215,13 +215,19 @@ function BookingWizard({
       const mainIds = next.filter(
         (item) => !services.find((service) => service.id === item)?.isAddon,
       );
-      return next.filter((item) => {
+      const kept = next.filter((item) => {
         const service = services.find((entry) => entry.id === item);
         if (!service?.isAddon) return true;
         return service.addonForServiceIds.some((parentId) => mainIds.includes(parentId));
       });
+      // Executor escolhido para um adicional removido não pode continuar valendo.
+      setAddonProfessionals((assigned) =>
+        Object.fromEntries(Object.entries(assigned).filter(([addonId]) => kept.includes(addonId))),
+      );
+      return kept;
     });
   }
+
 
   const selectedServices = services.filter((service) => serviceIds.includes(service.id));
   const total = selectedServices.reduce((sum, service) => sum + service.priceCents, 0);
