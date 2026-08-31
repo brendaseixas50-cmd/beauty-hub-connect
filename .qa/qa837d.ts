@@ -1,0 +1,11 @@
+const url="https://vctmjgezsdfwblemrjav.supabase.co";const key=process.env.PROD_SUPABASE_SECRET_KEY!;
+const h={apikey:key,Authorization:`Bearer ${key}`,"Content-Type":"application/json"};
+const g=async(p:string)=>await (await fetch(`${url}/rest/v1/${p}`,{headers:h})).json();
+const del=async(p:string)=>{const r=await fetch(`${url}/rest/v1/${p}`,{method:"DELETE",headers:h});return r.status;};
+const patch=async(p:string,b:unknown)=>{const r=await fetch(`${url}/rest/v1/${p}`,{method:"PATCH",headers:h,body:JSON.stringify(b)});return `${r.status} ${(await r.text()).slice(0,120)}`;};
+const rpc=async(fn:string,a:unknown)=>{const r=await fetch(`${url}/rest/v1/rpc/${fn}`,{method:"POST",headers:h,body:JSON.stringify(a)});return await r.json().catch(()=>null);};
+const T="4071a52f-66ad-4253-8a48-bf5c1768e02d",slug="top-barbers-277e3e0c";
+const CORTE="69929979-6021-4f45-8dc5-61c7744f5070",UNHA="65013890-aa37-413e-b29d-3be2274a47e6",SOBRA="0651c995-24cc-4c4d-90d0-52a547463268";
+const ANTHONY="49c2cc4a-0ebe-443e-ba0e-1a5a0b831517",JOAQUIM="0bf6a3a5-aa6d-484e-9927-00a9df2a6a03",BRUNA="d2ec7937-45b4-44d5-b4ee-f5372f2d1c3d";
+const at=(d:string)=>d;
+const pass=(n:string,ok:boolean,extra=""),=0;
