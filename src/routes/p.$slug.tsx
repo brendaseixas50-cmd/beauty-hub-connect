@@ -697,30 +697,55 @@ function StepServices({
             <p className="text-xs text-muted-foreground">Opcional — você pode seguir sem escolher.</p>
           </div>
           {addons.map((addon) => (
-            <Choice
-              key={addon.id}
-              selected={selected.includes(addon.id)}
-              onClick={() => onToggle(addon.id)}
-            >
-              <span className="flex min-w-0 flex-1 items-center gap-3">
-                {addon.imageUrl ? (
-                  <img
-                    src={addon.imageUrl}
-                    alt={addon.name}
-                    loading="lazy"
-                    className="h-10 w-10 shrink-0 rounded-lg object-cover"
-                  />
-                ) : null}
-                <span className="min-w-0 break-words">
-                  <strong className="block break-words">{addon.name}</strong>
-                  <small className="block text-muted-foreground">
-                    +{addon.durationMinutes} min
-                  </small>
+            <div key={addon.id} className="grid gap-1">
+              <Choice
+                selected={selected.includes(addon.id)}
+                onClick={() => onToggle(addon.id)}
+              >
+                <span className="flex min-w-0 flex-1 items-center gap-3">
+                  {addon.imageUrl ? (
+                    <img
+                      src={addon.imageUrl}
+                      alt={addon.name}
+                      loading="lazy"
+                      className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                    />
+                  ) : null}
+                  <span className="min-w-0 break-words">
+                    <strong className="block break-words">{addon.name}</strong>
+                    <small className="block text-muted-foreground">
+                      +{addon.durationMinutes} min
+                    </small>
+                  </span>
                 </span>
-              </span>
-              <strong>+ {brl(addon.priceCents)}</strong>
-            </Choice>
+                <strong>+ {brl(addon.priceCents)}</strong>
+              </Choice>
+              {/* Seletor só aparece quando a empresa permite a escolha e existe
+                  mais de um profissional apto a este adicional. */}
+              {selected.includes(addon.id) &&
+              addon.addonProfessionalMode === "client_choice" &&
+              addonOptions(addon).length > 1 ? (
+                <label className="flex items-center gap-2 px-4 text-xs text-muted-foreground">
+                  Profissional:
+                  <select
+                    className="min-h-9 flex-1 rounded-lg border bg-card px-2 py-1 text-sm text-foreground"
+                    value={addonProfessionals[addon.id] ?? ""}
+                    onChange={(event) =>
+                      onAddonProfessionalChange(addon.id, event.currentTarget.value)
+                    }
+                  >
+                    <option value="">Qualquer profissional disponível</option>
+                    {addonOptions(addon).map((professional) => (
+                      <option key={professional.id} value={professional.id}>
+                        {professional.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+            </div>
           ))}
+
         </div>
       ) : null}
 
