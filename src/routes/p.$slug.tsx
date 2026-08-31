@@ -378,12 +378,23 @@ function BookingWizard({
       {step === 1 ? (
         <StepServices
           services={services}
+          professionals={professionals}
           selected={serviceIds}
           onToggle={toggleService}
+          addonProfessionals={addonProfessionals}
+          onAddonProfessionalChange={(addonId, professionalId) =>
+            setAddonProfessionals((current) => {
+              const next = { ...current };
+              if (professionalId) next[addonId] = professionalId;
+              else delete next[addonId];
+              return next;
+            })
+          }
           total={total}
           duration={duration}
         />
       ) : null}
+
       {step === 2 ? (
         needsProfessionalChoice ? (
           <StepProfessionals
