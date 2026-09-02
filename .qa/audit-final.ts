@@ -1,7 +1,7 @@
 const url = "https://vctmjgezsdfwblemrjav.supabase.co";
 const sec = process.env.PROD_SUPABASE_SECRET_KEY!;
 const anon = "sb_publishable_DdzRB5DSvp73mnDbdLfraw_wm87F8p0";
-const H = (k: string) => ({ apikey: k, Authorization: `Bearer ${k}`, "Content-Type": "application/json" });
+const H = (k: string) => ({ apikey: k.startsWith("sb_") ? k : anon, Authorization: `Bearer ${k}`, "Content-Type": "application/json" });
 const SH = H(sec);
 const out: string[] = [];
 const log = (name: string, pass: boolean, info = "") => { out.push(`${pass ? "PASS" : "FAIL"} | ${name} | ${info}`); };
