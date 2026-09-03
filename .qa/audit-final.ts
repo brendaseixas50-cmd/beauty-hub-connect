@@ -23,9 +23,13 @@ async function mkUser(tag: string, product: string, company: string) {
   await fetch(`${url}/rest/v1/platform_access_grants`, { method: "POST", headers: SH, body: JSON.stringify({ email, user_id: u.id, product_type: product, access_type: "beta_tester", status: "active", plan_code: "team" }) });
   const s: any = await (await fetch(`${url}/auth/v1/token?grant_type=password`, { method: "POST", headers: H(anon), body: JSON.stringify({ email, password }) })).json();
   const token = s.access_token as string;
-  await rpc(token, "create_company_for_current_user", { company_name: company, selected_product: product });
+  const created = await rpc(token, "create_company_for_current_user", { company_name: company, selected_product: product });
+  const tenantId = JSON.parse(created.body) as string;
+  await rpc(token, "switch_active_tenant", { target_tenant_id: tenantId });
   const boot = JSON.parse((await rpc(token, "get_my_session_bootstrap", {})).body);
-  return { email, userId: u.id as string, token, tenantId: boot.companies[0].tenantId as string, role: boot.companies[0].role };
+  const mine = boot.companies.find((c: any) => c.tenantId === tenantId);
+  if (!mine) throw new Error(`bootstrap sem tenant criado: ${created.body} / ${JSON.stringify(boot.companies)}`);
+  return { email, userId: u.id as string, token, tenantId, role: mine.role };
 }
 
 const A = await mkUser("a", "beauty", `QA Empresa A ${stamp}`);
