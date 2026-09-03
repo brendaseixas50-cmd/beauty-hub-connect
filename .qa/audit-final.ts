@@ -36,9 +36,12 @@ log("setup: dois tenants isolados criados", A.tenantId !== B.tenantId, `A=${A.te
 async function seed(u: typeof A) {
   const cli = JSON.parse((await rest(u.token, "clients", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Cliente QA", phone: "+5511999990000" }) })).body)[0];
   const svc = JSON.parse((await rest(u.token, "services", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Servico QA", duration_minutes: 30, price_cents: 5000 }) })).body)[0];
-  const proRes = await rest(u.token, "professionals", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Pro QA", commission_percent: 50 }) });
-  console.error("DBG professionals", proRes.status, proRes.body.slice(0, 200));
-  const pro = JSON.parse(proRes.body)[0];
+  let pro = JSON.parse((await rest(u.token, `professionals?tenant_id=eq.${u.tenantId}&select=*&limit=1`)).body)[0];
+  if (!pro) {
+    const proRes = await rest(u.token, "professionals", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Pro QA", commission_percent: 50 }) });
+    pro = JSON.parse(proRes.body)[0];
+    if (!pro) throw new Error(`seed professional: ${proRes.status} ${proRes.body}`);
+  }
   const prod = JSON.parse((await rest(u.token, "products", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Produto QA", cost_cents: 100, sale_price_cents: 200, stock_quantity: 5, minimum_stock: 1, unit: "un" }) })).body)[0];
   await rest(u.token, "professional_services", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, professional_id: pro.id, service_id: svc.id }) });
   const start = new Date(Date.now() + 86400000).toISOString();
@@ -47,6 +50,9 @@ async function seed(u: typeof A) {
   return { cli, svc, pro, prod, apt, fin };
 }
 const sa = await seed(A); const sb = await seed(B);
+// limite de plano Solo aplicado no banco (não só no frontend)
+const extraPro = await rest(A.token, "professionals", { method: "POST", body: JSON.stringify({ tenant_id: A.tenantId, name: "Pro Extra", commission_percent: 10 }) });
+log("limite de profissionais do plano aplicado no banco", extraPro.status >= 400, `status=${extraPro.status} ${extraPro.body.slice(0,70)}`);
 log("escrita no próprio tenant funciona (A)", !!(sa.cli?.id && sa.apt?.id && sa.fin?.id), `apt=${sa.apt?.id?.slice(0,8)}`);
 log("escrita no próprio tenant funciona (B)", !!(sb.cli?.id && sb.apt?.id && sb.fin?.id), "");
 
