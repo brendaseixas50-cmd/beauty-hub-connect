@@ -50,7 +50,10 @@ async function seed(u: typeof A) {
   await rest(u.token, "professional_services", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, professional_id: pro.id, service_id: svc.id }) });
   const start = new Date(Date.now() + 86400000).toISOString();
   const apt = JSON.parse((await rest(u.token, "appointments", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, client_id: cli.id, service_id: svc.id, professional_id: pro.id, starts_at: start, ends_at: new Date(Date.now() + 86400000 + 1800000).toISOString(), price_cents: 5000, status: "scheduled" }) })).body)[0];
-  const fin = JSON.parse((await rest(u.token, "financial_entries", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, entry_type: "revenue", description: "QA", amount_cents: 5000, due_date: new Date().toISOString().slice(0, 10), status: "paid", origin: "manual" }) })).body)[0];
+  const finRes = await rest(u.token, "financial_entries", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, entry_type: "revenue", description: "QA", amount_cents: 5000, due_date: new Date().toISOString().slice(0, 10), status: "paid", origin: "manual" }) });
+  const aptRes2 = apt ? null : null;
+  if (!JSON.parse(finRes.body)[0]) console.error("DBG fin", finRes.status, finRes.body.slice(0, 250), "| apt:", JSON.stringify(apt).slice(0,120));
+  const fin = JSON.parse(finRes.body)[0] ?? { id: null };
   return { cli, svc, pro, prod, apt, fin };
 }
 const sa = await seed(A); const sb = await seed(B);
