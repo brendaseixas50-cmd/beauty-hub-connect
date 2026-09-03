@@ -36,7 +36,9 @@ log("setup: dois tenants isolados criados", A.tenantId !== B.tenantId, `A=${A.te
 async function seed(u: typeof A) {
   const cli = JSON.parse((await rest(u.token, "clients", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Cliente QA", phone: "+5511999990000" }) })).body)[0];
   const svc = JSON.parse((await rest(u.token, "services", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Servico QA", duration_minutes: 30, price_cents: 5000 }) })).body)[0];
-  const pro = JSON.parse((await rest(u.token, "professionals", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Pro QA", commission_percent: 50 }) })).body)[0];
+  const proRes = await rest(u.token, "professionals", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Pro QA", commission_percent: 50 }) });
+  console.error("DBG professionals", proRes.status, proRes.body.slice(0, 200));
+  const pro = JSON.parse(proRes.body)[0];
   const prod = JSON.parse((await rest(u.token, "products", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Produto QA", cost_cents: 100, sale_price_cents: 200, stock_quantity: 5, minimum_stock: 1, unit: "un" }) })).body)[0];
   await rest(u.token, "professional_services", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, professional_id: pro.id, service_id: svc.id }) });
   const start = new Date(Date.now() + 86400000).toISOString();
