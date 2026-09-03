@@ -23,9 +23,13 @@ async function mkUser(tag: string, product: string, company: string) {
   await fetch(`${url}/rest/v1/platform_access_grants`, { method: "POST", headers: SH, body: JSON.stringify({ email, user_id: u.id, product_type: product, access_type: "beta_tester", status: "active", plan_code: "team" }) });
   const s: any = await (await fetch(`${url}/auth/v1/token?grant_type=password`, { method: "POST", headers: H(anon), body: JSON.stringify({ email, password }) })).json();
   const token = s.access_token as string;
-  await rpc(token, "create_company_for_current_user", { company_name: company, selected_product: product });
+  const created = await rpc(token, "create_company_for_current_user", { company_name: company, selected_product: product });
+  const tenantId = JSON.parse(created.body) as string;
+  await rpc(token, "switch_active_tenant", { target_tenant_id: tenantId });
   const boot = JSON.parse((await rpc(token, "get_my_session_bootstrap", {})).body);
-  return { email, userId: u.id as string, token, tenantId: boot.companies[0].tenantId as string, role: boot.companies[0].role };
+  const mine = boot.companies.find((c: any) => c.tenantId === tenantId);
+  if (!mine) throw new Error(`bootstrap sem tenant criado: ${created.body} / ${JSON.stringify(boot.companies)}`);
+  return { email, userId: u.id as string, token, tenantId, role: mine.role };
 }
 
 const A = await mkUser("a", "beauty", `QA Empresa A ${stamp}`);
@@ -36,15 +40,25 @@ log("setup: dois tenants isolados criados", A.tenantId !== B.tenantId, `A=${A.te
 async function seed(u: typeof A) {
   const cli = JSON.parse((await rest(u.token, "clients", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Cliente QA", phone: "+5511999990000" }) })).body)[0];
   const svc = JSON.parse((await rest(u.token, "services", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Servico QA", duration_minutes: 30, price_cents: 5000 }) })).body)[0];
-  const pro = JSON.parse((await rest(u.token, "professionals", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Pro QA", commission_percent: 50 }) })).body)[0];
+  let pro = JSON.parse((await rest(u.token, `professionals?tenant_id=eq.${u.tenantId}&select=*&limit=1`)).body)[0];
+  if (!pro) {
+    const proRes = await rest(u.token, "professionals", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Pro QA", commission_percent: 50 }) });
+    pro = JSON.parse(proRes.body)[0];
+    if (!pro) throw new Error(`seed professional: ${proRes.status} ${proRes.body}`);
+  }
   const prod = JSON.parse((await rest(u.token, "products", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, name: "Produto QA", cost_cents: 100, sale_price_cents: 200, stock_quantity: 5, minimum_stock: 1, unit: "un" }) })).body)[0];
   await rest(u.token, "professional_services", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, professional_id: pro.id, service_id: svc.id }) });
   const start = new Date(Date.now() + 86400000).toISOString();
   const apt = JSON.parse((await rest(u.token, "appointments", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, client_id: cli.id, service_id: svc.id, professional_id: pro.id, starts_at: start, ends_at: new Date(Date.now() + 86400000 + 1800000).toISOString(), price_cents: 5000, status: "scheduled" }) })).body)[0];
-  const fin = JSON.parse((await rest(u.token, "financial_entries", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, entry_type: "revenue", description: "QA", amount_cents: 5000, due_date: new Date().toISOString().slice(0, 10), status: "paid", origin: "manual" }) })).body)[0];
+  const finRes = await rest(u.token, "financial_entries", { method: "POST", body: JSON.stringify({ tenant_id: u.tenantId, entry_type: "income", description: "QA", amount_cents: 5000, due_date: new Date().toISOString().slice(0, 10), status: "paid", origin: "manual" }) });
+  if (!JSON.parse(finRes.body)[0]) console.error("DBG fin", finRes.status, finRes.body.slice(0, 250));
+  const fin = JSON.parse(finRes.body)[0] ?? { id: null };
   return { cli, svc, pro, prod, apt, fin };
 }
 const sa = await seed(A); const sb = await seed(B);
+// limite de plano Solo aplicado no banco (não só no frontend)
+const extraPro = await rest(A.token, "professionals", { method: "POST", body: JSON.stringify({ tenant_id: A.tenantId, name: "Pro Extra", commission_percent: 10 }) });
+log("limite de profissionais do plano aplicado no banco", extraPro.status >= 400, `status=${extraPro.status} ${extraPro.body.slice(0,70)}`);
 log("escrita no próprio tenant funciona (A)", !!(sa.cli?.id && sa.apt?.id && sa.fin?.id), `apt=${sa.apt?.id?.slice(0,8)}`);
 log("escrita no próprio tenant funciona (B)", !!(sb.cli?.id && sb.apt?.id && sb.fin?.id), "");
 
@@ -60,7 +74,8 @@ log("leitura cruzada negada: tenants", JSON.parse(tb.body).length === 0, `status
 const mb = await rest(A.token, `tenant_memberships?tenant_id=eq.${B.tenantId}&select=*`);
 log("leitura cruzada negada: tenant_memberships", JSON.parse(mb.body).length === 0, "");
 const pg = await rest(A.token, `platform_access_grants?user_id=eq.${B.userId}&select=*`);
-log("leitura cruzada negada: platform_access_grants", JSON.parse(pg.body).length === 0, "");
+let pgRows: any = null; try { pgRows = JSON.parse(pg.body); } catch {}
+log("leitura cruzada negada: platform_access_grants", pg.status >= 400 || (Array.isArray(pgRows) && pgRows.length === 0), `status=${pg.status} ${pg.body.slice(0, 120)}`);
 const prof = await rest(A.token, `profiles?id=eq.${B.userId}&select=*`);
 log("leitura cruzada negada: profiles", JSON.parse(prof.body).length === 0, "");
 
@@ -83,7 +98,7 @@ const insTests: [string, any][] = [
   ["services", { tenant_id: B.tenantId, name: "Injetado", duration_minutes: 10, price_cents: 100 }],
   ["professionals", { tenant_id: B.tenantId, name: "Injetado", commission_percent: 10 }],
   ["products", { tenant_id: B.tenantId, name: "Injetado", cost_cents: 1, sale_price_cents: 2, stock_quantity: 1, minimum_stock: 0, unit: "un" }],
-  ["financial_entries", { tenant_id: B.tenantId, entry_type: "revenue", description: "Injetado", amount_cents: 999999, due_date: new Date().toISOString().slice(0, 10), status: "paid", origin: "manual" }],
+  ["financial_entries", { tenant_id: B.tenantId, entry_type: "income", description: "Injetado", amount_cents: 999999, due_date: new Date().toISOString().slice(0, 10), status: "paid", origin: "manual" }],
   ["appointments", { tenant_id: B.tenantId, client_id: sb.cli.id, service_id: sb.svc.id, professional_id: sb.pro.id, starts_at: new Date(Date.now() + 172800000).toISOString(), ends_at: new Date(Date.now() + 172800000 + 600000).toISOString(), price_cents: 1, status: "scheduled" }],
   ["professional_ledger_entries", { tenant_id: B.tenantId, professional_id: sb.pro.id, kind: "commission", amount_cents: 1, competence_date: new Date().toISOString().slice(0, 10), description: "Injetado" }],
   ["tenant_memberships", { tenant_id: B.tenantId, user_id: A.userId, role: "owner" }],
