@@ -24,6 +24,7 @@ const slugA = J((await rest(sec, `tenants?id=eq.${A.tenantId}&select=slug`)).bod
 const hours = { monday: [{ start: "08:00", end: "20:00" }], tuesday: [{ start: "08:00", end: "20:00" }], wednesday: [{ start: "08:00", end: "20:00" }], thursday: [{ start: "08:00", end: "20:00" }], friday: [{ start: "08:00", end: "20:00" }], saturday: [{ start: "08:00", end: "20:00" }], sunday: [{ start: "08:00", end: "20:00" }] };
 const p2res = await rest(A.token, "professionals", { method: "POST", body: JSON.stringify({ tenant_id: A.tenantId, name: "Pro A2", commission_percent: 40, email: `qa.pro2.${stamp}@luia-qa.dev`, working_hours: hours, active: true }) });
 const p2 = J(p2res.body)?.[0];
+if (!p2) { console.error("DBG p2", p2res.status, p2res.body); process.exit(1); }
 log("plano Equipe permite 2º profissional", !!p2, `status=${p2res.status} ${p2res.body.slice(0, 80)}`);
 await rest(A.token, `professionals?id=eq.${sa.pro.id}`, { method: "PATCH", body: JSON.stringify({ working_hours: hours, email: `qa.pro1.${stamp}@luia-qa.dev`, commission_percent: 50 }) });
 await rest(A.token, "professional_services", { method: "POST", body: JSON.stringify({ tenant_id: A.tenantId, professional_id: p2.id, service_id: sa.svc.id }) });
