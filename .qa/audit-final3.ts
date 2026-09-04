@@ -27,11 +27,11 @@ const stamp = Date.now();
 // upgrade tenant A para Equipe e concluir onboarding (via chave de serviço = papel de plataforma)
 const teamPlan = J((await rest(sec, "subscription_plans?code=eq.team&select=id")).body)[0].id;
 await fetch(`${url}/rest/v1/tenant_subscriptions`, { method: "POST", headers: { ...H(sec), Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ tenant_id: A.tenantId, plan_id: teamPlan, status: "active" }) });
-await rest(sec, `tenants?id=eq.${A.tenantId}`, { method: "PATCH", body: JSON.stringify({ onboarding_completed_at: new Date().toISOString(), public_page_status: "published", payment_methods: { pix: true, card: true, local: true, mercadoPago: false }, business_hours: { "0": "08:00-20:00", "1": "08:00-20:00", "2": "08:00-20:00", "3": "08:00-20:00", "4": "08:00-20:00", "5": "08:00-20:00", "6": "08:00-20:00" }, booking_interval_minutes: 30, booking_horizon_days: 30 }) });
+await rest(sec, `tenants?id=eq.${A.tenantId}`, { method: "PATCH", body: JSON.stringify({ onboarding_completed_at: new Date().toISOString(), public_page_status: "published", payment_methods: { pix: true, card: true, local: true, mercadoPago: false }, business_hours: { monday: "08:00-20:00", tuesday: "08:00-20:00", wednesday: "08:00-20:00", thursday: "08:00-20:00", friday: "08:00-20:00", saturday: "08:00-20:00", sunday: "08:00-20:00" }, booking_interval_minutes: 30, booking_horizon_days: 30 }) });
 const slugA = J((await rest(sec, `tenants?id=eq.${A.tenantId}&select=slug`)).body)[0].slug;
 
 // Equipe: dono cria 2º profissional (agora permitido)
-const hours = { monday: [{ start: "08:00", end: "20:00" }], tuesday: [{ start: "08:00", end: "20:00" }], wednesday: [{ start: "08:00", end: "20:00" }], thursday: [{ start: "08:00", end: "20:00" }], friday: [{ start: "08:00", end: "20:00" }], saturday: [{ start: "08:00", end: "20:00" }], sunday: [{ start: "08:00", end: "20:00" }] };
+const hours: any = { monday: [{ start: "08:00", end: "20:00" }], tuesday: [{ start: "08:00", end: "20:00" }], wednesday: [{ start: "08:00", end: "20:00" }], thursday: [{ start: "08:00", end: "20:00" }], friday: [{ start: "08:00", end: "20:00" }], saturday: [{ start: "08:00", end: "20:00" }], sunday: [{ start: "08:00", end: "20:00" }] };
 const p2res = await rest(A.token, "professionals", { method: "POST", body: JSON.stringify({ tenant_id: A.tenantId, name: "Pro A2", commission_percent: 40, email: `qa.pro2.${stamp}@luia-qa.dev`, working_hours: hours, active: true }) });
 const p2 = J(p2res.body)?.[0];
 if (!p2) { console.error("DBG p2", p2res.status, p2res.body); process.exit(1); }
