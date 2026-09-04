@@ -16,7 +16,7 @@ const stamp = Date.now();
 
 // upgrade tenant A para Equipe e concluir onboarding (via chave de serviço = papel de plataforma)
 const teamPlan = J((await rest(sec, "subscription_plans?code=eq.team&select=id")).body)[0].id;
-await rest(sec, `tenant_subscriptions?tenant_id=eq.${A.tenantId}`, { method: "PATCH", body: JSON.stringify({ plan_id: teamPlan, status: "active" }) });
+await fetch(`${url}/rest/v1/tenant_subscriptions`, { method: "POST", headers: { ...H(sec), Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ tenant_id: A.tenantId, plan_id: teamPlan, status: "active" }) });
 await rest(sec, `tenants?id=eq.${A.tenantId}`, { method: "PATCH", body: JSON.stringify({ onboarding_completed_at: new Date().toISOString() }) });
 const slugA = J((await rest(sec, `tenants?id=eq.${A.tenantId}&select=slug`)).body)[0].slug;
 
