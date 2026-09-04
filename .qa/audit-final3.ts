@@ -27,7 +27,7 @@ const stamp = Date.now();
 // upgrade tenant A para Equipe e concluir onboarding (via chave de serviço = papel de plataforma)
 const teamPlan = J((await rest(sec, "subscription_plans?code=eq.team&select=id")).body)[0].id;
 await fetch(`${url}/rest/v1/tenant_subscriptions`, { method: "POST", headers: { ...H(sec), Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ tenant_id: A.tenantId, plan_id: teamPlan, status: "active" }) });
-await rest(sec, `tenants?id=eq.${A.tenantId}`, { method: "PATCH", body: JSON.stringify({ onboarding_completed_at: new Date().toISOString(), public_page_status: "published" }) });
+await rest(sec, `tenants?id=eq.${A.tenantId}`, { method: "PATCH", body: JSON.stringify({ onboarding_completed_at: new Date().toISOString(), public_page_status: "published", payment_methods: { pix: true, card: true, local: true, mercadoPago: false }, business_hours: { "0": "08:00-20:00", "1": "08:00-20:00", "2": "08:00-20:00", "3": "08:00-20:00", "4": "08:00-20:00", "5": "08:00-20:00", "6": "08:00-20:00" }, booking_interval_minutes: 30, booking_horizon_days: 30 }) });
 const slugA = J((await rest(sec, `tenants?id=eq.${A.tenantId}&select=slug`)).body)[0].slug;
 
 // Equipe: dono cria 2º profissional (agora permitido)
@@ -53,16 +53,16 @@ log("disponibilidade pública retorna horários com agenda configurada", slots.l
 const slot = slots.find((s: any) => s.available) ?? slots[0];
 const startsAt = slot?.startsAt ?? slot?.starts_at ?? `${date}T12:00:00.000Z`;
 const reqId = crypto.randomUUID();
-const bk = await rpc(anon, "create_public_booking_v5", { p_slug: slugA, p_service_ids: [sa.svc.id], p_professional_id: sa.pro.id, p_starts_at: startsAt, p_customer_name: "Cliente Publico QA", p_customer_phone: "+5511988887777", p_request_id: reqId, p_fingerprint: `qa-${stamp}`, p_payment_method: "cash", p_payment_option: "on_site", p_addon_professionals: [] });
+const bk = await rpc(anon, "create_public_booking_v5", { p_slug: slugA, p_service_ids: [sa.svc.id], p_professional_id: sa.pro.id, p_starts_at: startsAt, p_customer_name: "Cliente Publico QA", p_customer_phone: "+5511988887777", p_request_id: reqId, p_fingerprint: `qa-${stamp}`, p_payment_method: "local", p_payment_option: "on_site", p_addon_professionals: [] });
 const booking = J(bk.body);
 log("reserva pública criada por anônimo", bk.status === 200 && booking?.ok === true, `status=${bk.status} ${bk.body.slice(0, 120)}`);
 const aptId = booking?.appointmentId ?? booking?.appointment_id;
 // idempotência
-const bk2 = await rpc(anon, "create_public_booking_v5", { p_slug: slugA, p_service_ids: [sa.svc.id], p_professional_id: sa.pro.id, p_starts_at: startsAt, p_customer_name: "Cliente Publico QA", p_customer_phone: "+5511988887777", p_request_id: reqId, p_fingerprint: `qa-${stamp}`, p_payment_method: "cash", p_payment_option: "on_site", p_addon_professionals: [] });
+const bk2 = await rpc(anon, "create_public_booking_v5", { p_slug: slugA, p_service_ids: [sa.svc.id], p_professional_id: sa.pro.id, p_starts_at: startsAt, p_customer_name: "Cliente Publico QA", p_customer_phone: "+5511988887777", p_request_id: reqId, p_fingerprint: `qa-${stamp}`, p_payment_method: "local", p_payment_option: "on_site", p_addon_professionals: [] });
 const b2 = J(bk2.body);
 log("mesmo request_id não duplica agendamento", (b2?.appointmentId ?? b2?.appointment_id) === aptId, `${bk2.body.slice(0, 90)}`);
 // horário já ocupado
-const bk3 = await rpc(anon, "create_public_booking_v5", { p_slug: slugA, p_service_ids: [sa.svc.id], p_professional_id: sa.pro.id, p_starts_at: startsAt, p_customer_name: "Outro Cliente", p_customer_phone: "+5511977776666", p_request_id: crypto.randomUUID(), p_fingerprint: `qa2-${stamp}`, p_payment_method: "cash", p_payment_option: "on_site", p_addon_professionals: [] });
+const bk3 = await rpc(anon, "create_public_booking_v5", { p_slug: slugA, p_service_ids: [sa.svc.id], p_professional_id: sa.pro.id, p_starts_at: startsAt, p_customer_name: "Outro Cliente", p_customer_phone: "+5511977776666", p_request_id: crypto.randomUUID(), p_fingerprint: `qa2-${stamp}`, p_payment_method: "local", p_payment_option: "on_site", p_addon_professionals: [] });
 log("horário ocupado é recusado (sem overbooking)", J(bk3.body)?.ok === false || bk3.status >= 400, `${bk3.body.slice(0, 110)}`);
 const aptRow = J((await rest(sec, `appointments?id=eq.${aptId}&select=tenant_id,professional_id,manage_token,public_code,price_cents,status`)).body)?.[0];
 log("agendamento gravado no tenant e profissional corretos", aptRow?.tenant_id === A.tenantId && aptRow?.professional_id === sa.pro.id, `${JSON.stringify(aptRow ?? null).slice(0, 120)} bk=${bk.body.slice(0,150)}`);
