@@ -27,7 +27,7 @@ const stamp = Date.now();
 // upgrade tenant A para Equipe e concluir onboarding (via chave de serviço = papel de plataforma)
 const teamPlan = J((await rest(sec, "subscription_plans?code=eq.team&select=id")).body)[0].id;
 await fetch(`${url}/rest/v1/tenant_subscriptions`, { method: "POST", headers: { ...H(sec), Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ tenant_id: A.tenantId, plan_id: teamPlan, status: "active" }) });
-await rest(sec, `tenants?id=eq.${A.tenantId}`, { method: "PATCH", body: JSON.stringify({ onboarding_completed_at: new Date().toISOString() }) });
+await rest(sec, `tenants?id=eq.${A.tenantId}`, { method: "PATCH", body: JSON.stringify({ onboarding_completed_at: new Date().toISOString(), public_page_status: "published" }) });
 const slugA = J((await rest(sec, `tenants?id=eq.${A.tenantId}&select=slug`)).body)[0].slug;
 
 // Equipe: dono cria 2º profissional (agora permitido)
@@ -119,11 +119,15 @@ log("profissional não troca para tenant alheio", proSwitch.status >= 400, `stat
 // ---- e-mail não autorizado ----
 const stranger = await proUser(`qa.stranger.${stamp}@luia-qa.dev`, "");
 const claimS = await rpc(stranger.token, "claim_professional_access", {});
-log("e-mail não autorizado não obtém acesso profissional", claimS.status >= 400 || !claimS.body.includes('"ok"'), `status=${claimS.status} ${claimS.body.slice(0, 100)}`);
+const claimSJson = J(claimS.body);
+log("e-mail não autorizado não é vinculado a empresa alheia", !claimS.body.includes(A.tenantId) && !claimS.body.includes(B.tenantId) && !claimS.body.includes(p2.id), `status=${claimS.status} ${claimS.body.slice(0, 90)}`);
 const bootS = J((await rpc(stranger.token, "get_my_session_bootstrap", {})).body);
-log("usuário sem vínculo não recebe empresa alguma", (bootS?.companies ?? []).length === 0, `companies=${(bootS?.companies ?? []).length}`);
+log("usuário novo recebe apenas a própria empresa (auto-serviço)", (bootS?.companies ?? []).every((c: any) => c.tenantId !== A.tenantId && c.tenantId !== B.tenantId), `companies=${(bootS?.companies ?? []).length}`);
+log("usuário novo sem liberação de beta não tem acesso ativo", (bootS?.platformAccess?.grants ?? []).filter((g: any) => g.status === "active").length === 0 && bootS?.platformAccess?.isAdministrator === false, JSON.stringify(bootS?.platformAccess ?? null).slice(0, 90));
 const strangerRead = await rest(stranger.token, "appointments?select=id&limit=1");
-log("usuário sem vínculo não lê agendamentos", (J(strangerRead.body) ?? []).length === 0, `status=${strangerRead.status}`);
+log("usuário novo não lê agendamentos de outras empresas", ((J(strangerRead.body) ?? []) as any[]).length === 0, `status=${strangerRead.status}`);
+const strangerB = await rest(stranger.token, `appointments?id=eq.${aptId}&select=id`);
+log("usuário novo não lê o agendamento da empresa A", ((J(strangerB.body) ?? []) as any[]).length === 0, `status=${strangerB.status}`);
 
 console.log(out.join("\n"));
 console.log(`\nTOTAL ${out.filter((l) => l.startsWith("PASS")).length}/${out.length} PASS`);

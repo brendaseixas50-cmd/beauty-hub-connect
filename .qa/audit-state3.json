@@ -1,18 +1,18 @@
 {
   "p2": {
-    "id": "13d2168c-4688-4258-9d29-3f2049cf3f3d",
+    "id": "8d59d280-1df3-4a66-8f33-6b9d69db7384",
     "tenant_id": "b5e77331-ce06-49db-8c49-955368130c8e",
     "user_id": null,
     "name": "Pro A2",
     "specialty": null,
-    "email": "qa.pro2.1788480329776@luia-qa.dev",
+    "email": "qa.pro2.1788480394442@luia-qa.dev",
     "phone": null,
     "commission_percent": 40,
     "color": "#8b5e67",
     "active": true,
     "notes": null,
-    "created_at": "2026-09-04T00:05:31.121695+00:00",
-    "updated_at": "2026-09-04T00:05:31.121695+00:00",
+    "created_at": "2026-09-04T00:06:35.263987+00:00",
+    "updated_at": "2026-09-04T00:06:35.263987+00:00",
     "working_hours": {
       "friday": [
         {
@@ -61,15 +61,15 @@
     "bio": null
   },
   "u2": {
-    "userId": "e1cc0d27-ef34-40e3-8588-d114d3f81474",
-    "token": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImI2NzM3ZDU2LWQyZmEtNDQxNi05YjE2LTgyYzM4NmY1ZTRjNSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3ZjdG1qZ2V6c2Rmd2JsZW1yamF2LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJlMWNjMGQyNy1lZjM0LTQwZTMtODU4OC1kMTE0ZDNmODE0NzQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg4NDgzOTM1LCJpYXQiOjE3ODg0ODAzMzUsImVtYWlsIjoicWEucHJvMi4xNzg4NDgwMzI5Nzc2QGx1aWEtcWEuZGV2IiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbF92ZXJpZmllZCI6dHJ1ZX0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3ODg0ODAzMzV9XSwic2Vzc2lvbl9pZCI6IjMzNGUzZTg1LTI3YmYtNGRiNS04MmI0LTM1MjFkY2VkYTNlOSIsImlzX2Fub255bW91cyI6ZmFsc2V9.RQLivJ_uMUW2wKr8QaaA_8JBPp1i_O6ZaVV357KrMywMMxmE3ArhLbwU5nk69fjY60SmrK95n3NFmTrKaq1xYQ",
-    "email": "qa.pro2.1788480329776@luia-qa.dev",
-    "proId": "13d2168c-4688-4258-9d29-3f2049cf3f3d"
+    "userId": "76fd02d7-7ee5-469c-998c-6fa2cb2e8f73",
+    "token": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImI2NzM3ZDU2LWQyZmEtNDQxNi05YjE2LTgyYzM4NmY1ZTRjNSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3ZjdG1qZ2V6c2Rmd2JsZW1yamF2LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI3NmZkMDJkNy03ZWU1LTQ2OWMtOTk4Yy02ZmEyY2IyZThmNzMiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg4NDg0MDAwLCJpYXQiOjE3ODg0ODA0MDAsImVtYWlsIjoicWEucHJvMi4xNzg4NDgwMzk0NDQyQGx1aWEtcWEuZGV2IiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbF92ZXJpZmllZCI6dHJ1ZX0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3ODg0ODA0MDB9XSwic2Vzc2lvbl9pZCI6IjgzMDRhN2YzLWJlZGQtNDIwYS1iODU4LTlkN2EyNTZjYzc3ZiIsImlzX2Fub255bW91cyI6ZmFsc2V9.D-1FXFsVreAvW6ugpzQkQl0L1RfqCo8NFNBjS3FwrzjurRurfbEPmvlJNStpOs05tM3E5Y4FM_IrV6HuaWZVYw",
+    "email": "qa.pro2.1788480394442@luia-qa.dev",
+    "proId": "8d59d280-1df3-4a66-8f33-6b9d69db7384"
   },
   "stranger": {
-    "userId": "f0a1f885-cdc2-4233-b0e4-8e2eb8c5548b",
-    "token": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImI2NzM3ZDU2LWQyZmEtNDQxNi05YjE2LTgyYzM4NmY1ZTRjNSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3ZjdG1qZ2V6c2Rmd2JsZW1yamF2LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmMGExZjg4NS1jZGMyLTQyMzMtYjBlNC04ZTJlYjhjNTU0OGIiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg4NDgzOTM4LCJpYXQiOjE3ODg0ODAzMzgsImVtYWlsIjoicWEuc3RyYW5nZXIuMTc4ODQ4MDMyOTc3NkBsdWlhLXFhLmRldiIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnsiZW1haWxfdmVyaWZpZWQiOnRydWV9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzg4NDgwMzM4fV0sInNlc3Npb25faWQiOiI4ZGU4ODNmMy1jNWVhLTQxNTMtOWEyMy0xYTI3MGJhNzM4MzQiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.cuanLPpLvwkyY2tBERl1Ms-xu9_CfT1K4z994HHALKn5Q5JtOi7tIzPxHm8kWHTayrsPpLmDjgnHLMcSJh0JYw",
-    "email": "qa.stranger.1788480329776@luia-qa.dev",
+    "userId": "f1cb7a6d-9bd5-45c3-83c0-1ad02398ca6c",
+    "token": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImI2NzM3ZDU2LWQyZmEtNDQxNi05YjE2LTgyYzM4NmY1ZTRjNSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3ZjdG1qZ2V6c2Rmd2JsZW1yamF2LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmMWNiN2E2ZC05YmQ1LTQ1YzMtODNjMC0xYWQwMjM5OGNhNmMiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg4NDg0MDAyLCJpYXQiOjE3ODg0ODA0MDIsImVtYWlsIjoicWEuc3RyYW5nZXIuMTc4ODQ4MDM5NDQ0MkBsdWlhLXFhLmRldiIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnsiZW1haWxfdmVyaWZpZWQiOnRydWV9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzg4NDgwNDAyfV0sInNlc3Npb25faWQiOiIyMzlmNGFkYy0yN2U1LTRkMjYtYmUyMi0xNTY2YzljMmIxMmIiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.HX_PSs9b40GVOeu84Ye80Ee1zr-JCPYvWxRUFXwEnDCAGcDRhGtBlkJ9K-AKoKqqgCN_UC0wCHtzd4P0dwV-Hg",
+    "email": "qa.stranger.1788480394442@luia-qa.dev",
     "proId": ""
   },
   "slugA": "qa-audit-a-1788401339907-55f94afa"
