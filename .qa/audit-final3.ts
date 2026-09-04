@@ -78,9 +78,13 @@ log("empresa B não vê agendamento da empresa A", (J(bView.body) ?? []).length 
 const done = await rest(A.token, `appointments?id=eq.${aptId}`, { method: "PATCH", body: JSON.stringify({ status: "completed" }) });
 log("gestão conclui atendimento do próprio tenant", done.status < 300 && (J(done.body) ?? []).length === 1, `status=${done.status}`);
 await new Promise((r) => setTimeout(r, 1500));
-const ledger = J((await rest(sec, `professional_ledger_entries?appointment_id=eq.${aptId}&select=tenant_id,professional_id,kind,amount_cents`)).body) ?? [];
+const ledgerRes = await rest(sec, `professional_ledger_entries?appointment_id=eq.${aptId}&select=tenant_id,professional_id,kind,amount_cents`);
+const ledger: any[] = Array.isArray(J(ledgerRes.body)) ? J(ledgerRes.body) : [];
+if (!ledger.length) console.error("DBG ledger", ledgerRes.status, ledgerRes.body.slice(0, 200));
 log("comissão lançada para o profissional correto", ledger.some((l: any) => l.professional_id === sa.pro.id && l.tenant_id === A.tenantId && l.amount_cents > 0), JSON.stringify(ledger).slice(0, 140));
-const fin = J((await rest(sec, `financial_entries?appointment_id=eq.${aptId}&select=tenant_id,entry_type,amount_cents`)).body) ?? [];
+const finRes2 = await rest(sec, `financial_entries?appointment_id=eq.${aptId}&select=tenant_id,entry_type,amount_cents`);
+const fin: any[] = Array.isArray(J(finRes2.body)) ? J(finRes2.body) : [];
+if (!fin.length) console.error("DBG fin2", finRes2.status, finRes2.body.slice(0, 200));
 log("receita registrada no financeiro do tenant", Array.isArray(fin) && (fin.length === 0 || fin.every((f: any) => f.tenant_id === A.tenantId)), JSON.stringify(fin).slice(0, 140));
 
 // ---- profissional A2 x A1 ----
