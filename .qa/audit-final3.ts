@@ -65,7 +65,7 @@ log("mesmo request_id não duplica agendamento", (b2?.appointmentId ?? b2?.appoi
 const bk3 = await rpc(anon, "create_public_booking_v5", { p_slug: slugA, p_service_ids: [sa.svc.id], p_professional_id: sa.pro.id, p_starts_at: startsAt, p_customer_name: "Outro Cliente", p_customer_phone: "+5511977776666", p_request_id: crypto.randomUUID(), p_fingerprint: `qa2-${stamp}`, p_payment_method: "cash", p_payment_option: "on_site", p_addon_professionals: [] });
 log("horário ocupado é recusado (sem overbooking)", J(bk3.body)?.ok === false || bk3.status >= 400, `${bk3.body.slice(0, 110)}`);
 const aptRow = J((await rest(sec, `appointments?id=eq.${aptId}&select=tenant_id,professional_id,manage_token,public_code,price_cents,status`)).body)?.[0];
-log("agendamento gravado no tenant e profissional corretos", aptRow?.tenant_id === A.tenantId && aptRow?.professional_id === sa.pro.id, `${JSON.stringify(aptRow).slice(0, 120)}`);
+log("agendamento gravado no tenant e profissional corretos", aptRow?.tenant_id === A.tenantId && aptRow?.professional_id === sa.pro.id, `${JSON.stringify(aptRow ?? null).slice(0, 120)} bk=${bk.body.slice(0,150)}`);
 log("agendamento recebe token de gestão e código público", !!aptRow?.manage_token && !!aptRow?.public_code, "");
 // token de gestão não vaza a anônimo pela tabela
 const anonApt = await fetch(`${url}/rest/v1/appointments?select=manage_token&limit=1`, { headers: H(anon) });
