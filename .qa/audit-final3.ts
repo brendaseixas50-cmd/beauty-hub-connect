@@ -11,7 +11,17 @@ async function rest(tok: string, path: string, init: RequestInit = {}) {
 const rpc = (tok: string, fn: string, args: unknown) => rest(tok, `rpc/${fn}`, { method: "POST", body: JSON.stringify(args) });
 const J = (s: string) => { try { return JSON.parse(s); } catch { return null; } };
 const st = JSON.parse(await Bun.file(".qa/audit-state.json").text());
-const { A, B, sa, sb } = st;
+const { sa, sb } = st;
+async function relogin(u: any, tag: string) {
+  const stampOld = u.email.split(".")[3].split("@")[0];
+  const password = `Qa!${stampOld}${tag}A`;
+  const r: any = await (await fetch(`${url}/auth/v1/token?grant_type=password`, { method: "POST", headers: H(anon), body: JSON.stringify({ email: u.email, password }) })).json();
+  if (!r.access_token) throw new Error(`relogin falhou (${u.email}): ${JSON.stringify(r).slice(0, 120)}`);
+  await rpc(r.access_token, "switch_active_tenant", { target_tenant_id: u.tenantId });
+  return { ...u, token: r.access_token };
+}
+const A = await relogin(st.A, "a");
+const B = await relogin(st.B, "b");
 const stamp = Date.now();
 
 // upgrade tenant A para Equipe e concluir onboarding (via chave de serviço = papel de plataforma)
