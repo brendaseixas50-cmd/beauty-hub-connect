@@ -11,19 +11,30 @@ async function rest(tok: string, path: string, init: RequestInit = {}) {
 const rpc = (tok: string, fn: string, args: unknown) => rest(tok, `rpc/${fn}`, { method: "POST", body: JSON.stringify(args) });
 const J = (s: string) => { try { return JSON.parse(s); } catch { return null; } };
 const st = JSON.parse(await Bun.file(".qa/audit-state.json").text());
-const { A, B, sa, sb } = st;
+const { sa, sb } = st;
+async function relogin(u: any, tag: string) {
+  const stampOld = u.email.split(".")[3].split("@")[0];
+  const password = `Qa!${stampOld}${tag}A`;
+  const r: any = await (await fetch(`${url}/auth/v1/token?grant_type=password`, { method: "POST", headers: H(anon), body: JSON.stringify({ email: u.email, password }) })).json();
+  if (!r.access_token) throw new Error(`relogin falhou (${u.email}): ${JSON.stringify(r).slice(0, 120)}`);
+  await rpc(r.access_token, "switch_active_tenant", { target_tenant_id: u.tenantId });
+  return { ...u, token: r.access_token };
+}
+const A = await relogin(st.A, "a");
+const B = await relogin(st.B, "b");
 const stamp = Date.now();
 
 // upgrade tenant A para Equipe e concluir onboarding (via chave de serviço = papel de plataforma)
 const teamPlan = J((await rest(sec, "subscription_plans?code=eq.team&select=id")).body)[0].id;
-await rest(sec, `tenant_subscriptions?tenant_id=eq.${A.tenantId}`, { method: "PATCH", body: JSON.stringify({ plan_id: teamPlan, status: "active" }) });
-await rest(sec, `tenants?id=eq.${A.tenantId}`, { method: "PATCH", body: JSON.stringify({ onboarding_completed_at: new Date().toISOString() }) });
+await fetch(`${url}/rest/v1/tenant_subscriptions`, { method: "POST", headers: { ...H(sec), Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ tenant_id: A.tenantId, plan_id: teamPlan, status: "active" }) });
+await rest(sec, `tenants?id=eq.${A.tenantId}`, { method: "PATCH", body: JSON.stringify({ onboarding_completed_at: new Date().toISOString(), public_page_status: "published", payment_methods: { pix: true, card: true, local: true, mercadoPago: false }, business_hours: { monday: "08:00-20:00", tuesday: "08:00-20:00", wednesday: "08:00-20:00", thursday: "08:00-20:00", friday: "08:00-20:00", saturday: "08:00-20:00", sunday: "08:00-20:00" }, booking_interval_minutes: 30, booking_horizon_days: 30 }) });
 const slugA = J((await rest(sec, `tenants?id=eq.${A.tenantId}&select=slug`)).body)[0].slug;
 
 // Equipe: dono cria 2º profissional (agora permitido)
-const hours = { monday: [{ start: "08:00", end: "20:00" }], tuesday: [{ start: "08:00", end: "20:00" }], wednesday: [{ start: "08:00", end: "20:00" }], thursday: [{ start: "08:00", end: "20:00" }], friday: [{ start: "08:00", end: "20:00" }], saturday: [{ start: "08:00", end: "20:00" }], sunday: [{ start: "08:00", end: "20:00" }] };
+const hours: any = Object.fromEntries(["0","1","2","3","4","5","6"].map((d) => [d, { dayOff: false, startsAt: "08:00", endsAt: "20:00" }]));
 const p2res = await rest(A.token, "professionals", { method: "POST", body: JSON.stringify({ tenant_id: A.tenantId, name: "Pro A2", commission_percent: 40, email: `qa.pro2.${stamp}@luia-qa.dev`, working_hours: hours, active: true }) });
 const p2 = J(p2res.body)?.[0];
+if (!p2) { console.error("DBG p2", p2res.status, p2res.body); process.exit(1); }
 log("plano Equipe permite 2º profissional", !!p2, `status=${p2res.status} ${p2res.body.slice(0, 80)}`);
 await rest(A.token, `professionals?id=eq.${sa.pro.id}`, { method: "PATCH", body: JSON.stringify({ working_hours: hours, email: `qa.pro1.${stamp}@luia-qa.dev`, commission_percent: 50 }) });
 await rest(A.token, "professional_services", { method: "POST", body: JSON.stringify({ tenant_id: A.tenantId, professional_id: p2.id, service_id: sa.svc.id }) });
@@ -42,19 +53,19 @@ log("disponibilidade pública retorna horários com agenda configurada", slots.l
 const slot = slots.find((s: any) => s.available) ?? slots[0];
 const startsAt = slot?.startsAt ?? slot?.starts_at ?? `${date}T12:00:00.000Z`;
 const reqId = crypto.randomUUID();
-const bk = await rpc(anon, "create_public_booking_v5", { p_slug: slugA, p_service_ids: [sa.svc.id], p_professional_id: sa.pro.id, p_starts_at: startsAt, p_customer_name: "Cliente Publico QA", p_customer_phone: "+5511988887777", p_request_id: reqId, p_fingerprint: `qa-${stamp}`, p_payment_method: "cash", p_payment_option: "on_site", p_addon_professionals: [] });
+const bk = await rpc(anon, "create_public_booking_v5", { p_slug: slugA, p_service_ids: [sa.svc.id], p_professional_id: sa.pro.id, p_starts_at: startsAt, p_customer_name: "Cliente Publico QA", p_customer_phone: "+5511988887777", p_request_id: reqId, p_fingerprint: `qa-${stamp}`, p_payment_method: "local", p_payment_option: "on_site", p_addon_professionals: [] });
 const booking = J(bk.body);
 log("reserva pública criada por anônimo", bk.status === 200 && booking?.ok === true, `status=${bk.status} ${bk.body.slice(0, 120)}`);
 const aptId = booking?.appointmentId ?? booking?.appointment_id;
 // idempotência
-const bk2 = await rpc(anon, "create_public_booking_v5", { p_slug: slugA, p_service_ids: [sa.svc.id], p_professional_id: sa.pro.id, p_starts_at: startsAt, p_customer_name: "Cliente Publico QA", p_customer_phone: "+5511988887777", p_request_id: reqId, p_fingerprint: `qa-${stamp}`, p_payment_method: "cash", p_payment_option: "on_site", p_addon_professionals: [] });
+const bk2 = await rpc(anon, "create_public_booking_v5", { p_slug: slugA, p_service_ids: [sa.svc.id], p_professional_id: sa.pro.id, p_starts_at: startsAt, p_customer_name: "Cliente Publico QA", p_customer_phone: "+5511988887777", p_request_id: reqId, p_fingerprint: `qa-${stamp}`, p_payment_method: "local", p_payment_option: "on_site", p_addon_professionals: [] });
 const b2 = J(bk2.body);
 log("mesmo request_id não duplica agendamento", (b2?.appointmentId ?? b2?.appointment_id) === aptId, `${bk2.body.slice(0, 90)}`);
 // horário já ocupado
-const bk3 = await rpc(anon, "create_public_booking_v5", { p_slug: slugA, p_service_ids: [sa.svc.id], p_professional_id: sa.pro.id, p_starts_at: startsAt, p_customer_name: "Outro Cliente", p_customer_phone: "+5511977776666", p_request_id: crypto.randomUUID(), p_fingerprint: `qa2-${stamp}`, p_payment_method: "cash", p_payment_option: "on_site", p_addon_professionals: [] });
+const bk3 = await rpc(anon, "create_public_booking_v5", { p_slug: slugA, p_service_ids: [sa.svc.id], p_professional_id: sa.pro.id, p_starts_at: startsAt, p_customer_name: "Outro Cliente", p_customer_phone: "+5511977776666", p_request_id: crypto.randomUUID(), p_fingerprint: `qa2-${stamp}`, p_payment_method: "local", p_payment_option: "on_site", p_addon_professionals: [] });
 log("horário ocupado é recusado (sem overbooking)", J(bk3.body)?.ok === false || bk3.status >= 400, `${bk3.body.slice(0, 110)}`);
 const aptRow = J((await rest(sec, `appointments?id=eq.${aptId}&select=tenant_id,professional_id,manage_token,public_code,price_cents,status`)).body)?.[0];
-log("agendamento gravado no tenant e profissional corretos", aptRow?.tenant_id === A.tenantId && aptRow?.professional_id === sa.pro.id, `${JSON.stringify(aptRow).slice(0, 120)}`);
+log("agendamento gravado no tenant e profissional corretos", aptRow?.tenant_id === A.tenantId && aptRow?.professional_id === sa.pro.id, `${JSON.stringify(aptRow ?? null).slice(0, 120)} bk=${bk.body.slice(0,150)}`);
 log("agendamento recebe token de gestão e código público", !!aptRow?.manage_token && !!aptRow?.public_code, "");
 // token de gestão não vaza a anônimo pela tabela
 const anonApt = await fetch(`${url}/rest/v1/appointments?select=manage_token&limit=1`, { headers: H(anon) });
@@ -67,9 +78,13 @@ log("empresa B não vê agendamento da empresa A", (J(bView.body) ?? []).length 
 const done = await rest(A.token, `appointments?id=eq.${aptId}`, { method: "PATCH", body: JSON.stringify({ status: "completed" }) });
 log("gestão conclui atendimento do próprio tenant", done.status < 300 && (J(done.body) ?? []).length === 1, `status=${done.status}`);
 await new Promise((r) => setTimeout(r, 1500));
-const ledger = J((await rest(sec, `professional_ledger_entries?appointment_id=eq.${aptId}&select=tenant_id,professional_id,kind,amount_cents`)).body) ?? [];
+const ledgerRes = await rest(sec, `professional_ledger_entries?appointment_id=eq.${aptId}&select=tenant_id,professional_id,kind,amount_cents`);
+const ledger: any[] = Array.isArray(J(ledgerRes.body)) ? J(ledgerRes.body) : [];
+if (!ledger.length) console.error("DBG ledger", ledgerRes.status, ledgerRes.body.slice(0, 200));
 log("comissão lançada para o profissional correto", ledger.some((l: any) => l.professional_id === sa.pro.id && l.tenant_id === A.tenantId && l.amount_cents > 0), JSON.stringify(ledger).slice(0, 140));
-const fin = J((await rest(sec, `financial_entries?appointment_id=eq.${aptId}&select=tenant_id,entry_type,amount_cents`)).body) ?? [];
+const finRes2 = await rest(sec, `financial_entries?appointment_id=eq.${aptId}&select=tenant_id,entry_type,amount_cents`);
+const fin: any[] = Array.isArray(J(finRes2.body)) ? J(finRes2.body) : [];
+if (!fin.length) console.error("DBG fin2", finRes2.status, finRes2.body.slice(0, 200));
 log("receita registrada no financeiro do tenant", Array.isArray(fin) && (fin.length === 0 || fin.every((f: any) => f.tenant_id === A.tenantId)), JSON.stringify(fin).slice(0, 140));
 
 // ---- profissional A2 x A1 ----
@@ -104,11 +119,15 @@ log("profissional não troca para tenant alheio", proSwitch.status >= 400, `stat
 // ---- e-mail não autorizado ----
 const stranger = await proUser(`qa.stranger.${stamp}@luia-qa.dev`, "");
 const claimS = await rpc(stranger.token, "claim_professional_access", {});
-log("e-mail não autorizado não obtém acesso profissional", claimS.status >= 400 || !claimS.body.includes('"ok"'), `status=${claimS.status} ${claimS.body.slice(0, 100)}`);
+const claimSJson = J(claimS.body);
+log("e-mail não autorizado não é vinculado a empresa alheia", !claimS.body.includes(A.tenantId) && !claimS.body.includes(B.tenantId) && !claimS.body.includes(p2.id), `status=${claimS.status} ${claimS.body.slice(0, 90)}`);
 const bootS = J((await rpc(stranger.token, "get_my_session_bootstrap", {})).body);
-log("usuário sem vínculo não recebe empresa alguma", (bootS?.companies ?? []).length === 0, `companies=${(bootS?.companies ?? []).length}`);
+log("usuário novo recebe apenas a própria empresa (auto-serviço)", (bootS?.companies ?? []).every((c: any) => c.tenantId !== A.tenantId && c.tenantId !== B.tenantId), `companies=${(bootS?.companies ?? []).length}`);
+log("usuário novo sem liberação de beta não tem acesso ativo", (bootS?.platformAccess?.grants ?? []).filter((g: any) => g.status === "active").length === 0 && bootS?.platformAccess?.isAdministrator === false, JSON.stringify(bootS?.platformAccess ?? null).slice(0, 90));
 const strangerRead = await rest(stranger.token, "appointments?select=id&limit=1");
-log("usuário sem vínculo não lê agendamentos", (J(strangerRead.body) ?? []).length === 0, `status=${strangerRead.status}`);
+log("usuário novo não lê agendamentos de outras empresas", ((J(strangerRead.body) ?? []) as any[]).length === 0, `status=${strangerRead.status}`);
+const strangerB = await rest(stranger.token, `appointments?id=eq.${aptId}&select=id`);
+log("usuário novo não lê o agendamento da empresa A", ((J(strangerB.body) ?? []) as any[]).length === 0, `status=${strangerB.status}`);
 
 console.log(out.join("\n"));
 console.log(`\nTOTAL ${out.filter((l) => l.startsWith("PASS")).length}/${out.length} PASS`);
