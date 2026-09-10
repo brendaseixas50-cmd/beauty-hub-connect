@@ -104,12 +104,17 @@ function PublicBookingApp() {
     "--border": theme.border,
     "--input": theme.border,
     "--ring": company.productType === "barber" ? "#c9a227" : theme.primary,
-    "--destructive": company.productType === "barber" ? "#9f1d1d" : "#d54d83",
+    "--destructive": textOnBackground(
+      company.productType === "barber" ? "#9f1d1d" : "#d54d83",
+      theme.card,
+    ),
     "--destructive-foreground": "#ffffff",
+    "--warning": textOnBackground("#c9a227", theme.card),
+    "--warning-foreground": contrast(theme.card),
   } as CSSProperties;
 
   return (
-    <main className="min-h-screen bg-background text-foreground" style={style}>
+    <main className="pagina-publica min-h-screen bg-background text-foreground" style={style}>
       <header className="border-b bg-card px-4 py-4 shadow-sm">
         <div className="mx-auto flex max-w-2xl items-center gap-3">
           {company.logoUrl ? (
