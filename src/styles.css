@@ -951,3 +951,69 @@
 .tema-barbearia .luvi-chat [data-slot="card"] .text-muted-foreground {
   color: #4a4a4a;
 }
+
+/* ---------------------------------------------------------------
+   Página pública: as cores escolhidas pela empresa mandam
+   ---------------------------------------------------------------
+   As regras fixas acima foram pensadas para o painel do LuBarber, onde os
+   cards são sempre brancos. Na página pública o card acompanha o fundo
+   escolhido pela empresa (podendo ser escuro), então o texto tem de vir dos
+   tokens calculados na própria rota — senão fica escuro sobre escuro. */
+.pagina-publica,
+.tema-barbearia .pagina-publica,
+.tema-barbearia .pagina-publica [data-slot="card"] {
+  color: var(--card-foreground);
+}
+.tema-barbearia .pagina-publica .text-muted-foreground,
+.tema-barbearia .pagina-publica [data-slot="card"] .text-muted-foreground,
+.tema-barbearia .pagina-publica [data-slot="card"] :is(.bg-muted, .bg-secondary)
+  .text-muted-foreground {
+  color: var(--muted-foreground);
+}
+.tema-barbearia .pagina-publica [data-slot="card"] .text-foreground {
+  color: var(--card-foreground);
+}
+.tema-barbearia .pagina-publica [data-slot="card"] .text-primary {
+  color: var(--primary);
+}
+.tema-barbearia .pagina-publica [data-slot="card"] .text-destructive {
+  color: var(--destructive);
+}
+.tema-barbearia .pagina-publica [data-slot="card"] .border,
+.tema-barbearia .pagina-publica [data-slot="card"] .text-eyebrow {
+  border-color: var(--border);
+}
+.tema-barbearia .pagina-publica [data-slot="card"] .text-eyebrow {
+  color: var(--muted-foreground);
+}
+.tema-barbearia .pagina-publica [data-slot="card"] :is(.bg-muted, .bg-secondary),
+.tema-barbearia .pagina-publica [data-slot="card"] .hover\:bg-muted:hover {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+}
+.tema-barbearia .pagina-publica [data-slot="card"] :is(.bg-background, .bg-card) {
+  background-color: var(--card);
+  color: var(--card-foreground);
+}
+
+/* Campos de digitação: fundo e texto sempre contrastantes entre si. */
+.pagina-publica :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select),
+.tema-barbearia .pagina-publica :is(input, textarea, select),
+.tema-barbearia
+  .pagina-publica
+  [data-slot="card"]
+  :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+  background-color: var(--field-bg);
+  color: var(--field-fg);
+  caret-color: var(--field-fg);
+}
+.pagina-publica :is(input, textarea)::placeholder,
+.tema-barbearia .pagina-publica :is(input, textarea)::placeholder,
+.tema-barbearia .pagina-publica [data-slot="card"] :is(input, textarea)::placeholder {
+  color: var(--field-placeholder);
+}
+.pagina-publica select option,
+.tema-barbearia .pagina-publica select option {
+  color: #161616;
+  background-color: #ffffff;
+}

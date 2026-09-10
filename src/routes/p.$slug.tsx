@@ -89,7 +89,10 @@ function PublicBookingApp() {
     "--background": theme.background,
     "--foreground": theme.foreground,
     "--card": theme.card,
-    "--card-foreground": theme.foreground,
+    "--card-foreground": theme.cardForeground,
+    "--field-bg": theme.fieldBackground,
+    "--field-fg": theme.fieldForeground,
+    "--field-placeholder": theme.fieldPlaceholder,
     "--primary": theme.primary,
     "--primary-foreground": contrast(theme.primary),
     "--secondary": theme.secondary,
@@ -101,12 +104,17 @@ function PublicBookingApp() {
     "--border": theme.border,
     "--input": theme.border,
     "--ring": company.productType === "barber" ? "#c9a227" : theme.primary,
-    "--destructive": company.productType === "barber" ? "#9f1d1d" : "#d54d83",
+    "--destructive": textOnBackground(
+      company.productType === "barber" ? "#9f1d1d" : "#d54d83",
+      theme.card,
+    ),
     "--destructive-foreground": "#ffffff",
+    "--warning": textOnBackground("#c9a227", theme.card),
+    "--warning-foreground": contrast(theme.card),
   } as CSSProperties;
 
   return (
-    <main className="min-h-screen bg-background text-foreground" style={style}>
+    <main className="pagina-publica min-h-screen bg-background text-foreground" style={style}>
       <header className="border-b bg-card px-4 py-4 shadow-sm">
         <div className="mx-auto flex max-w-2xl items-center gap-3">
           {company.logoUrl ? (
@@ -1605,14 +1613,23 @@ function publicTheme(company: PageData["company"]) {
 
   const darkBackground = luminance(background) < 0.5;
   const foreground = textOnBackground(company.textColor, background);
+  const card = darkBackground ? mixWith(background, "#ffffff", 0.1) : "#ffffff";
+  // O texto dentro do card acompanha o card (que segue o fundo escolhido pela
+  // empresa): sem isso, um fundo escuro produz etiquetas escuras invisíveis.
+  const cardForeground = textOnBackground(foreground, card);
   return {
     primary,
     secondary: mixWith(secondaryBase, background, barber ? 0.88 : 0.9),
     border: mixWith(barber ? "#c9a227" : primary, background, 0.72),
     background,
     foreground,
-    card: darkBackground ? mixWith(background, "#ffffff", 0.1) : "#ffffff",
-    mutedForeground: mixWith(foreground, background, 0.35),
+    card,
+    cardForeground,
+    mutedForeground: mixWith(cardForeground, card, 0.35),
+    // Campos de digitação: superfície clara com texto escuro em qualquer tema.
+    fieldBackground: "#ffffff",
+    fieldForeground: "#161616",
+    fieldPlaceholder: "#5f5f5f",
   };
 }
 
