@@ -1605,14 +1605,23 @@ function publicTheme(company: PageData["company"]) {
 
   const darkBackground = luminance(background) < 0.5;
   const foreground = textOnBackground(company.textColor, background);
+  const card = darkBackground ? mixWith(background, "#ffffff", 0.1) : "#ffffff";
+  // O texto dentro do card acompanha o card (que segue o fundo escolhido pela
+  // empresa): sem isso, um fundo escuro produz etiquetas escuras invisíveis.
+  const cardForeground = textOnBackground(foreground, card);
   return {
     primary,
     secondary: mixWith(secondaryBase, background, barber ? 0.88 : 0.9),
     border: mixWith(barber ? "#c9a227" : primary, background, 0.72),
     background,
     foreground,
-    card: darkBackground ? mixWith(background, "#ffffff", 0.1) : "#ffffff",
-    mutedForeground: mixWith(foreground, background, 0.35),
+    card,
+    cardForeground,
+    mutedForeground: mixWith(cardForeground, card, 0.35),
+    // Campos de digitação: superfície clara com texto escuro em qualquer tema.
+    fieldBackground: "#ffffff",
+    fieldForeground: "#161616",
+    fieldPlaceholder: "#5f5f5f",
   };
 }
 
