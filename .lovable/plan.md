@@ -16,6 +16,12 @@ O resultado é o que aparece na imagem enviada: campos sem etiqueta visível, cl
 
 Nada de comportamento muda: horários, preços, regras de agendamento, pagamento e banco de dados continuam iguais. É somente correção de cor de texto.
 
+## As cores da empresa continuam mandando
+
+A marca de cada cliente é preservada: fundo, cor de destaque, botões, barra de progresso, bordas e cartões seguem exatamente as 3 cores escolhidas no painel. Nada é substituído por uma cor padrão.
+
+O que muda é apenas o texto: em vez de uma cor fixa, ele é calculado a partir do fundo escolhido — claro sobre fundo escuro, escuro sobre fundo claro. Se a empresa escolher uma cor de texto que funcione com o fundo dela, essa cor é respeitada; a correção automática só entra quando a combinação ficaria ilegível (como no caso da imagem enviada).
+
 ## Observações técnicas
 
 - Marcar o `main` da rota `src/routes/p.$slug.tsx` com uma classe própria (ex.: `pagina-publica`) e excluir essa árvore das regras fixas `.tema-barbearia main [data-slot="card"] …` em `src/styles.css` via `:not(.pagina-publica)`.
