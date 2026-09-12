@@ -285,6 +285,138 @@ export const getPublicBookingRules = createServerFn({ method: "GET" })
  * Entrega o link seguro de gerenciamento ao próprio cliente logo após reservar.
  * O identificador do agendamento é conhecido apenas por quem acabou de agendar.
  */
+/**
+ * Consulta pública "Meus agendamentos" por nome + WhatsApp.
+ *
+ * Serve para quem perdeu o link seguro: com o telefone cadastrado e o próprio
+ * nome, o cliente reencontra os agendamentos daquela empresa (ativos e
+ * histórico). O token de gerenciamento só é devolvido para os agendamentos
+ * futuros ainda abertos — o histórico é apenas leitura.
+ */
+function apenasDigitos(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function nomeComparavel(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+export type CustomerBooking = {
+  code: string | null;
+  status: string;
+  startsAt: string;
+  priceCents: number;
+  serviceName: string | null;
+  professionalName: string | null;
+  manageToken: string | null;
+};
+
+export const findBookingsByCustomer = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      slug: z.string().trim().toLowerCase().min(3).max(80),
+      name: z.string().trim().min(2).max(120),
+      phone: z.string().trim().min(10).max(30),
+    }),
+  )
+  .handler(
+    async ({
+      data,
+    }): Promise<{
+      ok: boolean;
+      error?: string;
+      timezone?: string;
+      upcoming?: CustomerBooking[];
+      history?: CustomerBooking[];
+    }> => {
+      const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
+      const supabase = createSupabaseAdminClient();
+      const { data: tenant } = await supabase
+        .from("tenants")
+        .select("id, timezone")
+        .eq("slug", data.slug)
+        .maybeSingle();
+      if (!tenant) return { ok: false, error: "Empresa não encontrada." };
+
+      const digits = apenasDigitos(data.phone);
+      const variants = Array.from(
+        new Set([
+          digits,
+          digits.startsWith("55") ? digits.slice(2) : `55${digits}`,
+        ]),
+      ).filter((value) => value.length >= 10);
+      const { data: clients } = await supabase
+        .from("clients")
+        .select("id, name")
+        .eq("tenant_id", tenant.id)
+        .in("phone_normalized", variants);
+
+      const alvo = nomeComparavel(data.name);
+      const primeiro = alvo.split(" ")[0] ?? "";
+      const match = (clients ?? []).find((client) => {
+        const nome = nomeComparavel(client.name ?? "");
+        return nome === alvo || (primeiro.length >= 3 && nome.startsWith(primeiro));
+      });
+      if (!match) {
+        return {
+          ok: false,
+          error:
+            "Não encontramos agendamentos com esse nome e WhatsApp. Confira os dados exatamente como você informou ao agendar.",
+        };
+      }
+
+      const { data: appointments } = await supabase
+        .from("appointments")
+        .select("public_code, status, starts_at, price_cents, service_id, professional_id, manage_token")
+        .eq("tenant_id", tenant.id)
+        .eq("client_id", match.id)
+        .order("starts_at", { ascending: false })
+        .limit(50);
+
+      const rows = appointments ?? [];
+      const serviceIds = [...new Set(rows.map((row) => row.service_id).filter(Boolean))];
+      const professionalIds = [...new Set(rows.map((row) => row.professional_id).filter(Boolean))];
+      const [services, professionals] = await Promise.all([
+        serviceIds.length
+          ? supabase.from("services").select("id, name").in("id", serviceIds)
+          : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+        professionalIds.length
+          ? supabase.from("professionals").select("id, name").in("id", professionalIds)
+          : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+      ]);
+      const serviceName = new Map((services.data ?? []).map((item) => [item.id, item.name]));
+      const professionalName = new Map(
+        (professionals.data ?? []).map((item) => [item.id, item.name]),
+      );
+
+      const now = Date.now();
+      const upcoming: CustomerBooking[] = [];
+      const history: CustomerBooking[] = [];
+      for (const row of rows) {
+        const aberto =
+          !finalStatuses.has(row.status) && new Date(row.starts_at).getTime() > now;
+        const item: CustomerBooking = {
+          code: row.public_code ?? null,
+          status: row.status,
+          startsAt: row.starts_at,
+          priceCents: row.price_cents ?? 0,
+          serviceName: serviceName.get(row.service_id) ?? null,
+          professionalName: professionalName.get(row.professional_id) ?? null,
+          manageToken: aberto ? row.manage_token : null,
+        };
+        if (aberto) upcoming.push(item);
+        else history.push(item);
+      }
+      upcoming.reverse();
+      return { ok: true, timezone: tenant.timezone, upcoming, history };
+    },
+  );
+
 export const getManageLinkToken = createServerFn({ method: "POST" })
   .validator(z.object({ appointmentId: z.string().uuid() }))
   .handler(async ({ data }): Promise<{ token: string | null }> => {
