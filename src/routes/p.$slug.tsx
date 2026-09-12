@@ -78,7 +78,7 @@ export const Route = createFileRoute("/p/$slug")({
 
 function PublicBookingApp() {
   const { page, rules } = Route.useLoaderData();
-  const [area, setArea] = useState<"booking" | "store">("booking");
+  const [area, setArea] = useState<"booking" | "store" | "mine">("booking");
   // O tema do produto precisa valer também na raiz do documento: sem isso a
   // página de uma barbearia herda os tokens do LuBeauty (resquícios de rosa).
   useTemaProduto(page?.company.productType === "barber" ? "barber" : "beauty");
@@ -161,9 +161,22 @@ function PublicBookingApp() {
               <small className="font-normal">Ver produtos à venda</small>
             </span>
           </button>
+          <button
+            type="button"
+            aria-pressed={area === "mine"}
+            className={`col-span-2 grid min-h-16 place-items-center rounded-2xl border-2 p-4 text-center shadow-sm transition ${area === "mine" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}
+            onClick={() => setArea("mine")}
+          >
+            <span className="flex items-center gap-2">
+              <UserRound className="h-6 w-6" />
+              <strong>Meus agendamentos</strong>
+            </span>
+          </button>
         </div>
         {area === "booking" ? (
           <BookingWizard page={page} rules={rules} />
+        ) : area === "mine" ? (
+          <MyBookings page={page} />
         ) : (
           <StoreCatalog page={page} />
         )}
