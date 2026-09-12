@@ -938,7 +938,14 @@ function BookingSuccess({
   }, [appointmentId, manageTokenFn]);
   const localPayment = paymentMethod === "local";
   const url = whatsapp
-    ? bookingWhatsappUrl(whatsapp, result, customerName, result.paymentMethod ?? "local", timezone)
+    ? bookingWhatsappUrl(
+        whatsapp,
+        result,
+        customerName,
+        result.paymentMethod ?? "local",
+        timezone,
+        manageLink,
+      )
     : null;
 
   return (
@@ -1674,6 +1681,7 @@ function bookingWhatsappUrl(
   name: string,
   paymentMethod: string,
   timezone: string,
+  manageLink?: string | null,
 ) {
   const lines = [
     "Olá!",
@@ -1686,7 +1694,9 @@ function bookingWhatsappUrl(
     result.depositCents ? `Sinal solicitado: ${brl(result.depositCents)}` : "",
     result.remainingCents ? `Saldo restante: ${brl(result.remainingCents)}` : "",
     `Forma de pagamento: ${paymentLabels[paymentMethod] ?? paymentMethod}`,
-
+    // O link vai junto na conversa: assim o cliente sempre reencontra o
+    // agendamento no próprio histórico do WhatsApp.
+    manageLink ? `Meu agendamento (consultar, remarcar ou cancelar): ${manageLink}` : "",
     "Gostaria de combinar a confirmação do meu agendamento.",
   ].filter(Boolean);
   return `https://wa.me/${whatsappDigits(phone)}?text=${encodeURIComponent(lines.join("\n"))}`;
