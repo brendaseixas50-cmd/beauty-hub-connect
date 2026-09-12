@@ -34,6 +34,7 @@ import {
   getPublicCompanyPage,
 } from "@/modules/public-booking/server";
 import {
+  findBookingsByCustomer,
   getManageLinkToken,
   getPublicBookingRules,
 } from "@/modules/public-booking/gerenciar.functions";
@@ -77,7 +78,7 @@ export const Route = createFileRoute("/p/$slug")({
 
 function PublicBookingApp() {
   const { page, rules } = Route.useLoaderData();
-  const [area, setArea] = useState<"booking" | "store">("booking");
+  const [area, setArea] = useState<"booking" | "store" | "mine">("booking");
   // O tema do produto precisa valer também na raiz do documento: sem isso a
   // página de uma barbearia herda os tokens do LuBeauty (resquícios de rosa).
   useTemaProduto(page?.company.productType === "barber" ? "barber" : "beauty");
@@ -160,9 +161,22 @@ function PublicBookingApp() {
               <small className="font-normal">Ver produtos à venda</small>
             </span>
           </button>
+          <button
+            type="button"
+            aria-pressed={area === "mine"}
+            className={`col-span-2 grid min-h-16 place-items-center rounded-2xl border-2 p-4 text-center shadow-sm transition ${area === "mine" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}
+            onClick={() => setArea("mine")}
+          >
+            <span className="flex items-center gap-2">
+              <UserRound className="h-6 w-6" />
+              <strong>Meus agendamentos</strong>
+            </span>
+          </button>
         </div>
         {area === "booking" ? (
           <BookingWizard page={page} rules={rules} />
+        ) : area === "mine" ? (
+          <MyBookings page={page} />
         ) : (
           <StoreCatalog page={page} />
         )}
@@ -938,7 +952,14 @@ function BookingSuccess({
   }, [appointmentId, manageTokenFn]);
   const localPayment = paymentMethod === "local";
   const url = whatsapp
-    ? bookingWhatsappUrl(whatsapp, result, customerName, result.paymentMethod ?? "local", timezone)
+    ? bookingWhatsappUrl(
+        whatsapp,
+        result,
+        customerName,
+        result.paymentMethod ?? "local",
+        timezone,
+        manageLink,
+      )
     : null;
 
   return (
@@ -1043,6 +1064,128 @@ function BookingSuccess({
         </Button>
       ) : null}
     </Card>
+  );
+}
+
+/**
+ * "Meus agendamentos" sem cadastro: com o nome e o WhatsApp usados no
+ * agendamento, o cliente reencontra o que está marcado (com link para cancelar
+ * ou remarcar) e o histórico de atendimentos já realizados.
+ */
+function MyBookings({ page }: { page: PageData }) {
+  const findFn = useServerFn(findBookingsByCustomer);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string>();
+  const [result, setResult] = useState<Awaited<ReturnType<typeof findFn>>>();
+  const timezone = page.company.timezone;
+
+  async function search(event: FormEvent) {
+    event.preventDefault();
+    setPending(true);
+    setError(undefined);
+    setResult(undefined);
+    try {
+      const response = await findFn({ data: { slug: page.company.slug, name, phone } });
+      if (!response.ok) {
+        setError(response.error ?? "Não encontramos agendamentos.");
+        return;
+      }
+      setResult(response);
+    } catch {
+      setError("Não foi possível consultar agora. Tente novamente em instantes.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <Card className="mt-5 gap-5 p-5 sm:p-6">
+      <div>
+        <h2 className="font-display text-xl font-semibold">Meus agendamentos</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Informe o nome e o WhatsApp usados no agendamento para ver o que está marcado e o
+          histórico de atendimentos.
+        </p>
+      </div>
+      <form className="grid gap-4" onSubmit={search}>
+        <Field label="Nome" value={name} onChange={setName} autoComplete="name" />
+        <Field
+          label="WhatsApp"
+          value={phone}
+          onChange={setPhone}
+          inputMode="tel"
+          autoComplete="tel"
+        />
+        <Button type="submit" disabled={pending} className="min-h-12">
+          {pending ? "Consultando…" : "Ver meus agendamentos"}
+        </Button>
+      </form>
+      {error ? <p className="rounded-xl bg-secondary p-4 text-sm">{error}</p> : null}
+      {result?.ok ? (
+        <div className="grid gap-5">
+          <section className="grid gap-3">
+            <strong>Agendamentos ativos</strong>
+            {result.upcoming?.length ? (
+              result.upcoming.map((item) => (
+                <div key={`${item.startsAt}-${item.code}`} className="grid gap-2 rounded-2xl border p-4 text-sm">
+                  <span className="font-medium">{item.serviceName ?? "Atendimento"}</span>
+                  <span>
+                    {item.professionalName ? `${item.professionalName} · ` : ""}
+                    {formatSlot(item.startsAt, timezone)}
+                  </span>
+                  <span>{brl(item.priceCents)}</span>
+                  {item.manageToken ? (
+                    <Button asChild size="sm" className="w-fit">
+                      <a href={`/agendamento/${item.manageToken}`}>Remarcar ou cancelar</a>
+                    </Button>
+                  ) : null}
+                </div>
+              ))
+            ) : (
+              <p className="rounded-xl bg-secondary p-4 text-sm">
+                Você não tem agendamentos ativos por aqui.
+              </p>
+            )}
+          </section>
+          <section className="grid gap-3">
+            <strong>Histórico</strong>
+            {result.history?.length ? (
+              result.history.map((item) => (
+                <div
+                  key={`${item.startsAt}-${item.code}-h`}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border p-4 text-sm"
+                >
+                  <span>
+                    {item.serviceName ?? "Atendimento"} · {formatSlot(item.startsAt, timezone)}
+                  </span>
+                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
+                    {historyStatusLabel(item.status)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="rounded-xl bg-secondary p-4 text-sm">Nenhum atendimento anterior.</p>
+            )}
+          </section>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+function historyStatusLabel(status: string) {
+  return (
+    (
+      {
+        scheduled: "Agendado",
+        confirmed: "Confirmado",
+        completed: "Concluído",
+        cancelled: "Cancelado",
+        no_show: "Faltou",
+      } as Record<string, string>
+    )[status] ?? status
   );
 }
 
@@ -1538,6 +1681,9 @@ function formatDateLabel(value: string) {
   const [year, month, day] = value.split("-").map(Number);
   if (!year || !month || !day) return value;
   return new Intl.DateTimeFormat("pt-BR", {
+    // O rótulo tem de mostrar exatamente o dia escolhido: sem o fuso UTC a data
+    // criada em UTC volta um dia no Brasil (dia 22 aparecia como 21).
+    timeZone: "UTC",
     weekday: "short",
     day: "2-digit",
     month: "long",
@@ -1671,6 +1817,7 @@ function bookingWhatsappUrl(
   name: string,
   paymentMethod: string,
   timezone: string,
+  manageLink?: string | null,
 ) {
   const lines = [
     "Olá!",
@@ -1683,7 +1830,9 @@ function bookingWhatsappUrl(
     result.depositCents ? `Sinal solicitado: ${brl(result.depositCents)}` : "",
     result.remainingCents ? `Saldo restante: ${brl(result.remainingCents)}` : "",
     `Forma de pagamento: ${paymentLabels[paymentMethod] ?? paymentMethod}`,
-
+    // O link vai junto na conversa: assim o cliente sempre reencontra o
+    // agendamento no próprio histórico do WhatsApp.
+    manageLink ? `Meu agendamento (consultar, remarcar ou cancelar): ${manageLink}` : "",
     "Gostaria de combinar a confirmação do meu agendamento.",
   ].filter(Boolean);
   return `https://wa.me/${whatsappDigits(phone)}?text=${encodeURIComponent(lines.join("\n"))}`;
