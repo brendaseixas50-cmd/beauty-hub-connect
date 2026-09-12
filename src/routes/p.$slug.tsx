@@ -1538,6 +1538,9 @@ function formatDateLabel(value: string) {
   const [year, month, day] = value.split("-").map(Number);
   if (!year || !month || !day) return value;
   return new Intl.DateTimeFormat("pt-BR", {
+    // O rótulo tem de mostrar exatamente o dia escolhido: sem o fuso UTC a data
+    // criada em UTC volta um dia no Brasil (dia 22 aparecia como 21).
+    timeZone: "UTC",
     weekday: "short",
     day: "2-digit",
     month: "long",
