@@ -34,6 +34,7 @@ import {
   getPublicCompanyPage,
 } from "@/modules/public-booking/server";
 import {
+  findBookingsByCustomer,
   getManageLinkToken,
   getPublicBookingRules,
 } from "@/modules/public-booking/gerenciar.functions";
@@ -1050,6 +1051,128 @@ function BookingSuccess({
         </Button>
       ) : null}
     </Card>
+  );
+}
+
+/**
+ * "Meus agendamentos" sem cadastro: com o nome e o WhatsApp usados no
+ * agendamento, o cliente reencontra o que está marcado (com link para cancelar
+ * ou remarcar) e o histórico de atendimentos já realizados.
+ */
+function MyBookings({ page }: { page: PageData }) {
+  const findFn = useServerFn(findBookingsByCustomer);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string>();
+  const [result, setResult] = useState<Awaited<ReturnType<typeof findFn>>>();
+  const timezone = page.company.timezone;
+
+  async function search(event: FormEvent) {
+    event.preventDefault();
+    setPending(true);
+    setError(undefined);
+    setResult(undefined);
+    try {
+      const response = await findFn({ data: { slug: page.company.slug, name, phone } });
+      if (!response.ok) {
+        setError(response.error ?? "Não encontramos agendamentos.");
+        return;
+      }
+      setResult(response);
+    } catch {
+      setError("Não foi possível consultar agora. Tente novamente em instantes.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <Card className="mt-5 gap-5 p-5 sm:p-6">
+      <div>
+        <h2 className="font-display text-xl font-semibold">Meus agendamentos</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Informe o nome e o WhatsApp usados no agendamento para ver o que está marcado e o
+          histórico de atendimentos.
+        </p>
+      </div>
+      <form className="grid gap-4" onSubmit={search}>
+        <Field label="Nome" value={name} onChange={setName} autoComplete="name" />
+        <Field
+          label="WhatsApp"
+          value={phone}
+          onChange={setPhone}
+          inputMode="tel"
+          autoComplete="tel"
+        />
+        <Button type="submit" disabled={pending} className="min-h-12">
+          {pending ? "Consultando…" : "Ver meus agendamentos"}
+        </Button>
+      </form>
+      {error ? <p className="rounded-xl bg-secondary p-4 text-sm">{error}</p> : null}
+      {result?.ok ? (
+        <div className="grid gap-5">
+          <section className="grid gap-3">
+            <strong>Agendamentos ativos</strong>
+            {result.upcoming?.length ? (
+              result.upcoming.map((item) => (
+                <div key={`${item.startsAt}-${item.code}`} className="grid gap-2 rounded-2xl border p-4 text-sm">
+                  <span className="font-medium">{item.serviceName ?? "Atendimento"}</span>
+                  <span>
+                    {item.professionalName ? `${item.professionalName} · ` : ""}
+                    {formatSlot(item.startsAt, timezone)}
+                  </span>
+                  <span>{brl(item.priceCents)}</span>
+                  {item.manageToken ? (
+                    <Button asChild size="sm" className="w-fit">
+                      <a href={`/agendamento/${item.manageToken}`}>Remarcar ou cancelar</a>
+                    </Button>
+                  ) : null}
+                </div>
+              ))
+            ) : (
+              <p className="rounded-xl bg-secondary p-4 text-sm">
+                Você não tem agendamentos ativos por aqui.
+              </p>
+            )}
+          </section>
+          <section className="grid gap-3">
+            <strong>Histórico</strong>
+            {result.history?.length ? (
+              result.history.map((item) => (
+                <div
+                  key={`${item.startsAt}-${item.code}-h`}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border p-4 text-sm"
+                >
+                  <span>
+                    {item.serviceName ?? "Atendimento"} · {formatSlot(item.startsAt, timezone)}
+                  </span>
+                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
+                    {historyStatusLabel(item.status)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="rounded-xl bg-secondary p-4 text-sm">Nenhum atendimento anterior.</p>
+            )}
+          </section>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+function historyStatusLabel(status: string) {
+  return (
+    (
+      {
+        scheduled: "Agendado",
+        confirmed: "Confirmado",
+        completed: "Concluído",
+        cancelled: "Cancelado",
+        no_show: "Faltou",
+      } as Record<string, string>
+    )[status] ?? status
   );
 }
 
