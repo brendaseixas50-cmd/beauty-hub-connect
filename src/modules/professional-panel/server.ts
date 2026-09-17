@@ -445,7 +445,7 @@ const dayScheduleSchema = z.object({
 
 export const professionalSaveWorkingHours = createServerFn({ method: "POST" })
   .validator(
-    z.object({ followCompanyHours: z.boolean(), days: z.array(dayScheduleSchema).max(7) }),
+    z.object({ followCompanyHours: z.boolean(), days: z.array(dayScheduleSchema).length(7) }),
   )
   .handler(async ({ data }) => {
     const { supabase } = await professionalContext();
