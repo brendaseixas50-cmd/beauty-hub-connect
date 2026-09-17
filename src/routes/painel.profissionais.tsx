@@ -452,7 +452,7 @@ function ProfessionalDialog({
         "Agenda do profissional salva.",
       );
     }
-    onClose();
+    if (savedId) onClose();
   }
 
   return (

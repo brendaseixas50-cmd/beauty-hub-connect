@@ -1,0 +1,2 @@
+revoke execute on function public.professional_is_free(uuid, uuid, timestamptz, timestamptz) from anon, authenticated;
+grant execute on function public.professional_is_free(uuid, uuid, timestamptz, timestamptz) to service_role;

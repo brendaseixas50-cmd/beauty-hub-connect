@@ -357,10 +357,12 @@ export const findBookingsByCustomer = createServerFn({ method: "POST" })
         .in("phone_normalized", variants);
 
       const alvo = nomeComparavel(data.name);
-      const primeiro = alvo.split(" ")[0] ?? "";
+      if (!alvo.includes(" ")) {
+        return { ok: false, error: "Informe o nome completo usado no agendamento." };
+      }
       const match = (clients ?? []).find((client) => {
         const nome = nomeComparavel(client.name ?? "");
-        return nome === alvo || (primeiro.length >= 3 && nome.startsWith(primeiro));
+        return nome === alvo;
       });
       if (!match) {
         return {

@@ -70,4 +70,12 @@ describe("individual professional availability", () => {
       null,
     );
   });
+
+  it("keeps schedules saved with weekday names", () => {
+    const legacy = parseWorkingHours({
+      monday: { dayOff: false, startsAt: "08:00", endsAt: "17:00" },
+    });
+    assert.equal(legacy["1"]?.startsAt, "08:00");
+    assert.equal(legacy["1"]?.endsAt, "17:00");
+  });
 });

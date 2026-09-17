@@ -20,6 +20,7 @@ export const weekdayLabels = [
 ] as const;
 
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
+const weekdayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
 
 export function emptyDaySchedule(): DaySchedule {
   return {
@@ -44,7 +45,9 @@ export function parseWorkingHours(value: unknown): WorkingHours {
   const source = value as Record<string, unknown>;
   const parsed: WorkingHours = {};
   for (let weekday = 0; weekday < 7; weekday += 1) {
-    const raw = source[String(weekday)];
+    // Aceita tanto o formato atual ("0"–"6") quanto o formato legado por nome.
+    // Isso impede que uma agenda já salva pareça vazia depois de uma atualização.
+    const raw = source[String(weekday)] ?? source[weekdayNames[weekday] ?? ""];
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) continue;
     const day = raw as Record<string, unknown>;
     const startsAt = normalizeTime(day["startsAt"], "09:00");

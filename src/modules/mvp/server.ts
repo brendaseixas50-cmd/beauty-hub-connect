@@ -970,7 +970,7 @@ export const saveProfessionalSchedule = createServerFn({ method: "POST" })
     z.object({
       professionalId: z.string().uuid(),
       followCompanyHours: z.boolean(),
-      days: z.array(scheduleDaySchema).max(7),
+      days: z.array(scheduleDaySchema).length(7),
     }),
   )
   .handler(async ({ data }) => {

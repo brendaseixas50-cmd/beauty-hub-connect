@@ -4,6 +4,7 @@ import { CalendarPlus, ChevronLeft, ChevronRight, MessageCircle } from "lucide-r
 import { useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
+import { CompactAppointmentRow } from "@/components/agenda/compact-appointment-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -173,18 +174,18 @@ function AgendaView({ data }: { data: ProfessionalPanelData }) {
               <Card className="p-4 text-sm text-muted-foreground">Nenhum atendimento neste dia.</Card>
             ) : (
               list.map((appointment) => (
-                <Card key={appointment.id} className="gap-3 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold">
-                        {hourLabel(appointment.startsAt, timeZone)} –{" "}
-                        {hourLabel(appointment.endsAt, timeZone)}
-                      </p>
-                      <p className="truncate text-base font-medium">{appointment.clientName}</p>
-                      <p className="truncate text-sm text-muted-foreground">
-                        {appointment.serviceName}
-                      </p>
-                    </div>
+                <CompactAppointmentRow
+                  key={appointment.id}
+                  time={hourLabel(appointment.startsAt, timeZone)}
+                  clientName={appointment.clientName}
+                  summary={appointment.serviceName}
+                  status={appointmentStatusLabels[appointment.status]}
+                  cancelled={appointment.status === "cancelled"}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+                    <span>
+                      {hourLabel(appointment.startsAt, timeZone)} – {hourLabel(appointment.endsAt, timeZone)}
+                    </span>
                     <Badge variant={appointment.status === "cancelled" ? "outline" : "secondary"}>
                       {appointmentStatusLabels[appointment.status]}
                     </Badge>
@@ -203,7 +204,7 @@ function AgendaView({ data }: { data: ProfessionalPanelData }) {
                     {linkWhatsapp(appointment.clientPhone) ? (
                       <a
                         className="inline-flex items-center gap-1 underline"
-                        href={linkWhatsapp(appointment.clientPhone)!}
+                         href={linkWhatsapp(appointment.clientPhone) ?? undefined}
                         target="_blank"
                         rel="noreferrer"
                         title="Abrir conversa no WhatsApp"
@@ -260,7 +261,7 @@ function AgendaView({ data }: { data: ProfessionalPanelData }) {
                       </Button>
                     ) : null}
                   </div>
-                </Card>
+                </CompactAppointmentRow>
               ))
             )}
           </section>
