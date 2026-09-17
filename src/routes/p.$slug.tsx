@@ -299,18 +299,46 @@ function BookingWizard({
     setError(undefined);
     setStartsAt("");
     try {
-      const response = await availabilityFn({
-        data: {
-          slug: company.slug,
-          date: targetDate,
-          serviceIds,
-          professionalId:
-            !needsProfessionalChoice || professionalChoice === "any" ? null : professionalChoice,
-          addonProfessionals,
-        },
-
-      });
-      setSlots(response.slots);
+      const professionalIds =
+        needsProfessionalChoice && professionalChoice === "any"
+          ? availableProfessionals.map((professional) => professional.id)
+          : [!needsProfessionalChoice ? null : professionalChoice];
+      const responses = await Promise.all(
+        professionalIds.map((professionalId) =>
+          availabilityFn({
+            data: {
+              slug: company.slug,
+              date: targetDate,
+              serviceIds,
+              professionalId,
+              addonProfessionals,
+            },
+          }),
+        ),
+      );
+      const slotsByStart = new Map<string, (typeof responses)[number]["slots"][number]>();
+      for (const slot of responses.flatMap((response) => response.slots)) {
+        const current = slotsByStart.get(slot.startsAt);
+        if (!current) {
+          slotsByStart.set(slot.startsAt, slot);
+          continue;
+        }
+        const professionalsById = new Map(
+          [...current.professionals, ...slot.professionals].map((professional) => [
+            professional.id,
+            professional,
+          ]),
+        );
+        slotsByStart.set(slot.startsAt, {
+          ...current,
+          professionals: [...professionalsById.values()],
+        });
+      }
+      setSlots(
+        [...slotsByStart.values()].sort((left, right) =>
+          left.startsAt.localeCompare(right.startsAt),
+        ),
+      );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível consultar os horários.");
     } finally {
