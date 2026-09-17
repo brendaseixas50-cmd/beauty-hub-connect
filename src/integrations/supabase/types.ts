@@ -20,7 +20,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      professional_is_free: {
+        Args: {
+          p_ends_at: string
+          p_professional_id: string
+          p_starts_at: string
+          p_tenant_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
