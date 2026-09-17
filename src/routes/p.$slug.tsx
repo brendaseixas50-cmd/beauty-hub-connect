@@ -517,7 +517,7 @@ function BookingWizard({
             duration={duration}
             total={total}
           />
-          <Field label="Nome" value={name} onChange={setName} autoComplete="name" />
+          <Field label="Nome completo" value={name} onChange={setName} autoComplete="name" />
           <Field
             label="WhatsApp"
             value={phone}
@@ -1083,12 +1083,12 @@ function MyBookings({ page }: { page: PageData }) {
       <div>
         <h2 className="font-display text-xl font-semibold">Meus agendamentos</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Informe o nome e o WhatsApp usados no agendamento para ver o que está marcado e o
+          Informe o nome completo e o WhatsApp usados no agendamento para ver o que está marcado e o
           histórico de atendimentos.
         </p>
       </div>
       <form className="grid gap-4" onSubmit={search}>
-        <Field label="Nome" value={name} onChange={setName} autoComplete="name" />
+        <Field label="Nome completo" value={name} onChange={setName} autoComplete="name" />
         <Field
           label="WhatsApp"
           value={phone}
@@ -1118,6 +1118,11 @@ function MyBookings({ page }: { page: PageData }) {
                     <Button asChild size="sm" className="w-fit">
                       <a href={`/agendamento/${item.manageToken}`}>Remarcar ou cancelar</a>
                     </Button>
+                  ) : null}
+                  {page.company.cancellationPolicyEnabled && page.company.cancellationPolicy ? (
+                    <p className="text-xs text-muted-foreground">
+                      Cancelamento e remarcação seguem a política da empresa: {page.company.cancellationPolicy}
+                    </p>
                   ) : null}
                 </div>
               ))
