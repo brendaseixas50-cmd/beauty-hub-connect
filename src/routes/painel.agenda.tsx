@@ -5,7 +5,7 @@ import { useMemo, useState, type FormEvent } from "react";
 
 import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
 import { formatarTelefone, linkWhatsapp } from "@/lib/telefone";
-import { Badge } from "@/components/ui/badge";
+import { CompactAppointmentRow } from "@/components/agenda/compact-appointment-row";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -212,24 +212,17 @@ function AgendaPage() {
       ) : (
         <div className="mt-6 grid gap-3">
           {filtered.map((appointment) => (
-            <Card key={appointment.id} className="gap-4 p-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                  <p className="text-lg font-medium">{appointment.clients?.name ?? "Cliente"}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {appointment.services?.name ?? "Serviço"} ·{" "}
-                    {appointment.professionals?.name ?? "Profissional"}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant={appointment.status === "cancelled" ? "destructive" : "secondary"}>
-                    {statusLabel(appointment.status)}
-                  </Badge>
-                  <span className="text-sm font-medium">
-                    {formatDateTime(appointment.starts_at)}
-                  </span>
-                </div>
-              </div>
+            <CompactAppointmentRow
+              key={appointment.id}
+              time={new Date(appointment.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              clientName={appointment.clients?.name ?? "Cliente"}
+              summary={appointment.services?.name ?? "Serviço"}
+              status={statusLabel(appointment.status)}
+              cancelled={appointment.status === "cancelled"}
+            >
+              <p className="text-sm text-muted-foreground">
+                {formatDateTime(appointment.starts_at)} · {appointment.professionals?.name ?? "Profissional"}
+              </p>
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <span>Valor: {brl(appointment.price_cents)}</span>
                 <span>
@@ -242,7 +235,7 @@ function AgendaPage() {
                 {linkWhatsapp(appointment.clients?.phone) ? (
                   <a
                     className="inline-flex items-center gap-1 underline"
-                    href={linkWhatsapp(appointment.clients?.phone)!}
+                    href={linkWhatsapp(appointment.clients?.phone) ?? undefined}
                     target="_blank"
                     rel="noreferrer"
                     title="Abrir conversa no WhatsApp"
@@ -273,7 +266,7 @@ function AgendaPage() {
                   }
                 />
               </div>
-            </Card>
+            </CompactAppointmentRow>
           ))}
         </div>
       )}

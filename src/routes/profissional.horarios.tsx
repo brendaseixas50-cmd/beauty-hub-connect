@@ -93,7 +93,8 @@ function ProfessionalHours() {
       {!followCompany ? (
         <div className="grid gap-3">
           {weekdayLabels.map((label, weekday) => {
-            const day = days[weekday]!;
+    const day = days[weekday];
+    if (!day) return null;
             return (
               <Card key={label} className="gap-3 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
