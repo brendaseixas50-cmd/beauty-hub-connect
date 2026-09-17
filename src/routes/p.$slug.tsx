@@ -14,7 +14,6 @@ import {
   MessageCircle,
   Minus,
   Plus,
-  ShoppingBag,
   ShoppingCart,
   Star,
   Trash2,
@@ -78,7 +77,7 @@ export const Route = createFileRoute("/p/$slug")({
 
 function PublicBookingApp() {
   const { page, rules } = Route.useLoaderData();
-  const [area, setArea] = useState<"booking" | "store" | "mine">("booking");
+  const [area, setArea] = useState<"services" | "combos" | "mine">("services");
   // O tema do produto precisa valer também na raiz do documento: sem isso a
   // página de uma barbearia herda os tokens do LuBeauty (resquícios de rosa).
   useTemaProduto(page?.company.productType === "barber" ? "barber" : "beauty");
@@ -136,49 +135,45 @@ function PublicBookingApp() {
       </header>
 
       <div className="mx-auto max-w-2xl px-4 py-5 sm:py-8">
-        <div className="grid grid-cols-2 gap-3" aria-label="Escolha entre agendamento e loja">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3" aria-label="Escolha o que deseja ver">
           <button
             type="button"
-            aria-pressed={area === "booking"}
-            className={`grid min-h-28 place-items-center rounded-2xl border-2 p-4 text-center shadow-sm transition ${area === "booking" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}
-            onClick={() => setArea("booking")}
+            aria-pressed={area === "services"}
+            className={`grid min-h-20 place-items-center rounded-xl border p-2 text-center transition sm:min-h-24 sm:p-3 ${area === "services" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}
+            onClick={() => setArea("services")}
           >
-            <span className="grid gap-2">
-              <CalendarDays className="mx-auto h-7 w-7" />
-              <strong>Agendamento</strong>
-              <small className="font-normal">Escolher serviços e horário</small>
+            <span className="grid gap-1.5">
+              <CalendarDays className="mx-auto h-5 w-5" />
+              <strong className="text-sm">Serviços</strong>
             </span>
           </button>
           <button
             type="button"
-            aria-pressed={area === "store"}
-            className={`grid min-h-28 place-items-center rounded-2xl border-2 p-4 text-center shadow-sm transition disabled:cursor-not-allowed disabled:opacity-55 ${area === "store" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}
-            onClick={() => setArea("store")}
+            aria-pressed={area === "combos"}
+            className={`grid min-h-20 place-items-center rounded-xl border p-2 text-center transition sm:min-h-24 sm:p-3 ${area === "combos" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}
+            onClick={() => setArea("combos")}
           >
-            <span className="grid gap-2">
-              <ShoppingBag className="mx-auto h-7 w-7" />
-              <strong>Loja</strong>
-              <small className="font-normal">Ver produtos à venda</small>
+            <span className="grid gap-1.5">
+              <ShoppingCart className="mx-auto h-5 w-5" />
+              <strong className="text-sm">Combos</strong>
             </span>
           </button>
           <button
             type="button"
             aria-pressed={area === "mine"}
-            className={`col-span-2 grid min-h-16 place-items-center rounded-2xl border-2 p-4 text-center shadow-sm transition ${area === "mine" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}
+            className={`grid min-h-20 place-items-center rounded-xl border p-2 text-center transition sm:min-h-24 sm:p-3 ${area === "mine" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}
             onClick={() => setArea("mine")}
           >
-            <span className="flex items-center gap-2">
-              <UserRound className="h-6 w-6" />
-              <strong>Meus agendamentos</strong>
+            <span className="grid gap-1.5">
+              <UserRound className="mx-auto h-5 w-5" />
+              <strong className="text-xs leading-tight sm:text-sm">Meus agendamentos</strong>
             </span>
           </button>
         </div>
-        {area === "booking" ? (
-          <BookingWizard page={page} rules={rules} />
-        ) : area === "mine" ? (
+        {area === "mine" ? (
           <MyBookings page={page} />
         ) : (
-          <StoreCatalog page={page} />
+          <BookingWizard key={area} page={page} rules={rules} initialServiceType={area} />
         )}
         <CompanyInformation page={page} />
       </div>
