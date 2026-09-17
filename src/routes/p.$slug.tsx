@@ -14,6 +14,7 @@ import {
   MessageCircle,
   Minus,
   Plus,
+  ShoppingBag,
   ShoppingCart,
   Star,
   Trash2,
@@ -194,9 +195,11 @@ type Professional = PageData["professionals"][number];
 function BookingWizard({
   page,
   rules,
+  initialServiceType,
 }: {
   page: PageData;
   rules: { horizonDays: number; deadlineEnabled: boolean; deadlineHours: number };
+  initialServiceType: "services" | "combos";
 }) {
   const { company, services, professionals } = page;
   const availabilityFn = useServerFn(getPublicAvailability);
@@ -415,6 +418,7 @@ function BookingWizard({
           }
           total={total}
           duration={duration}
+          initialTab={initialServiceType === "combos" ? "combos" : "servicos"}
         />
       ) : null}
 
@@ -640,6 +644,7 @@ function StepServices({
   onAddonProfessionalChange,
   total,
   duration,
+  initialTab,
 }: {
   services: Service[];
   professionals: Professional[];
@@ -649,8 +654,9 @@ function StepServices({
   onAddonProfessionalChange: (addonId: string, professionalId: string) => void;
   total: number;
   duration: number;
+  initialTab: "servicos" | "combos";
 }) {
-  const [tab, setTab] = useState<"servicos" | "combos">("servicos");
+  const tab = initialTab;
   const combos = services.filter((service) => service.isCombo && !service.isAddon);
   const simples = services.filter((service) => !service.isCombo && !service.isAddon);
   const mainServices = tab === "combos" ? combos : simples;
@@ -673,29 +679,6 @@ function StepServices({
 
   return (
     <div className="grid gap-3">
-      {combos.length ? (
-        <div role="tablist" aria-label="Tipo de serviço" className="flex gap-2">
-          {(
-            [
-              ["servicos", "Serviços"],
-              ["combos", "Combos"],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              role="tab"
-              aria-selected={tab === value}
-              onClick={() => setTab(value)}
-              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
-                tab === value ? "bg-primary text-primary-foreground" : "bg-secondary"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      ) : null}
       {mainServices.length ? (
         mainServices.map((service) => (
           <Choice
