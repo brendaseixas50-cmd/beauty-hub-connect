@@ -7,4 +7,4 @@
 - [x] Validar os fluxos nos temas LuBeauty e LuBarber e em telas móveis.
 
 - [x] Corrigir “Qualquer profissional” para reunir horários livres de todos os profissionais aptos.
-- [ ] Validar a disponibilidade real da Top Barbers sem criar reservas.
+- [x] Validar a disponibilidade real da Top Barbers sem criar reservas.
