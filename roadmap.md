@@ -6,5 +6,5 @@
 - [x] Tornar a agenda da gestão e do profissional compacta, revelando detalhes ao tocar no cliente.
 - [x] Validar os fluxos nos temas LuBeauty e LuBarber e em telas móveis.
 
-- [ ] Corrigir “Qualquer profissional” para reunir horários livres de todos os profissionais aptos.
+- [x] Corrigir “Qualquer profissional” para reunir horários livres de todos os profissionais aptos.
 - [ ] Validar a disponibilidade real da Top Barbers sem criar reservas.
