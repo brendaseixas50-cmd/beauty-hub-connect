@@ -9,3 +9,4 @@
 - [x] Corrigir “Qualquer profissional” para reunir horários livres de todos os profissionais aptos.
 - [x] Validar a disponibilidade real da Top Barbers sem criar reservas.
 - [x] Restaurar os cards Agendamento e Loja, mantendo Serviços, Combos e Meus agendamentos dentro de Agendamento.
+- [x] Deixar Serviços, Combos e Meus agendamentos compactos como as categorias da Loja.
