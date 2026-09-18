@@ -169,44 +169,36 @@ function PublicBookingApp() {
         {section === "booking" ? (
           <>
             <div
-              className="mt-5 grid grid-cols-3 gap-2 sm:gap-3"
+              role="group"
+              className="-mx-1 mt-5 flex gap-2 overflow-x-auto px-1 pb-1"
               aria-label="Escolha o fluxo de agendamento"
             >
               <Button
                 type="button"
-                variant={area === "services" ? "default" : "outline"}
+                variant={area === "services" ? "default" : "secondary"}
                 aria-pressed={area === "services"}
-                className="h-auto min-h-20 whitespace-normal rounded-xl p-2 text-center sm:min-h-24 sm:p-3"
+                className="min-h-10 shrink-0 whitespace-nowrap rounded-full px-4 text-sm"
                 onClick={() => setArea("services")}
               >
-                <span className="grid gap-1.5">
-                  <CalendarDays className="mx-auto h-5 w-5" />
-                  <strong className="text-sm">Serviços</strong>
-                </span>
+                Serviços
               </Button>
               <Button
                 type="button"
-                variant={area === "combos" ? "default" : "outline"}
+                variant={area === "combos" ? "default" : "secondary"}
                 aria-pressed={area === "combos"}
-                className="h-auto min-h-20 whitespace-normal rounded-xl p-2 text-center sm:min-h-24 sm:p-3"
+                className="min-h-10 shrink-0 whitespace-nowrap rounded-full px-4 text-sm"
                 onClick={() => setArea("combos")}
               >
-                <span className="grid gap-1.5">
-                  <ShoppingCart className="mx-auto h-5 w-5" />
-                  <strong className="text-sm">Combos</strong>
-                </span>
+                Combos
               </Button>
               <Button
                 type="button"
-                variant={area === "mine" ? "default" : "outline"}
+                variant={area === "mine" ? "default" : "secondary"}
                 aria-pressed={area === "mine"}
-                className="h-auto min-h-20 whitespace-normal rounded-xl p-2 text-center sm:min-h-24 sm:p-3"
+                className="min-h-10 shrink-0 whitespace-nowrap rounded-full px-4 text-sm"
                 onClick={() => setArea("mine")}
               >
-                <span className="grid gap-1.5">
-                  <UserRound className="mx-auto h-5 w-5" />
-                  <strong className="text-xs leading-tight sm:text-sm">Meus agendamentos</strong>
-                </span>
+                Meus agendamentos
               </Button>
             </div>
             {area === "mine" ? (
