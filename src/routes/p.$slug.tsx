@@ -78,6 +78,7 @@ export const Route = createFileRoute("/p/$slug")({
 
 function PublicBookingApp() {
   const { page, rules } = Route.useLoaderData();
+  const [section, setSection] = useState<"booking" | "store">("booking");
   const [area, setArea] = useState<"services" | "combos" | "mine">("services");
   // O tema do produto precisa valer também na raiz do documento: sem isso a
   // página de uma barbearia herda os tokens do LuBeauty (resquícios de rosa).
@@ -136,45 +137,86 @@ function PublicBookingApp() {
       </header>
 
       <div className="mx-auto max-w-2xl px-4 py-5 sm:py-8">
-        <div className="grid grid-cols-3 gap-2 sm:gap-3" aria-label="Escolha o que deseja ver">
-          <button
+        <div className="grid grid-cols-2 gap-3" aria-label="Escolha entre agendamento e loja">
+          <Button
             type="button"
-            aria-pressed={area === "services"}
-            className={`grid min-h-20 place-items-center rounded-xl border p-2 text-center transition sm:min-h-24 sm:p-3 ${area === "services" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}
-            onClick={() => setArea("services")}
+            variant={section === "booking" ? "default" : "outline"}
+            aria-pressed={section === "booking"}
+            className="h-auto min-h-32 whitespace-normal rounded-2xl px-4 py-5 text-center"
+            onClick={() => setSection("booking")}
           >
-            <span className="grid gap-1.5">
-              <CalendarDays className="mx-auto h-5 w-5" />
-              <strong className="text-sm">Serviços</strong>
+            <span className="grid gap-2">
+              <CalendarDays className="mx-auto h-7 w-7" />
+              <strong className="text-lg">Agendamento</strong>
+              <span className="text-sm font-normal">Escolher serviços e horário</span>
             </span>
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            aria-pressed={area === "combos"}
-            className={`grid min-h-20 place-items-center rounded-xl border p-2 text-center transition sm:min-h-24 sm:p-3 ${area === "combos" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}
-            onClick={() => setArea("combos")}
+            variant={section === "store" ? "default" : "outline"}
+            aria-pressed={section === "store"}
+            className="h-auto min-h-32 whitespace-normal rounded-2xl px-4 py-5 text-center"
+            onClick={() => setSection("store")}
           >
-            <span className="grid gap-1.5">
-              <ShoppingCart className="mx-auto h-5 w-5" />
-              <strong className="text-sm">Combos</strong>
+            <span className="grid gap-2">
+              <ShoppingBag className="mx-auto h-7 w-7" />
+              <strong className="text-lg">Loja</strong>
+              <span className="text-sm font-normal">Ver produtos à venda</span>
             </span>
-          </button>
-          <button
-            type="button"
-            aria-pressed={area === "mine"}
-            className={`grid min-h-20 place-items-center rounded-xl border p-2 text-center transition sm:min-h-24 sm:p-3 ${area === "mine" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}
-            onClick={() => setArea("mine")}
-          >
-            <span className="grid gap-1.5">
-              <UserRound className="mx-auto h-5 w-5" />
-              <strong className="text-xs leading-tight sm:text-sm">Meus agendamentos</strong>
-            </span>
-          </button>
+          </Button>
         </div>
-        {area === "mine" ? (
-          <MyBookings page={page} />
+
+        {section === "booking" ? (
+          <>
+            <div
+              className="mt-5 grid grid-cols-3 gap-2 sm:gap-3"
+              aria-label="Escolha o fluxo de agendamento"
+            >
+              <Button
+                type="button"
+                variant={area === "services" ? "default" : "outline"}
+                aria-pressed={area === "services"}
+                className="h-auto min-h-20 whitespace-normal rounded-xl p-2 text-center sm:min-h-24 sm:p-3"
+                onClick={() => setArea("services")}
+              >
+                <span className="grid gap-1.5">
+                  <CalendarDays className="mx-auto h-5 w-5" />
+                  <strong className="text-sm">Serviços</strong>
+                </span>
+              </Button>
+              <Button
+                type="button"
+                variant={area === "combos" ? "default" : "outline"}
+                aria-pressed={area === "combos"}
+                className="h-auto min-h-20 whitespace-normal rounded-xl p-2 text-center sm:min-h-24 sm:p-3"
+                onClick={() => setArea("combos")}
+              >
+                <span className="grid gap-1.5">
+                  <ShoppingCart className="mx-auto h-5 w-5" />
+                  <strong className="text-sm">Combos</strong>
+                </span>
+              </Button>
+              <Button
+                type="button"
+                variant={area === "mine" ? "default" : "outline"}
+                aria-pressed={area === "mine"}
+                className="h-auto min-h-20 whitespace-normal rounded-xl p-2 text-center sm:min-h-24 sm:p-3"
+                onClick={() => setArea("mine")}
+              >
+                <span className="grid gap-1.5">
+                  <UserRound className="mx-auto h-5 w-5" />
+                  <strong className="text-xs leading-tight sm:text-sm">Meus agendamentos</strong>
+                </span>
+              </Button>
+            </div>
+            {area === "mine" ? (
+              <MyBookings page={page} />
+            ) : (
+              <BookingWizard key={area} page={page} rules={rules} initialServiceType={area} />
+            )}
+          </>
         ) : (
-          <BookingWizard key={area} page={page} rules={rules} initialServiceType={area} />
+          <StoreCatalog page={page} />
         )}
         <CompanyInformation page={page} />
       </div>
