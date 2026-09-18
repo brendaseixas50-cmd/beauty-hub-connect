@@ -170,14 +170,14 @@ function PublicBookingApp() {
           <>
             <div
               role="group"
-              className="-mx-1 mt-5 flex gap-2 overflow-x-auto px-1 pb-1"
+              className="mt-5 grid grid-cols-[0.8fr_0.75fr_1.45fr] gap-2"
               aria-label="Escolha o fluxo de agendamento"
             >
               <Button
                 type="button"
                 variant={area === "services" ? "default" : "secondary"}
                 aria-pressed={area === "services"}
-                className="min-h-10 shrink-0 whitespace-nowrap rounded-full px-4 text-sm"
+                className="min-h-10 min-w-0 whitespace-normal rounded-full px-2 text-xs sm:px-4 sm:text-sm"
                 onClick={() => setArea("services")}
               >
                 Serviços
@@ -186,7 +186,7 @@ function PublicBookingApp() {
                 type="button"
                 variant={area === "combos" ? "default" : "secondary"}
                 aria-pressed={area === "combos"}
-                className="min-h-10 shrink-0 whitespace-nowrap rounded-full px-4 text-sm"
+                className="min-h-10 min-w-0 whitespace-normal rounded-full px-2 text-xs sm:px-4 sm:text-sm"
                 onClick={() => setArea("combos")}
               >
                 Combos
@@ -195,7 +195,7 @@ function PublicBookingApp() {
                 type="button"
                 variant={area === "mine" ? "default" : "secondary"}
                 aria-pressed={area === "mine"}
-                className="min-h-10 shrink-0 whitespace-nowrap rounded-full px-4 text-sm"
+                className="min-h-10 min-w-0 whitespace-normal rounded-full px-2 text-xs leading-tight sm:px-4 sm:text-sm"
                 onClick={() => setArea("mine")}
               >
                 Meus agendamentos
