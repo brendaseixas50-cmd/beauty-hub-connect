@@ -1948,6 +1948,32 @@ export const saveAppointment = createServerFn({ method: "POST" })
     return saved as Appointment;
   });
 
+export const setAppointmentOutcome = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      id: z.string().uuid(),
+      status: z.enum(["completed", "cancelled"]),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const { supabase, tenantId, role, user } = await tenantContext();
+    requireManager(role);
+    const { data: saved, error } = await supabase
+      .from("appointments")
+      .update({ status: data.status })
+      .eq("id", data.id)
+      .eq("tenant_id", tenantId)
+      .select("id")
+      .maybeSingle();
+    if (error || !saved) databaseError(error, "Não foi possível atualizar o atendimento.");
+    await syncAppointmentFinancials({
+      tenantId,
+      appointmentId: saved.id,
+      createdBy: user.id,
+    });
+    return { success: true } as const;
+  });
+
 
 export const deleteAppointment = createServerFn({ method: "POST" })
   .validator(idSchema)

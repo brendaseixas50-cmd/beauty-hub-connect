@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { parseWorkingHours } from "@/modules/mvp/agenda-disponibilidade";
-import { syncAppointmentFinancials } from "@/modules/finance/comissoes.server";
 import {
   isLedgerKind,
   summarizeLedger,
@@ -98,42 +97,6 @@ async function professionalContext() {
   if (!identity) throw new Error("Sua conta não está vinculada a um profissional ativo.");
   if (!identity.active) throw new Error(disabledAccessMessage);
   return { supabase, identity };
-}
-
-/**
- * Preferência da empresa sobre quem pode concluir atendimentos.
- * Falha fechada: qualquer erro de leitura mantém o padrão "somente gestão".
- */
-async function completionPermission(
-  supabase: SupabaseServerClient,
-  tenantId: string,
-): Promise<"management" | "management_professional"> {
-  const { data } = await supabase
-    .from("tenants")
-    .select("completion_permission")
-    .eq("id", tenantId)
-    .maybeSingle();
-  return data?.completion_permission === "management_professional"
-    ? "management_professional"
-    : "management";
-}
-
-/**
- * Autorização de servidor: o profissional só conclui atendimentos quando a
- * empresa liberou "Gestão + profissional responsável". Gestão (owner/admin)
- * segue concluindo pelo Painel Administrativo.
- */
-async function assertCanComplete(
-  supabase: SupabaseServerClient,
-  identity: { tenantId: string; role: string },
-) {
-  if (identity.role === "owner" || identity.role === "admin") return;
-  const permission = await completionPermission(supabase, identity.tenantId);
-  if (permission !== "management_professional") {
-    throw new Error(
-      "Somente a gestão da empresa pode concluir atendimentos. Fale com o administrador.",
-    );
-  }
 }
 
 export const getProfessionalPanel = createServerFn({ method: "GET" }).handler(
@@ -254,10 +217,6 @@ export const getProfessionalPanel = createServerFn({ method: "GET" }).handler(
         })),
         services,
         clients: clientsResult.data ?? [],
-        canCompleteAppointments:
-          identity.role === "owner" ||
-          identity.role === "admin" ||
-          (await completionPermission(supabase, identity.tenantId)) === "management_professional",
       },
     };
   },
@@ -281,7 +240,7 @@ export const professionalSaveAppointment = createServerFn({ method: "POST" })
       clientId: z.string().uuid(),
       serviceId: z.string().uuid(),
       startsAt: z.string().datetime({ offset: true }),
-      status: z.enum(["scheduled", "confirmed", "completed", "cancelled", "no_show"]),
+      status: z.enum(["scheduled", "confirmed"]),
       notes: z
         .string()
         .trim()
@@ -292,7 +251,6 @@ export const professionalSaveAppointment = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabase, identity } = await professionalContext();
-    if (data.status === "completed") await assertCanComplete(supabase, identity);
     const { data: service, error: serviceError } = await supabase
       .from("services")
       .select("duration_minutes, price_cents, active")
@@ -347,9 +305,6 @@ export const professionalSaveAppointment = createServerFn({ method: "POST" })
       : supabase.from("appointments").insert(values).select("id");
     const { data: saved, error } = await query.maybeSingle();
     if (error) databaseError(error, "Não foi possível salvar o atendimento.");
-    if (saved?.id) {
-      await syncAppointmentFinancials({ tenantId: identity.tenantId, appointmentId: saved.id });
-    }
     return { success: true } as const;
   });
 
@@ -357,19 +312,17 @@ export const professionalSetAppointmentStatus = createServerFn({ method: "POST" 
   .validator(
     z.object({
       id: z.string().uuid(),
-      status: z.enum(["scheduled", "confirmed", "completed", "cancelled", "no_show"]),
+      status: z.literal("confirmed"),
     }),
   )
   .handler(async ({ data }) => {
     const { supabase, identity } = await professionalContext();
-    if (data.status === "completed") await assertCanComplete(supabase, identity);
     const { error } = await supabase
       .from("appointments")
       .update({ status: data.status })
       .eq("id", data.id)
       .eq("professional_id", identity.professionalId);
     if (error) databaseError(error, "Não foi possível atualizar o atendimento.");
-    await syncAppointmentFinancials({ tenantId: identity.tenantId, appointmentId: data.id });
     return { success: true } as const;
   });
 

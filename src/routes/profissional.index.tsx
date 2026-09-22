@@ -34,7 +34,6 @@ import {
 import {
   professionalCreateClient,
   professionalSaveAppointment,
-  professionalSetAppointmentStatus,
 } from "@/modules/professional-panel/server";
 
 const layoutApi = getRouteApi("/profissional");
@@ -57,8 +56,6 @@ function AgendaView({ data }: { data: ProfessionalPanelData }) {
   const [selected, setSelected] = useState(today);
   const [view, setView] = useState<"day" | "week">("day");
   const [creating, setCreating] = useState(false);
-  const [pending, setPending] = useState(false);
-  const setStatus = useServerFn(professionalSetAppointmentStatus);
 
   const byDay = useMemo(() => {
     const map = new Map<string, ProfessionalAppointment[]>();
@@ -73,19 +70,6 @@ function AgendaView({ data }: { data: ProfessionalPanelData }) {
 
   const weekStart = shiftDayKey(selected, -new Date(`${selected}T12:00:00Z`).getUTCDay());
   const days = weekKeys(weekStart);
-
-  async function updateStatus(appointment: ProfessionalAppointment, status: ProfessionalAppointment["status"]) {
-    setPending(true);
-    try {
-      await setStatus({ data: { id: appointment.id, status } });
-      await router.invalidate();
-      toast.success(`Atendimento marcado como ${appointmentStatusLabels[status].toLowerCase()}.`);
-    } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Não foi possível atualizar.");
-    } finally {
-      setPending(false);
-    }
-  }
 
   const visible = view === "day" ? [selected] : days;
 
@@ -220,47 +204,6 @@ function AgendaView({ data }: { data: ProfessionalPanelData }) {
                       {appointment.notes}
                     </p>
                   ) : null}
-                  <div className="flex flex-wrap gap-2">
-                    {appointment.status !== "confirmed" && appointment.status !== "completed" ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={pending}
-                        onClick={() => void updateStatus(appointment, "confirmed")}
-                      >
-                        {data.canCompleteAppointments ? "Confirmar" : "Aceitar atendimento"}
-                      </Button>
-                    ) : null}
-                    {data.canCompleteAppointments && appointment.status !== "completed" ? (
-                      <Button
-                        size="sm"
-                        disabled={pending}
-                        onClick={() => void updateStatus(appointment, "completed")}
-                      >
-                        Concluir
-                      </Button>
-                    ) : null}
-                    {appointment.status !== "cancelled" ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={pending}
-                        onClick={() => void updateStatus(appointment, "cancelled")}
-                      >
-                        Cancelar
-                      </Button>
-                    ) : null}
-                    {appointment.status !== "no_show" ? (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={pending}
-                        onClick={() => void updateStatus(appointment, "no_show")}
-                      >
-                        Não compareceu
-                      </Button>
-                    ) : null}
-                  </div>
                 </CompactAppointmentRow>
               ))
             )}
