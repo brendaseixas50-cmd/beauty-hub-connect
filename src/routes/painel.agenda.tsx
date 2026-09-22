@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarPlus, MessageCircle, Pencil } from "lucide-react";
+import { CalendarPlus, CheckCircle2, MessageCircle, Pencil, XCircle } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 
 import { DeleteButton, EmptyState, PageHeader, SearchField } from "@/components/mvp-page";
@@ -8,6 +8,17 @@ import { formatarTelefone, linkWhatsapp } from "@/lib/telefone";
 import { CompactAppointmentRow } from "@/components/agenda/compact-appointment-row";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +38,12 @@ import {
   type Professional,
   type Service,
 } from "@/modules/mvp/domain";
-import { deleteAppointment, getAgenda, saveAppointment } from "@/modules/mvp/server";
+import {
+  deleteAppointment,
+  getAgenda,
+  saveAppointment,
+  setAppointmentOutcome,
+} from "@/modules/mvp/server";
 import { useMvpAction } from "@/modules/mvp/use-action";
 import { LuviContextBridge } from "@/modules/luvi-core/context";
 
@@ -41,6 +57,7 @@ export const Route = createFileRoute("/painel/agenda")({
 function AgendaPage() {
   const data = Route.useLoaderData();
   const remove = useServerFn(deleteAppointment);
+  const setOutcome = useServerFn(setAppointmentOutcome);
   const action = useMvpAction();
   const [search, setSearch] = useState("");
   const [professional, setProfessional] = useState("all");
@@ -252,6 +269,39 @@ function AgendaPage() {
                 </p>
               ) : null}
               <div className="flex flex-wrap gap-2">
+                {appointment.status === "scheduled" || appointment.status === "confirmed" ? (
+                  <>
+                    <OutcomeButton
+                      title="Finalizar atendimento?"
+                      description={`O serviço de ${appointment.clients?.name ?? "Cliente"} será concluído e a comissão será lançada para ${appointment.professionals?.name ?? "o profissional responsável"}.`}
+                      confirmLabel="Sim, finalizar"
+                      pending={action.pending}
+                      onConfirm={() =>
+                        void action.run(
+                          () => setOutcome({ data: { id: appointment.id, status: "completed" } }),
+                          "Atendimento finalizado e comissão lançada.",
+                        )
+                      }
+                    >
+                      <CheckCircle2 className="h-4 w-4" /> Finalizar
+                    </OutcomeButton>
+                    <OutcomeButton
+                      title="Cancelar atendimento?"
+                      description="O atendimento será marcado como cancelado e não gerará comissão."
+                      confirmLabel="Sim, cancelar"
+                      variant="outline"
+                      pending={action.pending}
+                      onConfirm={() =>
+                        void action.run(
+                          () => setOutcome({ data: { id: appointment.id, status: "cancelled" } }),
+                          "Atendimento cancelado.",
+                        )
+                      }
+                    >
+                      <XCircle className="h-4 w-4" /> Cancelar
+                    </OutcomeButton>
+                  </>
+                ) : null}
                 <Button variant="outline" size="sm" onClick={() => setEditing(appointment)}>
                   <Pencil className="h-4 w-4" /> Editar
                 </Button>
@@ -281,6 +331,46 @@ function AgendaPage() {
         />
       ) : null}
     </div>
+  );
+}
+
+function OutcomeButton({
+  title,
+  description,
+  confirmLabel,
+  variant = "default",
+  pending,
+  onConfirm,
+  children,
+}: {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  variant?: "default" | "outline";
+  pending: boolean;
+  onConfirm: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button type="button" size="sm" variant={variant} disabled={pending}>
+          {children}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Voltar</AlertDialogCancel>
+          <AlertDialogAction disabled={pending} onClick={onConfirm}>
+            {confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

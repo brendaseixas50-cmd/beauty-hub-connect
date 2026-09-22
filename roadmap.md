@@ -10,3 +10,4 @@
 - [x] Validar a disponibilidade real da Top Barbers sem criar reservas.
 - [x] Restaurar os cards Agendamento e Loja, mantendo Serviços, Combos e Meus agendamentos dentro de Agendamento.
 - [x] Deixar Serviços, Combos e Meus agendamentos compactos como as categorias da Loja.
+- [x] Adicionar finalização e cancelamento rápidos na agenda da gestão, com comissão automática, e remover essas ações do painel profissional.
