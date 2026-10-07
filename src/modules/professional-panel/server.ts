@@ -153,7 +153,7 @@ export const getProfessionalPanel = createServerFn({ method: "GET" }).handler(
           .eq("tenant_id", identity.tenantId),
       ]);
 
-    if (appointmentsResult.error) console.error("DEBUGPANEL", appointmentsResult.error);
+    console.error("DEBUGPANEL", identity.professionalId, appointmentsResult.error, appointmentsResult.data?.length, appointmentsResult.status, from.toISOString(), to.toISOString());
     const appointmentRows = appointmentsResult.data ?? [];
     const serviceRows = servicesResult.data ?? [];
     const serviceNames = new Map(serviceRows.map((service) => [service.id, service.name]));
