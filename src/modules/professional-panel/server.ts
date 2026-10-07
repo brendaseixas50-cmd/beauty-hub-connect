@@ -125,41 +125,64 @@ export const getProfessionalPanel = createServerFn({ method: "GET" }).handler(
     const to = new Date();
     to.setDate(to.getDate() + 90);
 
+    // A identidade já foi validada pela sessão do profissional. As leituras da
+    // agenda usam o leitor do servidor, sempre presas à empresa e ao profissional
+    // validados: as regras por linha do banco estouravam o tempo limite e
+    // devolviam a agenda vazia.
+    const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
+    const reader = createSupabaseAdminClient();
     const [appointmentsResult, blocksResult, linkResult, clientsResult, servicesResult] =
       await Promise.all([
-        supabase
+        reader
           .from("appointments")
           .select(
-            "id, starts_at, ends_at, status, price_cents, notes, clients(name, phone), services(name)",
+            "id, client_id, starts_at, ends_at, status, price_cents, notes, clients(name, phone), services(name)",
           )
+          .eq("tenant_id", identity.tenantId)
           .eq("professional_id", identity.professionalId)
           .gte("starts_at", from.toISOString())
           .lt("starts_at", to.toISOString())
           .order("starts_at"),
-        supabase
+        reader
           .from("professional_unavailability")
           .select("id, starts_at, ends_at, reason")
+          .eq("tenant_id", identity.tenantId)
           .eq("professional_id", identity.professionalId)
           .gte("ends_at", from.toISOString())
           .order("starts_at"),
-        supabase
+        reader
           .from("professional_services")
           .select("service_id")
+          .eq("tenant_id", identity.tenantId)
           .eq("professional_id", identity.professionalId),
-        supabase.from("clients").select("id, name, phone").eq("active", true).order("name"),
-        supabase
+        reader
+          .from("clients")
+          .select("id, name, phone, last_professional_id")
+          .eq("tenant_id", identity.tenantId)
+          .eq("active", true)
+          .order("name"),
+        reader
           .from("services")
           .select("id, name, duration_minutes, price_cents, active")
           .eq("tenant_id", identity.tenantId),
       ]);
 
+    if (appointmentsResult.error) throw new Error("Não foi possível carregar sua agenda agora.");
     const appointmentRows = appointmentsResult.data ?? [];
     const serviceRows = servicesResult.data ?? [];
     const serviceNames = new Map(serviceRows.map((service) => [service.id, service.name]));
+    // Mantém a regra de privacidade: só clientes que este profissional atende.
+    const ownClientIds = new Set(appointmentRows.map((row) => row.client_id));
+    const ownClients = (clientsResult.data ?? [])
+      .filter(
+        (client) =>
+          client.last_professional_id === identity.professionalId || ownClientIds.has(client.id),
+      )
+      .map(({ id, name, phone }) => ({ id, name, phone }));
 
     const itemsByAppointment = new Map<string, ProfessionalAppointment["items"]>();
     if (appointmentRows.length > 0) {
-      const { data: itemRows } = await supabase
+      const { data: itemRows } = await reader
         .from("appointment_services")
         .select("appointment_id, service_id, position, duration_minutes, price_cents")
         .in(
