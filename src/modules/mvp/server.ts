@@ -1099,7 +1099,17 @@ const clientSchema = z.object({
 
 export const listClients = createServerFn({ method: "GET" }).handler(
   async (): Promise<MarketingClient[]> => {
-    const { supabase, tenantId } = await tenantContext();
+    const context = await tenantContext();
+    const { tenantId, role } = context;
+    // A gestão (dono, administrador, recepção) lê os clientes da empresa já
+    // verificados; a checagem linha por linha do banco derrubava a página
+    // quando a lista de clientes e atendimentos crescia. As consultas abaixo
+    // continuam filtradas pelo tenant do usuário verificado.
+    let supabase = context.supabase;
+    if (role === "owner" || role === "admin" || role === "receptionist") {
+      const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
+      supabase = createSupabaseAdminClient() as unknown as typeof supabase;
+    }
     const [clientsResult, appointmentsResult] = await Promise.all([
       supabase
         .from("clients")
@@ -1182,7 +1192,15 @@ const campaignType = z.enum([
 ]);
 
 export const getMarketing = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabase, tenantId } = await tenantContext();
+  const context = await tenantContext();
+  const { tenantId, role } = context;
+  // Mesma leitura verificada usada na agenda: a checagem linha por linha do
+  // banco derrubava a página quando a empresa tem muitos atendimentos/clientes.
+  let supabase = context.supabase;
+  if (role === "owner" || role === "admin" || role === "receptionist") {
+    const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
+    supabase = createSupabaseAdminClient() as unknown as typeof supabase;
+  }
   const [
     clientsResult,
     appointmentsResult,
