@@ -1833,7 +1833,17 @@ const appointmentSchema = z.object({
 });
 
 export const getAgenda = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabase, tenantId } = await tenantContext();
+  const context = await tenantContext();
+  const { tenantId } = context;
+  // Gestão (dono, administrador, recepção) lê a agenda inteira da empresa já verificada.
+  // A leitura com as regras por linha estourava o tempo limite em empresas com muitos
+  // atendimentos (ex.: centenas no período), derrubando a página. Todas as consultas
+  // abaixo continuam filtradas pelo tenant do usuário verificado.
+  let supabase = context.supabase;
+  if (context.role === "owner" || context.role === "admin" || context.role === "receptionist") {
+    const { createSupabaseAdminClient } = await import("@/modules/supabase/admin-client");
+    supabase = createSupabaseAdminClient() as unknown as typeof supabase;
+  }
   const start = new Date();
   start.setMonth(start.getMonth() - 2, 1);
   start.setHours(0, 0, 0, 0);
