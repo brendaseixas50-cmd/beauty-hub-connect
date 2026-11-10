@@ -865,6 +865,30 @@ function temporaryPassword(): string {
  * Cria (ou reaproveita) a conta de acesso do profissional e vincula ao próprio
  * cadastro dentro da empresa. O profissional entra apenas no Painel Profissional.
  */
+/**
+ * Profissional cadastrado pela empresa nunca vira "dono" de empresa própria nem
+ * depende de liberação do Painel Master: abre direto na empresa que o cadastrou.
+ * Remove a empresa vazia criada automaticamente no cadastro da conta nova.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function ensureProfessionalOnlyAccount(admin: any, userId: string, tenantId: string, newAccount: boolean) {
+  await admin.from("user_active_tenants").upsert({ user_id: userId, tenant_id: tenantId }, { onConflict: "user_id" });
+  if (!newAccount) return;
+  const { data: owned } = await admin.from("tenants").select("id").eq("owner_id", userId).neq("id", tenantId);
+  for (const ghost of owned ?? []) {
+    const checks = await Promise.all(
+      ["appointments", "clients", "services"].map((table) =>
+        admin.from(table).select("id", { count: "exact", head: true }).eq("tenant_id", ghost.id),
+      ),
+    );
+    if (checks.some((c: { count: number | null }) => (c.count ?? 0) > 0)) continue;
+    await admin.from("professionals").delete().eq("tenant_id", ghost.id);
+    await admin.from("tenant_memberships").delete().eq("tenant_id", ghost.id);
+    await admin.from("profiles").update({ tenant_id: tenantId, role: "professional" }).eq("id", userId).eq("tenant_id", ghost.id);
+    await admin.from("tenants").delete().eq("id", ghost.id);
+  }
+}
+
 export const generateProfessionalAccess = createServerFn({ method: "POST" })
   .validator(idSchema)
   .handler(async ({ data }) => {
@@ -913,6 +937,8 @@ export const generateProfessionalAccess = createServerFn({ method: "POST" })
       p_user_id: userId,
     });
     if (linkError) databaseError(linkError, "Não foi possível vincular o acesso do profissional.");
+
+    await ensureProfessionalOnlyAccount(admin, userId, tenantId, password !== null);
 
     return {
       email,
