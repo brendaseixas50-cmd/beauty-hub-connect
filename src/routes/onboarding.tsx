@@ -1,3 +1,4 @@
+import { hasProfessionalPanel } from "@/modules/professional-panel/server";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, ArrowRight, Check, Plus, Sparkles, Trash2 } from "lucide-react";
@@ -29,11 +30,13 @@ export const Route = createFileRoute("/onboarding")({
   beforeLoad: async ({ context }) => {
     const session = await readSession(context.queryClient);
     if (!session) throw redirect({ to: "/login", search: { redirect: "/onboarding" } });
-    if (!session.user.betaAccessActive)
+    if (!session.user.betaAccessActive) {
+      if (await hasProfessionalPanel().catch(() => false)) throw redirect({ to: "/profissional" });
       throw redirect({
         to: "/beta-fechado",
         search: { produto: session.user.productType },
       });
+    }
     return { session };
   },
   loader: () => getOnboardingData(),

@@ -61,6 +61,9 @@ export const Route = createFileRoute("/painel")({
       throw redirect({ to: "/profissional" });
     }
     if (!session.user.betaAccessActive) {
+      if (await hasProfessionalPanel().catch(() => false)) {
+        throw redirect({ to: "/profissional" });
+      }
       throw redirect({ to: "/beta-fechado", search: { produto: session.user.productType } });
     }
     if (session.user.productType === "beauty" && !session.user.onboardingCompleted) {

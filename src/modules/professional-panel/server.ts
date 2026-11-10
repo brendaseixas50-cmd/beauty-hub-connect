@@ -251,7 +251,13 @@ export const hasProfessionalPanel = createServerFn({ method: "GET" }).handler(
     const supabase = createSupabaseServerClient();
     const { data: auth } = await supabase.auth.getUser();
     if (!auth.user) return false;
-    const identity = await readIdentity(supabase);
+    // Profissional cadastrado pela empresa nunca depende da autorização Master.
+    const claim = await claimAccess(supabase);
+    if (claim !== "ok") return false;
+    let identity = await readIdentity(supabase);
+    if (!identity && (await activateProfessionalTenant(supabase))) {
+      identity = await readIdentity(supabase);
+    }
     return Boolean(identity?.active);
   },
 );

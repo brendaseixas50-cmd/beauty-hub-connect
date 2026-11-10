@@ -1,3 +1,4 @@
+import { hasProfessionalPanel } from "@/modules/professional-panel/server";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Clock3, LogOut, ShieldCheck } from "lucide-react";
@@ -22,6 +23,8 @@ export const Route = createFileRoute("/beta-fechado")({
     if (!session)
       throw redirect({ to: "/login", search: { redirect: "/painel", produto: undefined } });
     if (session.user.betaAccessActive) throw redirect({ to: "/painel" });
+    // Profissionais cadastrados por uma empresa vão direto ao Painel Profissional.
+    if (await hasProfessionalPanel().catch(() => false)) throw redirect({ to: "/profissional" });
     return { session };
   },
   // Registra a solicitação pendente no Painel Master do produto correspondente.
