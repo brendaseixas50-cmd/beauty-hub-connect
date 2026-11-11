@@ -813,8 +813,26 @@ export const saveProfessional = createServerFn({ method: "POST" })
       bio: data.bio,
       photo_url: data.photoUrl,
     };
+    // Se a empresa trocou o e-mail do profissional, o acesso passa para a conta
+    // do novo e-mail: o vínculo antigo é desfeito para não bloquear o login.
+    let resetLink = false;
+    if (data.id) {
+      const { data: current } = await supabase
+        .from("professionals")
+        .select("email")
+        .eq("id", data.id)
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+      const before = current?.email?.trim().toLowerCase() ?? null;
+      const after = data.email?.trim().toLowerCase() ?? null;
+      resetLink = before !== after;
+    }
     const query = data.id
-      ? supabase.from("professionals").update(values).eq("id", data.id).eq("tenant_id", tenantId)
+      ? supabase
+          .from("professionals")
+          .update(resetLink ? { ...values, user_id: null } : values)
+          .eq("id", data.id)
+          .eq("tenant_id", tenantId)
       : supabase.from("professionals").insert(values);
     const { data: saved, error } = await query.select().single();
     if (error || !saved) databaseError(error, "Não foi possível salvar o profissional.");
